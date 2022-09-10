@@ -1,0 +1,27 @@
+{
+  "name": "type-validator",
+  "version": "0.0.1",
+  "description": "",
+  "author": "scotty ",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "npx tsc --build tsconfig.json",
+    "test": "npx jest -c jest.config.js",
+    "test:watch": "npx jest -c jest.config.js --watch",
+    "lint": "eslint test/*.ts src/*.ts",
+    "lint:fix": "eslint test/*.ts src/*.ts --fix"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^23.3.14",
+    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "@typescript-eslint/parser": "^5.36.2",
+    "eslint": "^8.23.0",
+    "eslint-config-standard-with-typescript": "^22.0.0",
+    "jest": "^23.6.0",
+    "npm": "^8.19.1",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.3.1"
+  }
+}
