@@ -6,8 +6,8 @@
   "main": "build/index.js",
   "scripts": {
     "build": "npx tsc --build tsconfig.json",
-    "test": "npx jest -c jest.config.js",
-    "test:watch": "npx jest -c jest.config.js --watch",
+    "test": "npx jest -c jest.config.js --maxWorkers=1",
+    "test:watch": "npx jest -c jest.config.js --maxWorkers=1 --watch",
     "lint": "eslint test/*.ts src/*.ts",
     "lint:fix": "eslint test/*.ts src/*.ts --fix"
   },

@@ -1,4 +1,7 @@
 type simpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
+const allSimpleTypes: simpleTypeVariant[] = [
+  'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
+];
 
 interface SimpleRule {
   readonly category: 'simple'
@@ -23,6 +26,12 @@ export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
 }
 
+class UnreachableCaseError extends Error {
+  constructor(value: never) {
+    super(`Unexpected value ${String(value)}`);
+  }
+}
+
 /// Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.
 /// This tries to mimic how TypeScript compares simple types.
 function getSimpleTypeOf(value: unknown): string {
@@ -39,49 +48,56 @@ export function validator(parts: TemplateStringsArray): Validator {
   const rawRule = parts[0];
 
   if (rawRule === 'unknown' || rawRule === 'any') {
-    return f({
-      assertMatches<T>(value: T): T {
-        return value;
-      },
-      matches(value: unknown) {
-        return true;
-      },
-      rule: f({ category: 'noop' as const }),
+    return validator.fromRule({ category: 'noop' as const });
+  } else if ((allSimpleTypes as string[]).includes(rawRule)) {
+    return validator.fromRule({
+      category: 'simple' as const,
+      type: rawRule as simpleTypeVariant,
     });
   } else {
-    let simpleType: simpleTypeVariant;
-    const allSimpleTypes: simpleTypeVariant[] = ['string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined'];
-    if ((allSimpleTypes as string[]).includes(rawRule)) {
-      simpleType = rawRule as simpleTypeVariant;
-    } else {
-      throw new Error('Invalid input');
-    }
-
-    const instance = f({
-      assertMatches<T>(value: T): T {
-        if (getSimpleTypeOf(value) !== simpleType) { // eslint-disable-line valid-typeof
-          throw new ValidatorAssertionError(`Expected a value of type "${simpleType}" but got type "${getSimpleTypeOf(value)}".`);
-        }
-
-        return value;
-      },
-      matches(value: unknown) {
-        try {
-          instance.assertMatches(value);
-          return true;
-        } catch (err) {
-          if (err instanceof ValidatorAssertionError) {
-            return false;
-          }
-          throw err;
-        }
-      },
-      rule: f({
-        category: 'simple' as const,
-        type: simpleType,
-      }),
-    });
-
-    return instance;
+    throw new Error('Invalid input');
   }
+}
+
+validator.fromRule = function(rule_: Rule): Validator {
+  let rule: Rule;
+  if (rule_.category === 'simple' || rule_.category === 'noop') {
+    rule = f({ ...rule_ });
+  } else {
+    throw new UnreachableCaseError(rule_);
+  }
+
+  const instance: Validator = f({
+    assertMatches<T>(value: T): T {
+      return assertMatches(rule, value);
+    },
+    matches(value: unknown) {
+      try {
+        instance.assertMatches(value);
+        return true;
+      } catch (err) {
+        if (err instanceof ValidatorAssertionError) {
+          return false;
+        }
+        throw err;
+      }
+    },
+    rule,
+  });
+
+  return instance;
+};
+
+function assertMatches<T>(rule: Rule, value: T): T {
+  if (rule.category === 'noop') {
+    // noop
+  } else if (rule.category === 'simple') {
+    if (getSimpleTypeOf(value) !== rule.type) { // eslint-disable-line valid-typeof
+      throw new ValidatorAssertionError(
+        `Expected a value of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
+      );
+    }
+  }
+
+  return value;
 }
