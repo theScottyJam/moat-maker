@@ -1,3 +1,4 @@
+import { strict as assert } from 'node:assert';
 import { validator, ValidatorAssertionError } from '../src';
 
 describe('validator behavior', () => {
@@ -37,8 +38,8 @@ describe('validator behavior', () => {
         type: 'number',
       });
       const act = (): any => v.assertMatches('xyz');
-      expect(act).toThrow(ValidatorAssertionError);
-      expect(act).toThrow('Expected a value of type "number" but got type "string".');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected a value of type "number" but got type "string".' });
     });
 
     test('validator behavior does not change, even if input rule is mutated', () => {
@@ -54,8 +55,8 @@ describe('validator behavior', () => {
       expect(rule.type).toBe('string');
 
       const act = (): any => v.assertMatches('xyz');
-      expect(act).toThrow(ValidatorAssertionError);
-      expect(act).toThrow('Expected a value of type "number" but got type "string".');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected a value of type "number" but got type "string".' });
     });
   });
 });

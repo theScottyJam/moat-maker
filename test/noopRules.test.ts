@@ -1,6 +1,6 @@
 import { validator } from '../src';
 
-describe('noop validators', () => {
+describe('noop rules', () => {
   describe('unknown', () => {
     test('accepts string inputs', () => {
       const v = validator`unknown`;
@@ -12,7 +12,7 @@ describe('noop validators', () => {
       v.assertMatches({ x: 2 });
     });
 
-    test('produces the correct rules', () => {
+    test('produces the correct rule', () => {
       const v = validator`unknown`;
       expect(v.rule).toMatchObject({ category: 'noop' });
       expect(Object.isFrozen(v.rule)).toBe(true);
