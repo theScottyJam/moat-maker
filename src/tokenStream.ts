@@ -1,28 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { ValidatorSyntaxError } from './exceptions';
-
-export interface TextPosition {
-  readonly index: number
-  readonly lineNumb: number
-  readonly colNumb: number
-}
-
-export interface TextRange {
-  readonly start: TextPosition
-  readonly end: TextPosition
-}
-
-export interface Token {
-  readonly category: 'identifier' | 'specialChar' | 'eof'
-  readonly value: string
-  readonly range: TextRange
-}
-
-export interface TokenStream {
-  readonly originalText: string
-  readonly next: () => Token
-  readonly peek: () => Token
-}
+import { TextPosition, Token, TokenStream } from './types/tokenizer';
 
 /// Returns the extracted result, the first position in the extracted range range
 /// (i.e. the passed in pos object), and the last position in the extracted range.

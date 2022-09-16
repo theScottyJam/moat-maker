@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import type { TextRange } from './tokenStream';
+import type { TextRange } from './types/tokenizer';
 
 export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
