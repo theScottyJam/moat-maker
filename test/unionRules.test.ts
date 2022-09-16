@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError } from '../src';
+import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
@@ -37,6 +37,9 @@ describe('union rules', () => {
         },
       ],
     });
+    assert(v.rule.category === 'union');
+    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.rule.variants)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
@@ -101,6 +104,18 @@ describe('union rules', () => {
         "Recieved value did not match any of the union's variants.",
         '  Variant 1: Expected a value of type "number" but got type "null".',
         "  Variant 2: Recieved value did not match any of the union's variants.", // <-- the concise error
+      ].join('\n'),
+    });
+  });
+
+  test('Throws a syntax error when there\'s nothing to the right of the "|"', () => {
+    const act = (): any => validator`number | `;
+    assert.throws(act, ValidatorSyntaxError);
+    assert.throws(act, {
+      message: [
+        'Unexpected EOF. (line 1, col 10)',
+        '  number | ',
+        '           ~',
       ].join('\n'),
     });
   });

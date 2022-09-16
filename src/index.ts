@@ -1,3 +1,8 @@
+import { createTokenStream, TokenStream } from './tokenStream';
+import { ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
+import { UnreachableCaseError } from './util';
+export { ValidatorAssertionError, ValidatorSyntaxError };
+
 type simpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 const allSimpleTypes: simpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
@@ -25,25 +30,6 @@ interface Validator {
   readonly rule: Rule
 }
 
-export class ValidatorAssertionError extends Error {
-  name = 'ValidatorAssertionError';
-  public readonly conciseMessage;
-
-  /// `message` will sometimes be multiline while `conciseMessage` should always fit on one line.
-  /// `conciseMessage` is useful when you need to combine multipler error messages together into one.
-  constructor(message: string, conciseMessage = message) {
-    super(message);
-    this.conciseMessage = conciseMessage;
-  }
-}
-
-class UnreachableCaseError extends Error {
-  name = 'UnreachableCaseError';
-  constructor(value: never) {
-    super(`Unexpected value ${String(value)}`);
-  }
-}
-
 /// Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.
 /// This tries to mimic how TypeScript compares simple types.
 function getSimpleTypeOf(value: unknown): string {
@@ -57,7 +43,11 @@ function getSimpleTypeOf(value: unknown): string {
 }
 
 export function validator(parts: TemplateStringsArray): Validator {
-  return validator.fromRule(inputStringToRule([...parts]));
+  const tokenStream = createTokenStream(parts);
+  if (tokenStream.peek().category === 'eof') {
+    throw new ValidatorSyntaxError('The validator had no content.');
+  }
+  return validator.fromRule(ruleFromTokenStream(tokenStream));
 }
 
 validator.fromRule = function(rule_: Rule): Validator {
@@ -86,43 +76,72 @@ validator.fromRule = function(rule_: Rule): Validator {
 
 function freezeRule(rule: Rule): Rule {
   // shallow-copy-and-freeze function
-  const f = <T>(obj: T): T => (
-    Object.isFrozen(obj)
-      ? obj
-      : Object.freeze({ ...obj })
-  );
+  const f = <T>(objOrArray: T): T => {
+    if (Object.isFrozen(objOrArray)) {
+      return objOrArray;
+    }
+    return Object.freeze(
+      Array.isArray(objOrArray) ? [...objOrArray] : { ...objOrArray },
+    ) as T;
+  };
 
   if (rule.category === 'simple' || rule.category === 'noop') {
     return f({ ...rule });
   } else if (rule.category === 'union') {
     return f({
       ...rule,
-      variants: [...rule.variants], // <-- TODO: Freeze the array and test that.
+      variants: f([...rule.variants]),
     });
   } else {
     throw new UnreachableCaseError(rule);
   }
 }
 
-function inputStringToRule(parts: string[]): Rule {
-  const rawRule = parts[0];
+function ruleFromTokenStream(tokenStream: TokenStream): Rule {
+  const token = tokenStream.next();
+  if (token.category === 'eof') {
+    throw new ValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, token.range);
+  }
 
-  if (rawRule === 'unknown' || rawRule === 'any') {
-    return freezeRule({
-      category: 'noop',
-    });
-  } else if ((allSimpleTypes as string[]).includes(rawRule)) {
-    return freezeRule({
-      category: 'simple',
-      type: rawRule as simpleTypeVariant,
-    });
-  } else if (rawRule.includes('|')) {
+  let rule: Rule;
+  if (token.category === 'identifier') {
+    const identifier = token.value;
+    if (identifier === 'unknown' || identifier === 'any') {
+      rule = freezeRule({
+        category: 'noop',
+      });
+    } else if ((allSimpleTypes as string[]).includes(identifier)) {
+      rule = freezeRule({
+        category: 'simple',
+        type: identifier as simpleTypeVariant,
+      });
+    } else {
+      // TODO: Add tests for this
+      throw new Error('Invalid input');
+    }
+  } else {
+    // TODO: Add tests for this
+    throw new Error('Invalid input');
+  }
+
+  if (tokenStream.peek().value === '|') {
+    tokenStream.next();
+    const subRule = ruleFromTokenStream(tokenStream);
+    const subRules = subRule.category === 'union'
+      ? subRule.variants
+      : [subRule];
+
     return freezeRule({
       category: 'union',
-      variants: rawRule.split('|').map(x => x.trim()).map(x => inputStringToRule([x])),
+      variants: [rule, ...subRules],
     });
   } else {
-    throw new Error('Invalid input');
+    const nextToken = tokenStream.peek();
+    if (nextToken.category !== 'eof') {
+      throw new ValidatorSyntaxError('Expected EOF.', tokenStream.originalText, nextToken.range);
+    }
+
+    return rule;
   }
 }
 
