@@ -38,6 +38,11 @@ function ruleFromTokenStream(tokenStream: TokenStream): Rule {
       // TODO: Add tests for this
       throw new Error('Invalid input');
     }
+  } else if (token.category === 'interpolation') {
+    rule = freezeRule({
+      category: 'interpolation',
+      interpolationIndex: token.range.start.sectionIndex,
+    });
   } else {
     // TODO: Add tests for this
     throw new Error('Invalid input');
@@ -75,7 +80,7 @@ export function freezeRule(rule: Rule): Rule {
     ) as T;
   };
 
-  if (rule.category === 'simple' || rule.category === 'noop') {
+  if (rule.category === 'simple' || rule.category === 'noop' || rule.category === 'interpolation') {
     return f({ ...rule });
   } else if (rule.category === 'union') {
     return f({

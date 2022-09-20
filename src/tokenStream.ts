@@ -4,13 +4,13 @@ import { TextPosition, Token, TokenStream } from './types/tokenizer';
 
 /// Returns the extracted result, the first position in the extracted range range
 /// (i.e. the passed in pos object), and the last position in the extracted range.
-function extract(regex: RegExp, text: string, pos_: TextPosition): [string | null, TextPosition, TextPosition] {
+function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition): [string | null, TextPosition, TextPosition] {
   const pos = { ...pos_ };
   assert(regex.sticky, 'Internal error: The sticky flag must be set');
   assert(regex.lastIndex === 0);
 
-  regex.lastIndex = pos.index;
-  const match = regex.exec(text);
+  regex.lastIndex = pos.textIndex;
+  const match = regex.exec(sections[pos.sectionIndex]);
   regex.lastIndex = 0;
 
   if (match === null || match[0] === '') {
@@ -18,7 +18,7 @@ function extract(regex: RegExp, text: string, pos_: TextPosition): [string | nul
   }
 
   const theExtract = match[0];
-  pos.index += theExtract.length;
+  pos.textIndex += theExtract.length;
   for (const c of theExtract) {
     if (c === '\n') {
       pos.lineNumb++;
@@ -31,30 +31,45 @@ function extract(regex: RegExp, text: string, pos_: TextPosition): [string | nul
   return [theExtract, pos_, Object.freeze(pos)];
 }
 
-export function createTokenStream(parts: TemplateStringsArray): TokenStream {
-  const content = parts[0];
-
+export function createTokenStream(sections: TemplateStringsArray): TokenStream {
   let currentPos = {
-    index: 0,
+    sectionIndex: 0,
+    textIndex: 0,
     lineNumb: 1,
     colNumb: 1,
   };
 
   const getNextToken = (): Token => {
-    [,, currentPos] = extract(/\s+/y, content, currentPos); // skip whitespace
+    [,, currentPos] = extract(/\s+/y, sections, currentPos); // skip whitespace
 
-    if (currentPos.index === content.length) {
-      return {
-        category: 'eof',
-        value: '',
-        range: { start: currentPos, end: currentPos },
-      };
+    if (currentPos.textIndex === sections[currentPos.sectionIndex].length) {
+      if (currentPos.sectionIndex === sections.length - 1) {
+        return {
+          category: 'eof',
+          value: '',
+          range: { start: currentPos, end: currentPos },
+        };
+      } else {
+        const lastPos = currentPos;
+        currentPos = {
+          ...lastPos,
+          sectionIndex: lastPos.sectionIndex + 1,
+          textIndex: 0,
+        };
+        const token = {
+          category: 'interpolation' as const,
+          value: undefined,
+          interpolationIndex: currentPos.sectionIndex,
+          range: { start: lastPos, end: currentPos },
+        };
+        return token;
+      }
     }
 
     let lastPos: TextPosition;
     let segment: string | null;
 
-    [segment, lastPos, currentPos] = extract(/[a-zA-Z]+/y, content, currentPos);
+    [segment, lastPos, currentPos] = extract(/[a-zA-Z]+/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'identifier',
@@ -63,7 +78,7 @@ export function createTokenStream(parts: TemplateStringsArray): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/\|/y, content, currentPos);
+    [segment, lastPos, currentPos] = extract(/\|/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'specialChar',
@@ -72,15 +87,15 @@ export function createTokenStream(parts: TemplateStringsArray): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/\S+/y, content, currentPos);
+    [segment, lastPos, currentPos] = extract(/\S+/y, sections, currentPos);
     assert(segment);
     const errorRange = { start: lastPos, end: currentPos };
-    throw new ValidatorSyntaxError('Failed to interpret this syntax.', content, errorRange);
+    throw new ValidatorSyntaxError('Failed to interpret this syntax.', sections, errorRange);
   };
 
   let curToken = getNextToken();
   return Object.freeze({
-    originalText: content,
+    originalText: sections,
     next(): Token {
       const lastToken = curToken;
       curToken = getNextToken();

@@ -16,4 +16,9 @@ export interface UnionRule {
   readonly variants: Rule[]
 }
 
-export type Rule = SimpleRule | NoopRule | UnionRule;
+export interface InterpolationRule {
+  readonly category: 'interpolation'
+  readonly interpolationIndex: number
+}
+
+export type Rule = SimpleRule | NoopRule | UnionRule | InterpolationRule;
