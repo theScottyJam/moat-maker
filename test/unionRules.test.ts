@@ -15,7 +15,7 @@ describe('union rules', () => {
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
-        "Recieved value did not match any of the union's variants.",
+        "Received value did not match any of the union's variants.",
         '  Variant 1: Expected a value of type "number" but got type "null".',
         '  Variant 2: Expected a value of type "string" but got type "null".',
         '  Variant 3: Expected a value of type "undefined" but got type "null".',
@@ -101,9 +101,9 @@ describe('union rules', () => {
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
-        "Recieved value did not match any of the union's variants.",
+        "Received value did not match any of the union's variants.",
         '  Variant 1: Expected a value of type "number" but got type "null".',
-        "  Variant 2: Recieved value did not match any of the union's variants.", // <-- the concise error
+        "  Variant 2: Received value did not match any of the union's variants.", // <-- the concise error
       ].join('\n'),
     });
   });

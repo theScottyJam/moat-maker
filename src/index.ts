@@ -2,6 +2,7 @@ import { parse, freezeRule } from './ruleParser';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
 import { Validator } from './types/validator';
+import { matcher, installProtocolOnBuiltins } from './matcherProtocol';
 
 export * from './exceptions';
 export * from './types/parseRules';
@@ -24,3 +25,7 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
     interpolated: Object.freeze(interpolated),
   });
 };
+
+validator.matcher = matcher;
+
+installProtocolOnBuiltins();

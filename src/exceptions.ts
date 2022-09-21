@@ -6,7 +6,7 @@ export class ValidatorAssertionError extends Error {
   public readonly conciseMessage;
 
   /// `message` will sometimes be multiline while `conciseMessage` should always fit on one line.
-  /// `conciseMessage` is useful when you need to combine multipler error messages together into one.
+  /// `conciseMessage` is useful when you need to combine multiple error messages together into one.
   constructor(message: string, conciseMessage = message) {
     super(message);
     this.conciseMessage = conciseMessage;
