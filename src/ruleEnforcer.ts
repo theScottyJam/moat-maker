@@ -55,14 +55,20 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
     if (!isObject(value)) {
       throw new ValidatorAssertionError(`Expected ${path} to be an object but got ${reprUnknownValue(value)}.`);
     }
-    const missingKeys = Object.keys(rule.content).filter(key => !(key in value));
+
+    const missingKeys = Object.keys(rule.content)
+      .filter(key => !rule.content[key].optional)
+      .filter(key => !(key in value));
+
     if (missingKeys.length > 0) {
       throw new ValidatorAssertionError(
         `${path} is missing the required fields: ` +
         missingKeys.map(key => JSON.stringify(key)).join(', '),
       );
     }
+
     for (const [key, iterRuleInfo] of Object.entries(rule.content)) {
+      if (iterRuleInfo.optional && !(key in value)) continue;
       assertMatches(iterRuleInfo.rule, (value as any)[key], interpolated, `${path}.${key}`);
     }
   } else if (rule.category === 'interpolation') {

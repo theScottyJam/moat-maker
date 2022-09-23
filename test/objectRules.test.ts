@@ -3,7 +3,7 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 
 describe('object rules', () => {
   test('accepts an object with matching fields', () => {
-    const v = validator`{ str: string, numb: number }`;
+    const v = validator`{ str: string, numb?: number }`;
     v.assertMatches({ numb: 2, str: '' });
   });
 
@@ -30,6 +30,19 @@ describe('object rules', () => {
     const act = (): any => v.assertMatches({ str: '' });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb", "bool"' });
+  });
+
+  // TODO: Check that this error works when using string keys with odd characters
+  test('rejects an object missing both required and optional fields', () => {
+    const v = validator`{ str: string, numb: number, bool?: boolean }`;
+    const act = (): any => v.assertMatches({ str: '' });
+    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb"' });
+  });
+
+  test('accepts a missing optional field', () => {
+    const v = validator`{ numb: number, str?: string }`;
+    v.assertMatches({ numb: 2 });
   });
 
   // TODO: Check that this error works when using string keys with odd characters
@@ -71,7 +84,7 @@ describe('object rules', () => {
   });
 
   test('produces the correct rule', () => {
-    const v = validator`{ numKey: number, strKey: string }`;
+    const v = validator`{ numKey: number, strKey?: string }`;
     expect(v.rule).toMatchObject({
       category: 'object',
       content: {
@@ -83,7 +96,7 @@ describe('object rules', () => {
           },
         },
         strKey: {
-          optional: false,
+          optional: true,
           rule: {
             category: 'simple',
             type: 'string',

@@ -102,6 +102,12 @@ function parseObject(tokenStream: TokenStream): Rule {
       throw new ValidatorSyntaxError('Expected an object key or closing bracket (`}`).', tokenStream.originalText, keyToken.range);
     }
 
+    let optional = false;
+    if (tokenStream.peek().value === '?') {
+      tokenStream.next();
+      optional = true;
+    }
+
     const colonToken = tokenStream.next();
     if (colonToken.value !== ':') {
       throw new ValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
@@ -110,7 +116,7 @@ function parseObject(tokenStream: TokenStream): Rule {
     const valueRule = parseRule(tokenStream);
 
     rule.content[keyToken.value] = {
-      optional: false,
+      optional,
       rule: valueRule,
     };
 
