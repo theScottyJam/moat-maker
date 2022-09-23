@@ -71,6 +71,14 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
       if (iterRuleInfo.optional && !(key in value)) continue;
       assertMatches(iterRuleInfo.rule, (value as any)[key], interpolated, `${path}.${key}`);
     }
+  } else if (rule.category === 'array') {
+    if (!Array.isArray(value)) {
+      throw new ValidatorAssertionError(`Expected ${path} to be an array but got ${reprUnknownValue(value)}.`);
+    }
+
+    for (const [i, element] of value.entries()) {
+      assertMatches(rule.content, element, interpolated, `${path}[${i}]`);
+    }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
 

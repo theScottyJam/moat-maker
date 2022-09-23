@@ -239,7 +239,7 @@ describe('interpolation', () => {
       expect(v.matches({ x: 2, y: 3 })).toBe(false);
     });
 
-    test.only('any interpolation in a single-line comment is ignored', () => {
+    test('any interpolation in a single-line comment is ignored', () => {
       const v = validator`{
         x: ${2}, y: // ${3}
         ${4}

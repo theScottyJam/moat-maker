@@ -1,4 +1,4 @@
-// Everything in here is publically exported
+// Everything in here is publicly exported
 
 export type simpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -22,6 +22,11 @@ export interface ObjectRule {
   readonly index: Rule | null
 }
 
+export interface ArrayRule {
+  readonly category: 'array'
+  readonly content: Rule
+}
+
 export interface UnionRule {
   readonly category: 'union'
   readonly variants: Rule[]
@@ -32,4 +37,4 @@ export interface InterpolationRule {
   readonly interpolationIndex: number
 }
 
-export type Rule = SimpleRule | NoopRule | ObjectRule | UnionRule | InterpolationRule;
+export type Rule = SimpleRule | NoopRule | ObjectRule | ArrayRule | UnionRule | InterpolationRule;

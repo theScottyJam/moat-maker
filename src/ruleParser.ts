@@ -26,39 +26,22 @@ export function parse(parts: TemplateStringsArray): Rule {
 }
 
 function parseRule(tokenStream: TokenStream): Rule {
-  const token = tokenStream.peek();
-  if (token.category === 'eof') {
-    throw new ValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, token.range);
+  if (tokenStream.peek().category === 'eof') {
+    throw new ValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, tokenStream.peek().range);
   }
 
-  let rule: Rule;
-  if (token.category === 'identifier') {
+  let rule: Rule = parseRuleWithoutModifiers(tokenStream);
+
+  while (tokenStream.peek().value === '[') {
     tokenStream.next();
-    const identifier = token.value;
-    if (identifier === 'unknown' || identifier === 'any') {
-      rule = freezeRule({
-        category: 'noop',
-      });
-    } else if ((allSimpleTypes as string[]).includes(identifier)) {
-      rule = freezeRule({
-        category: 'simple',
-        type: identifier as simpleTypeVariant,
-      });
-    } else {
-      // TODO: Add tests for this
-      throw new Error('Invalid input');
+    if (tokenStream.peek().value !== ']') {
+      throw new ValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
     }
-  } else if (token.category === 'interpolation') {
     tokenStream.next();
     rule = freezeRule({
-      category: 'interpolation',
-      interpolationIndex: token.range.start.sectionIndex,
+      category: 'array',
+      content: rule,
     });
-  } else if (token.value === '{') {
-    rule = parseObject(tokenStream);
-  } else {
-    // TODO: Add tests for this
-    throw new Error('Invalid input');
   }
 
   if (tokenStream.peek().value === '|') {
@@ -74,6 +57,46 @@ function parseRule(tokenStream: TokenStream): Rule {
     });
   } else {
     return rule;
+  }
+}
+
+/// Parse a rule, without worrying about things tacked onto it, like `[]`
+/// to make it an array, or `|` to "union" it with another rule.
+function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
+  const token = tokenStream.peek();
+  if (token.category === 'identifier') {
+    return parseLiteralOrNoop(tokenStream);
+  } else if (token.category === 'interpolation') {
+    tokenStream.next();
+    return freezeRule({
+      category: 'interpolation',
+      interpolationIndex: token.range.start.sectionIndex,
+    });
+  } else if (token.value === '{') {
+    return parseObject(tokenStream);
+  } else {
+    // TODO: Add tests for this
+    throw new Error('Invalid input');
+  }
+}
+
+function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
+  const token = tokenStream.next();
+  assert(token.category === 'identifier');
+
+  const identifier = token.value;
+  if (identifier === 'unknown' || identifier === 'any') {
+    return freezeRule({
+      category: 'noop',
+    });
+  } else if ((allSimpleTypes as string[]).includes(identifier)) {
+    return freezeRule({
+      category: 'simple',
+      type: identifier as simpleTypeVariant,
+    });
+  } else {
+    // TODO: Add tests for this
+    throw new Error('Invalid input');
   }
 }
 
@@ -142,13 +165,8 @@ export function freezeRule(rule: Rule): Rule {
     ) as T;
   };
 
-  if (rule.category === 'simple' || rule.category === 'noop' || rule.category === 'interpolation') {
+  if (rule.category === 'simple' || rule.category === 'noop' || rule.category === 'array' || rule.category === 'interpolation') {
     return f({ ...rule });
-  } else if (rule.category === 'union') {
-    return f({
-      ...rule,
-      variants: f([...rule.variants]),
-    });
   } else if (rule.category === 'object') {
     return f({
       ...rule,
@@ -156,6 +174,11 @@ export function freezeRule(rule: Rule): Rule {
         Object.entries(rule.content)
           .map(([k, v]) => f([k, f({ ...v })])),
       )),
+    });
+  } else if (rule.category === 'union') {
+    return f({
+      ...rule,
+      variants: f([...rule.variants]),
     });
   } else {
     throw new UnreachableCaseError(rule);
