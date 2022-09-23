@@ -148,6 +148,20 @@ describe('object rules', () => {
       }`;
     });
 
+    test('allows a newline inside a block comment as a separator', () => {
+      validator`{
+        key1: number /*
+        */ key2: number
+      }`;
+    });
+
+    test('allows a newline at the end of a single-line comment as a separator', () => {
+      validator`{
+        key1: number // XX
+        key2: number
+      }`;
+    });
+
     test('forbids an omitted separator', () => {
       const act = (): any => validator`{ key1: number key2: number }`;
       assert.throws(act, ValidatorSyntaxError);

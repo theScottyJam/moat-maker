@@ -40,11 +40,11 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
   };
 
   const getNextToken = (): Token => {
-    let whitespaceSegment;
-    [whitespaceSegment,, currentPos] = extract(/\s+/y, sections, currentPos); // skip whitespace
-    const afterNewline = whitespaceSegment?.includes('\n') ?? false;
+    let afterNewline;
+    ({ newPos: currentPos, foundNewLine: afterNewline } = ignoreWhitespaceAndComments(sections, currentPos));
 
     if (currentPos.textIndex === sections[currentPos.sectionIndex].length) {
+      // If reached end of entire string
       if (currentPos.sectionIndex === sections.length - 1) {
         return {
           category: 'eof',
@@ -121,4 +121,70 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
       return curToken;
     },
   });
+}
+
+function ignoreWhitespaceAndComments(sections: TemplateStringsArray, startingPos: TextPosition): { foundNewLine: boolean, newPos: TextPosition } {
+  let currentPos = startingPos;
+
+  while (true) {
+    const startingIndex = currentPos.textIndex;
+    let segment, lastPos;
+
+    // whitespace
+    [,, currentPos] = extract(/\s+/y, sections, currentPos);
+
+    // block comments
+    [segment, lastPos, currentPos] = extract(/\/\*/y, sections, currentPos);
+    if (segment !== null) {
+      const { newPos, matchFound } = eatUntil(sections, currentPos, /(.|\n)*?\*\//y);
+      if (!matchFound) {
+        const errorRange = { start: lastPos, end: currentPos };
+        throw new ValidatorSyntaxError('This block comment never got closed.', sections, errorRange);
+      }
+      currentPos = newPos;
+    }
+
+    // single-line comments
+    [segment,, currentPos] = extract(/\/\//y, sections, currentPos);
+    if (segment !== null) {
+      // ignoring `matchFound`. If no match is found, then there was simply a single-line
+      // comment at the end of the whole string, so it didn't have a newline afterwards.
+      const { newPos, matchFound } = eatUntil(sections, currentPos, /(.|\n)*?\n/y);
+      currentPos = newPos;
+    }
+
+    if (startingIndex === currentPos.textIndex) break;
+  }
+
+  return {
+    foundNewLine: currentPos.lineNumb > startingPos.lineNumb,
+    newPos: currentPos,
+  };
+}
+
+/// Keeps moving currentPos (including across interpolation points) until
+/// the provided pattern is matched. currentPos will be set to the position
+/// right after the matched text.
+function eatUntil(sections: TemplateStringsArray, startingPos: TextPosition, pattern: RegExp): { newPos: TextPosition, matchFound: boolean } {
+  let currentPos = startingPos;
+  while (true) {
+    let segment;
+    [segment,, currentPos] = extract(pattern, sections, currentPos);
+    if (segment !== null) {
+      return { newPos: currentPos, matchFound: true };
+    }
+
+    // If reached end of entire string
+    if (currentPos.sectionIndex === sections.length - 1) {
+      [,, currentPos] = extract(/.*/y, sections, currentPos); // move currentPos to the end
+      return { newPos: currentPos, matchFound: false };
+    } else {
+      const lastPos = currentPos;
+      currentPos = {
+        ...lastPos,
+        sectionIndex: lastPos.sectionIndex + 1,
+        textIndex: 0,
+      };
+    }
+  }
 }

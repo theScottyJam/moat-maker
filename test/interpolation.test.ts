@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError } from '../src';
+import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 
 describe('interpolation', () => {
   describe('misc', () => {
@@ -229,6 +229,23 @@ describe('interpolation', () => {
           ),
         });
       });
+    });
+  });
+
+  describe('interpolating inside a comment', () => {
+    test('any interpolation in a block comment is ignored', () => {
+      const v = validator`{ x: ${2}, y: /* ${3} */ ${4} }`;
+      expect(v.matches({ x: 2, y: 4 })).toBe(true);
+      expect(v.matches({ x: 2, y: 3 })).toBe(false);
+    });
+
+    test.only('any interpolation in a single-line comment is ignored', () => {
+      const v = validator`{
+        x: ${2}, y: // ${3}
+        ${4}
+      }`;
+      expect(v.matches({ x: 2, y: 4 })).toBe(true);
+      expect(v.matches({ x: 2, y: 3 })).toBe(false);
     });
   });
 });
