@@ -1,13 +1,8 @@
 /* eslint-disable no-extend-native */
 
-export const matcher = Symbol('validator matcher');
+import { MatcherProtocol } from './types/matcherProtocol';
 
-interface MatcherProtocol {
-  [matcher]: (value: unknown) => {
-    matched: boolean
-    value: unknown
-  }
-}
+export const matcher = Symbol('validator matcher');
 
 export function conformsToMatcherProtocol(value: unknown): value is MatcherProtocol {
   return matcher in Object(value);
