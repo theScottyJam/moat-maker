@@ -9,7 +9,7 @@ describe('simple rules', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(null);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "string" but got type "null".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "null".' });
     });
   });
 
@@ -23,14 +23,14 @@ describe('simple rules', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "string" but got type "number".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
     });
 
     test('rejects string objects', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(new String('xyz'));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "string" but got type "object".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "object".' });
     });
 
     test('produces the correct rule', () => {
@@ -53,14 +53,14 @@ describe('simple rules', () => {
       const v = validator`number`;
       const act = (): any => v.assertMatches(2n);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "number" but got type "bigint".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "bigint".' });
     });
 
     test('rejects number objects', () => {
       const v = validator`number`;
       const act = (): any => v.assertMatches(new Number('hi there'));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "number" but got type "object".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "object".' });
     });
 
     test('produces the correct rule', () => {
@@ -83,7 +83,7 @@ describe('simple rules', () => {
       const v = validator`bigint`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "bigint" but got type "number".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "bigint" but got type "number".' });
     });
 
     test('produces the correct rule', () => {
@@ -107,14 +107,14 @@ describe('simple rules', () => {
       const v = validator`boolean`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "boolean" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "boolean" but got type "string".' });
     });
 
     test('rejects boolean objects', () => {
       const v = validator`boolean`;
       const act = (): any => v.assertMatches(new Boolean(false));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "boolean" but got type "object".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "boolean" but got type "object".' });
     });
 
     test('produces the correct rule', () => {
@@ -137,7 +137,7 @@ describe('simple rules', () => {
       const v = validator`symbol`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "symbol" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "symbol" but got type "string".' });
     });
 
     test('produces the correct rule', () => {
@@ -175,7 +175,7 @@ describe('simple rules', () => {
       const v = validator`object`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "object" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "object" but got type "string".' });
     });
 
     test('produces the correct rule', () => {
@@ -198,7 +198,7 @@ describe('simple rules', () => {
       const v = validator`null`;
       const act = (): any => v.assertMatches(undefined);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "null" but got type "undefined".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "null" but got type "undefined".' });
     });
 
     test('produces the correct rule', () => {
@@ -221,7 +221,7 @@ describe('simple rules', () => {
       const v = validator`undefined`;
       const act = (): any => v.assertMatches(null);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "undefined" but got type "null".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "undefined" but got type "null".' });
     });
 
     test('produces the correct rule', () => {

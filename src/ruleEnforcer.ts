@@ -4,6 +4,8 @@ import { UnreachableCaseError } from './util';
 import { ValidatorAssertionError } from './exceptions';
 import { matcher, conformsToMatcherProtocol } from './matcherProtocol';
 
+const isObject = (value: unknown): value is object => Object(value) === value;
+
 const reprUnknownValue = (value: unknown): string => {
   if (typeof value === 'function') {
     if (value.name === '') return '[anonymous function/class]';
@@ -30,13 +32,13 @@ const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
 );
 
-export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly unknown[]): T {
+export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly unknown[], path = '<receivedValue>'): T {
   if (rule.category === 'noop') {
     // noop
   } else if (rule.category === 'simple') {
     if (getSimpleTypeOf(value) !== rule.type) { // eslint-disable-line valid-typeof
       throw new ValidatorAssertionError(
-        `Expected a value of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
+        `Expected ${path} to be of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
       );
     }
   } else if (rule.category === 'union') {
@@ -49,6 +51,20 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
         "Received value did not match any of the union's variants.",
       );
     }
+  } else if (rule.category === 'object') {
+    if (!isObject(value)) {
+      throw new ValidatorAssertionError(`Expected ${path} to be an object but got ${reprUnknownValue(value)}.`);
+    }
+    const missingKeys = Object.keys(rule.content).filter(key => !(key in value));
+    if (missingKeys.length > 0) {
+      throw new ValidatorAssertionError(
+        `${path} is missing the required fields: ` +
+        missingKeys.map(key => JSON.stringify(key)).join(', '),
+      );
+    }
+    for (const [key, iterRuleInfo] of Object.entries(rule.content)) {
+      assertMatches(iterRuleInfo.rule, (value as any)[key], interpolated, `${path}.${key}`);
+    }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
 
@@ -58,7 +74,7 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
       assert('matched' in Object(result)); // <-- TODO: Test, and throw a good error message for this.
       if (!result.matched) {
         throw new ValidatorAssertionError(
-          `Expected the value ${reprUnknownValue(value)} to match ${reprUnknownValue(valueToMatch)} ` +
+          `Expected ${path}, which is ${reprUnknownValue(value)} to match ${reprUnknownValue(valueToMatch)} ` +
           '(via its matcher protocol).',
         );
       }
@@ -69,7 +85,7 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
 
     if (!sameValueZero(value, valueToMatch)) {
       throw new ValidatorAssertionError(
-        `Expected the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(value)}.`,
+        `Expected ${path} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(value)}.`,
       );
     }
   } else {

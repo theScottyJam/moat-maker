@@ -40,13 +40,16 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
   };
 
   const getNextToken = (): Token => {
-    [,, currentPos] = extract(/\s+/y, sections, currentPos); // skip whitespace
+    let whitespaceSegment;
+    [whitespaceSegment,, currentPos] = extract(/\s+/y, sections, currentPos); // skip whitespace
+    const afterNewline = whitespaceSegment?.includes('\n') ?? false;
 
     if (currentPos.textIndex === sections[currentPos.sectionIndex].length) {
       if (currentPos.sectionIndex === sections.length - 1) {
         return {
           category: 'eof',
           value: '',
+          afterNewline,
           range: { start: currentPos, end: currentPos },
         };
       } else {
@@ -59,6 +62,7 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
         const token = {
           category: 'interpolation' as const,
           value: undefined,
+          afterNewline,
           interpolationIndex: currentPos.sectionIndex,
           range: { start: lastPos, end: currentPos },
         };
@@ -69,20 +73,32 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
     let lastPos: TextPosition;
     let segment: string | null;
 
-    [segment, lastPos, currentPos] = extract(/[a-zA-Z]+/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(/[a-zA-Z$_][a-zA-Z0-9$_]*/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'identifier',
         value: segment,
+        afterNewline,
         range: { start: lastPos, end: currentPos },
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/\|/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(/(\d*\.)?\d+/y, sections, currentPos);
+    if (segment !== null) {
+      return {
+        category: 'number',
+        value: segment,
+        afterNewline,
+        range: { start: lastPos, end: currentPos },
+      };
+    }
+
+    [segment, lastPos, currentPos] = extract(/[{}:;,|]/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'specialChar',
         value: segment,
+        afterNewline,
         range: { start: lastPos, end: currentPos },
       };
     }

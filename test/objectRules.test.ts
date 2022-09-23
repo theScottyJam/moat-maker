@@ -1,0 +1,183 @@
+import { strict as assert } from 'node:assert';
+import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+
+describe('object rules', () => {
+  test('accepts an object with matching fields', () => {
+    const v = validator`{ str: string, numb: number }`;
+    v.assertMatches({ numb: 2, str: '' });
+  });
+
+  test('accepts an object with extra fields', () => {
+    const v = validator`{ str: string }`;
+    v.assertMatches({ str: '', numb: 2 });
+  });
+
+  test('accepts inherited fields', () => {
+    const v = validator`{ toString: ${Function} }`;
+    v.assertMatches({});
+  });
+
+  test('rejects a primitive', () => {
+    const v = validator`{ str: string }`;
+    const act = (): any => v.assertMatches('xyz');
+    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
+  });
+
+  // TODO: Check that this error works when using string keys with odd characters
+  test('rejects an object missing a required field', () => {
+    const v = validator`{ str: string, numb: number, bool: boolean }`;
+    const act = (): any => v.assertMatches({ str: '' });
+    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb", "bool"' });
+  });
+
+  // TODO: Check that this error works when using string keys with odd characters
+  test('rejects when an object field does not match the expected type', () => {
+    const v = validator`{ str: string, numb: number, bool: boolean }`;
+    const act = (): any => v.assertMatches({ str: '', numb: true, bool: 2 });
+    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, {
+      message: 'Expected <receivedValue>.numb to be of type "number" but got type "boolean".',
+    });
+  });
+
+  test('rejects when a nested object field does not match the expected type', () => {
+    const v = validator`{ sub: { sub2: { value: {} } } }`;
+    const act = (): any => v.assertMatches({ sub: { sub2: { value: 2 } } });
+    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, {
+      message: 'Expected <receivedValue>.sub.sub2.value to be an object but got 2.',
+    });
+  });
+
+  describe('object type checks', () => {
+    test('accepts an array', () => {
+      validator`{}`.assertMatches([2]);
+    });
+
+    test('accepts a function', () => {
+      validator`{}`.assertMatches(() => {});
+    });
+
+    test('accepts a boxed primitive', () => {
+      validator`{}`.assertMatches(new Number(2)); // eslint-disable-line no-new-wrappers
+    });
+
+    test('rejects a symbol', () => {
+      const act = (): any => validator`{}`.assertMatches(Symbol('mySymb'));
+      assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
+    });
+  });
+
+  test('produces the correct rule', () => {
+    const v = validator`{ numKey: number, strKey: string }`;
+    expect(v.rule).toMatchObject({
+      category: 'object',
+      content: {
+        numKey: {
+          optional: false,
+          rule: {
+            category: 'simple',
+            type: 'number',
+          },
+        },
+        strKey: {
+          optional: false,
+          rule: {
+            category: 'simple',
+            type: 'string',
+          },
+        },
+      },
+      index: null,
+    });
+    expect(Object.isFrozen(v.rule)).toBe(true);
+  });
+
+  describe('Syntax errors', () => {
+    test('throws on invalid object key', () => {
+      const act = (): any => validator`{ ||`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected an object key or closing bracket (`}`). (line 1, col 3)',
+          '  { ||',
+          '    ~',
+        ].join('\n'),
+      });
+    });
+
+    test('allows numeric keys', () => {
+      const v = validator`{ 42: string }`;
+      v.assertMatches({ 42: 'xyz' });
+    });
+
+    test('throws on number keys with special characters', () => {
+      const act = (): any => validator`{ 2.3: string }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected an object key or closing bracket (`}`). (line 1, col 3)',
+          '  { 2.3: string }',
+          '    ~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('throws on missing colon', () => {
+      const act = (): any => validator`{ myKey ||`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected a colon (`:`) to separate the key from the value. (line 1, col 9)',
+          '  { myKey ||',
+          '          ~',
+        ].join('\n'),
+      });
+    });
+
+    test('allows a semicolon as a separator', () => {
+      validator`{ key1: number; key2: number }`;
+    });
+
+    test('allows a newline as a separator', () => {
+      validator`{
+        key1: number
+        key2: number
+      }`;
+    });
+
+    test('forbids an omitted separator', () => {
+      const act = (): any => validator`{ key1: number key2: number }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected a comma (`,`) or closing bracket (`}`). (line 1, col 16)',
+          '  { key1: number key2: number }',
+          '                 ~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('allows a trailing comma', () => {
+      validator`{ key1: number, }`;
+    });
+
+    test('allows a trailing semicolon', () => {
+      validator`{ key1: number; }`;
+    });
+
+    test('forbids an empty object with a separator character', () => {
+      const act = (): any => validator`{ , }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected an object key or closing bracket (`}`). (line 1, col 3)',
+          '  { , }',
+          '    ~',
+        ].join('\n'),
+      });
+    });
+  });
+});

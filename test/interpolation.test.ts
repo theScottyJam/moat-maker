@@ -33,14 +33,14 @@ describe('interpolation', () => {
       const v = validator`${23}`;
       const act = (): any => v.assertMatches(24);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value 23 but got 24.' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got 24.' });
     });
 
     test('Rejects a different value type', () => {
       const v = validator`${23}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value 23 but got "xyz".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got "xyz".' });
     });
 
     test('No interpolation points produces an empty interpolated array', () => {
@@ -63,55 +63,55 @@ describe('interpolation', () => {
     describe('error formatting', () => {
       test('formats a string with special characters', () => {
         const act = (): any => validator`${2}`.assertMatches('x\ny');
-        assert.throws(act, { message: 'Expected the value 2 but got "x\\ny".' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got "x\\ny".' });
       });
 
       test('formats a number', () => {
         const act = (): any => validator`${2}`.assertMatches(3);
-        assert.throws(act, { message: 'Expected the value 2 but got 3.' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got 3.' });
       });
 
       test('formats a bigint', () => {
         const act = (): any => validator`${2}`.assertMatches(2n);
-        assert.throws(act, { message: 'Expected the value 2 but got 2n.' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got 2n.' });
       });
 
       test('formats a boolean', () => {
         // eslint-disable-next-line symbol-description
         const act = (): any => validator`${Symbol('a')}`.assertMatches(Symbol());
-        assert.throws(act, { message: 'Expected the value Symbol(a) but got Symbol().' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value Symbol(a) but got Symbol().' });
       });
 
       test('formats null', () => {
         const act = (): any => validator`${2}`.assertMatches(null);
-        assert.throws(act, { message: 'Expected the value 2 but got null.' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got null.' });
       });
 
       test('formats undefined', () => {
         const act = (): any => validator`${2}`.assertMatches(undefined);
-        assert.throws(act, { message: 'Expected the value 2 but got undefined.' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got undefined.' });
       });
 
       test('formats a received object', () => {
         const act = (): any => validator`${2}`.assertMatches({ x: 2 });
-        assert.throws(act, { message: 'Expected the value 2 but got [object Object].' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [object Object].' });
       });
 
       test('formats a received function', () => {
         // eslint-disable-next-line prefer-arrow-callback
         const act = (): any => validator`${2}`.assertMatches(function test() {});
-        assert.throws(act, { message: 'Expected the value 2 but got `test`.' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got `test`.' });
       });
 
       test('formats a received anonymous function', () => {
         const act = (): any => validator`${2}`.assertMatches(() => {});
-        assert.throws(act, { message: 'Expected the value 2 but got [anonymous function/class].' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [anonymous function/class].' });
       });
 
       test('formats a primitive wrapper instances as an object', () => {
         // eslint-disable-next-line no-new-wrappers
         const act = (): any => validator`${2}`.assertMatches(new Number(2));
-        assert.throws(act, { message: 'Expected the value 2 but got [object Number].' });
+        assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [object Number].' });
       });
     });
   });
@@ -131,7 +131,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value "xyz" to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz" to match `Number` (via its matcher protocol).' });
     });
 
     test('the Number class does not match an inherited boxed primitive', () => {
@@ -139,7 +139,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches(new MyNumber(3));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value [object MyNumber] to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber] to match `Number` (via its matcher protocol).' });
     });
   });
 
@@ -153,19 +153,24 @@ describe('interpolation', () => {
       const v = validator`${Map}`;
       const act = (): any => v.assertMatches({ x: 2 });
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value [object Object] to match `Map` (via its matcher protocol).' });
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue>, which is [object Object] to match `Map` ' +
+          '(via its matcher protocol).'
+        ),
+      });
     });
 
     describe('error formatting', () => {
       test('the Map class does not match a null-prototype object', () => {
         const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
-        assert.throws(act, { message: 'Expected the value [object Object] to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object] to match `Map` (via its matcher protocol).' });
       });
 
       test('the Map class does not match an inherited instance of Map', () => {
         class MyMap extends Map {}
         const act = (): any => validator`${Map}`.assertMatches(new MyMap());
-        assert.throws(act, { message: 'Expected the value [object MyMap] to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap] to match `Map` (via its matcher protocol).' });
       });
     });
   });
@@ -180,7 +185,12 @@ describe('interpolation', () => {
       const v = validator`${{ [validator.matcher]: () => ({ matched: false }) }}`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected the value 2 to match [object Object] (via its matcher protocol).' });
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue>, which is 2 to match [object Object] ' +
+          '(via its matcher protocol).'
+        ),
+      });
     });
 
     test('protocol function receives value being matched', () => {
@@ -200,14 +210,24 @@ describe('interpolation', () => {
         // eslint-disable-next-line @typescript-eslint/no-extraneous-class
         const v = validator`${class MyClass { static [validator.matcher] = (): any => ({ matched: false }); }}`;
         const act = (): any => v.assertMatches('xyz');
-        assert.throws(act, { message: 'Expected the value "xyz" to match `MyClass` (via its matcher protocol).' });
+        assert.throws(act, {
+          message: (
+            'Expected <receivedValue>, which is "xyz" to match `MyClass` ' +
+            '(via its matcher protocol).'
+          ),
+        });
       });
 
       test('anonymous classes', () => {
         // eslint-disable-next-line @typescript-eslint/no-extraneous-class
         const v = validator`${class { static [validator.matcher] = (): any => ({ matched: false }); }}`;
         const act = (): any => v.assertMatches('xyz');
-        assert.throws(act, { message: 'Expected the value "xyz" to match [anonymous function/class] (via its matcher protocol).' });
+        assert.throws(act, {
+          message: (
+            'Expected <receivedValue>, which is "xyz" to match [anonymous function/class] ' +
+            '(via its matcher protocol).'
+          ),
+        });
       });
     });
   });

@@ -39,7 +39,7 @@ describe('validator behavior', () => {
       });
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "number" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
     });
 
     test('validator behavior does not change, even if input rule is mutated', () => {
@@ -56,7 +56,7 @@ describe('validator behavior', () => {
 
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected a value of type "number" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
     });
   });
 });

@@ -11,6 +11,17 @@ export interface NoopRule {
   readonly category: 'noop'
 }
 
+export interface ObjectRule {
+  readonly category: 'object'
+  readonly content: {
+    readonly [key: string]: {
+      readonly optional: boolean
+      readonly rule: Rule
+    }
+  }
+  readonly index: Rule | null
+}
+
 export interface UnionRule {
   readonly category: 'union'
   readonly variants: Rule[]
@@ -21,4 +32,4 @@ export interface InterpolationRule {
   readonly interpolationIndex: number
 }
 
-export type Rule = SimpleRule | NoopRule | UnionRule | InterpolationRule;
+export type Rule = SimpleRule | NoopRule | ObjectRule | UnionRule | InterpolationRule;

@@ -11,14 +11,16 @@ export interface TextRange {
 }
 
 export interface TextToken {
-  readonly category: 'identifier' | 'specialChar' | 'eof'
+  readonly category: 'identifier' | 'number' | 'specialChar' | 'eof'
   readonly value: string
+  readonly afterNewline: boolean
   readonly range: TextRange
 }
 
 export interface InterpolationToken {
   readonly category: 'interpolation'
   readonly value: undefined
+  readonly afterNewline: boolean
   readonly interpolationIndex: number
   readonly range: TextRange
 }
