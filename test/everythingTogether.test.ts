@@ -9,4 +9,10 @@ describe('order of operations', () => {
     expect(v.matches([2])).toBe(true);
     expect(v.matches([['xyz']])).toBe(false);
   });
+
+  test('list of empty tuples', () => {
+    const v = validator`[][]`;
+    expect(v.matches([[], []])).toBe(true);
+    expect(v.matches([[1], []])).toBe(false);
+  });
 });

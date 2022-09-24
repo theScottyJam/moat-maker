@@ -12,12 +12,6 @@ describe('array rules', () => {
     v.assertMatches([]);
   });
 
-  test('accepts an inherited array', () => {
-    class MyArray extends Array {}
-    const v = validator`string[]`;
-    v.assertMatches(new (MyArray as any)('abc', 'xyz'));
-  });
-
   test('rejects a non-array', () => {
     const v = validator`string[]`;
     const act = (): any => v.assertMatches({});
@@ -37,6 +31,13 @@ describe('array rules', () => {
     const act = (): any => v.assertMatches(['abc', 2, 'xyz']);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "string" but got type "number".' });
+  });
+
+  test('accepts an inherited array', () => {
+    class MyArray extends Array {}
+    const v = validator`string[]`;
+    v.assertMatches(new (MyArray as any)('abc', 'xyz'));
+    expect(v.matches(new (MyArray as any)('abc', 2))).toBe(false);
   });
 
   test('rejects an inherited array with the wrong fields', () => {

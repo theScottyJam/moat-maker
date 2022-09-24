@@ -74,6 +74,8 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
     });
   } else if (token.value === '{') {
     return parseObject(tokenStream);
+  } else if (token.value === '[') {
+    return parseTuple(tokenStream);
   } else {
     // TODO: Add tests for this
     throw new Error('Invalid input');
@@ -154,6 +156,38 @@ function parseObject(tokenStream: TokenStream): Rule {
   return rule;
 }
 
+function parseTuple(tokenStream: TokenStream): Rule {
+  assert(tokenStream.next().value === '[');
+  const rule = {
+    category: 'tuple' as const,
+    content: [] as Rule[],
+    optionalContent: [] as Rule[],
+    rest: null,
+  };
+
+  while (true) {
+    if (tokenStream.peek().value === ']') {
+      tokenStream.next();
+      break;
+    }
+    if (tokenStream.peek().value === ',') {
+      throw new ValidatorSyntaxError('Expected a tuple entry or a closing bracket (`]`).', tokenStream.originalText, tokenStream.peek().range);
+    }
+
+    const valueRule = parseRule(tokenStream);
+    rule.content.push(valueRule);
+
+    const separatorToken = tokenStream.peek();
+    if (separatorToken.value === ',') {
+      tokenStream.next();
+    } else if (separatorToken.value !== ']') {
+      throw new ValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`]`).', tokenStream.originalText, separatorToken.range);
+    }
+  }
+
+  return rule;
+}
+
 export function freezeRule(rule: Rule): Rule {
   // shallow-copy-and-freeze function
   const f = <T>(objOrArray: T): T => {
@@ -174,6 +208,12 @@ export function freezeRule(rule: Rule): Rule {
         Object.entries(rule.content)
           .map(([k, v]) => f([k, f({ ...v })])),
       )),
+    });
+  } else if (rule.category === 'tuple') {
+    return f({
+      ...rule,
+      content: f([...rule.content]),
+      optionalContent: f([...rule.optionalContent]),
     });
   } else if (rule.category === 'union') {
     return f({

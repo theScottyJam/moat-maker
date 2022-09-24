@@ -58,6 +58,18 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
     for (const [i, element] of value.entries()) {
       assertMatches(rule.content, element, interpolated, `${lookupPath}[${i}]`);
     }
+  } else if (rule.category === 'tuple') {
+    if (!Array.isArray(value)) {
+      throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(value)}.`);
+    } else if (value.length !== rule.content.length) {
+      throw new ValidatorAssertionError(
+        `Expected the ${lookupPath} array to have ${rule.content.length} entries, but found ${value.length}.`,
+      );
+    }
+
+    for (const [i, element] of value.entries()) {
+      assertMatches(rule.content[i], element, interpolated, `${lookupPath}[${i}]`);
+    }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
 
@@ -93,7 +105,7 @@ export function doesMatch(rule: Rule, value: unknown, interpolated: readonly unk
   }
 }
 
-function collectAssertionErrors(rules: Rule[], value: unknown, interpolated: readonly unknown[]): string[] {
+function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpolated: readonly unknown[]): readonly string[] {
   return rules
     .map(rule => {
       try {
