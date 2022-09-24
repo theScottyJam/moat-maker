@@ -1,31 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { Rule } from './types/parseRules';
-import { UnreachableCaseError } from './util';
+import { reprUnknownValue, UnreachableCaseError } from './util';
 import { ValidatorAssertionError } from './exceptions';
 import { matcher, conformsToMatcherProtocol } from './matcherProtocol';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
-
-const reprUnknownValue = (value: unknown): string => {
-  if (typeof value === 'function') {
-    if (value.name === '') return '[anonymous function/class]';
-    return '`' + value.name + '`';
-  }
-
-  if (typeof value === 'object' && value !== null) {
-    const name = Object.getPrototypeOf(value)?.constructor?.name;
-    if (typeof name === 'string') {
-      return `[object ${name}]`;
-    } else {
-      return Object.prototype.toString.call(value); // TODO: Test
-    }
-  }
-
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'bigint') return String(value) + 'n';
-  if (value === null) return 'null';
-  return String(value);
-};
 
 // Compares two values using JavaScript's SameValueZero algorithm.
 const sameValueZero = (x: unknown, y: unknown): boolean => (
@@ -84,14 +63,7 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
 
     if (conformsToMatcherProtocol(valueToMatch)) {
       assert(typeof valueToMatch[matcher] === 'function'); // <-- TODO: Test
-      const result = valueToMatch[matcher](value);
-      assert('matched' in Object(result)); // <-- TODO: Test, and throw a good error message for this.
-      if (!result.matched) {
-        throw new ValidatorAssertionError(
-          `Expected ${path}, which is ${reprUnknownValue(value)} to match ${reprUnknownValue(valueToMatch)} ` +
-          '(via its matcher protocol).',
-        );
-      }
+      valueToMatch[matcher](value, path);
       return value;
     }
 

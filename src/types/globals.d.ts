@@ -1,7 +1,8 @@
 import type { matcher } from '../matcherProtocol';
+import type { MatcherProtocolFn } from './matcherProtocol';
 
 declare global {
   interface Function {
-    [matcher]: (value: unknown) => { matched: boolean, value: unknown }
+    [matcher]: MatcherProtocolFn
   }
 }

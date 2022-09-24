@@ -4,10 +4,13 @@ import { Rule } from './types/parseRules';
 import { matcher, installProtocolOnBuiltins } from './matcherProtocol';
 import type { Validator } from './types/validator';
 import type { MatcherProtocol, MatcherProtocolFn } from './types/matcherProtocol';
+import { reprUnknownValue } from './util';
+import { ValidatorAssertionError } from './exceptions';
 
 export * from './exceptions';
 export * from './types/parseRules';
 export * from './types/matcherProtocol';
+export { Validator };
 
 export function validator(parts: TemplateStringsArray, ...interpolated: readonly unknown[]): Validator {
   return validator.fromRule(parse(parts), interpolated);
@@ -16,7 +19,7 @@ export function validator(parts: TemplateStringsArray, ...interpolated: readonly
 validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []): Validator {
   const rule = freezeRule(rule_);
 
-  return Object.freeze({
+  const instance = Object.freeze({
     assertMatches<T>(value: T): T {
       return assertMatches(rule, value, interpolated);
     },
@@ -25,7 +28,13 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
     },
     rule,
     interpolated: Object.freeze(interpolated),
+    [matcher]: (value: unknown) => ({
+      matched: instance.matches(value),
+      value: undefined,
+    }),
   });
+
+  return instance;
 };
 
 class CustomMatcher implements MatcherProtocol {
@@ -40,11 +49,14 @@ class CustomMatcher implements MatcherProtocol {
     this.matcher = this[matcher];
   }
 
-  [matcher](valueBeingMatched: unknown): ReturnType<MatcherProtocolFn> {
-    return {
-      matched: this.#callback(valueBeingMatched),
-      value: undefined,
-    };
+  [matcher](value: unknown, path: string): void {
+    if (!this.#callback(value)) {
+      // TODO: Duplicate error message. (Also, it might be nice to just say `to match a custom matcher function` or something)
+      throw new ValidatorAssertionError(
+        `Expected ${path}, which is ${reprUnknownValue(value)} to match ${reprUnknownValue(this)} ` +
+        '(via its matcher protocol).',
+      );
+    }
   }
 }
 

@@ -176,20 +176,21 @@ describe('interpolation', () => {
   });
 
   describe('userland protocol implementations', () => {
-    test('accepts if matched is true', () => {
+    test('accepts if matcher does not throw', () => {
       const v = validator`${{ [validator.matcher]: () => ({ matched: true }) }}`;
       v.assertMatches(2);
     });
 
-    test('rejects if matched is false', () => {
-      const v = validator`${{ [validator.matcher]: () => ({ matched: false }) }}`;
+    test('rejects if matcher throws', () => {
+      const v = validator`${{
+        [validator.matcher]: () => {
+          throw new ValidatorAssertionError('Whoops');
+        },
+      }}`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
-        message: (
-          'Expected <receivedValue>, which is 2 to match [object Object] ' +
-          '(via its matcher protocol).'
-        ),
+        message: 'Whoops',
       });
     });
 
@@ -198,38 +199,41 @@ describe('interpolation', () => {
       const v = validator`${{
         [validator.matcher]: (receivedValue_: unknown) => {
           receivedValue = receivedValue_;
-          return { matched: true };
         },
       }}`;
       v.assertMatches(2);
       expect(receivedValue).toBe(2);
     });
 
-    describe('error formatting', () => {
-      test('userland classes', () => {
-        // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-        const v = validator`${class MyClass { static [validator.matcher] = (): any => ({ matched: false }); }}`;
-        const act = (): any => v.assertMatches('xyz');
-        assert.throws(act, {
-          message: (
-            'Expected <receivedValue>, which is "xyz" to match `MyClass` ' +
-            '(via its matcher protocol).'
-          ),
-        });
-      });
-
-      test('anonymous classes', () => {
-        // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-        const v = validator`${class { static [validator.matcher] = (): any => ({ matched: false }); }}`;
-        const act = (): any => v.assertMatches('xyz');
-        assert.throws(act, {
-          message: (
-            'Expected <receivedValue>, which is "xyz" to match [anonymous function/class] ' +
-            '(via its matcher protocol).'
-          ),
-        });
-      });
+    test('protocol function receives path to value being matched', () => {
+      let path;
+      const matcher = {
+        [validator.matcher]: (_: unknown, path_: string) => {
+          path = path_;
+        },
+      };
+      const v = validator`{ x: { y: ${matcher} } }`;
+      v.assertMatches({ x: { y: 0 } });
+      expect(path).toBe('<receivedValue>.x.y');
     });
+  });
+
+  describe('Interpolate validator instances', () => {
+    // TODO
+    // I can validate that the interpolated instance is a validator instance, than I can grab the contained rules
+    // and just use them.
+    // test('Allows a value that matches the interpolated validator', () => {
+    //   const v = validator`{ x: ${validator`{ y: number }`}}`;
+    //   v.assertMatches({ x: { y: 2 } });
+    // });
+
+    // test('Rejects a value that does not match the interpolated validator', () => {
+    //   const v = validator`{ x: ${validator`{ y: number }`}}`;
+    //   const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
+    //   act();
+    //   assert.throws(act, ValidatorAssertionError);
+    //   assert.throws(act, { message: '??' });
+    // });
   });
 
   describe('interpolating inside a comment', () => {
