@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { Rule } from './types/parseRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
 import { ValidatorAssertionError } from './exceptions';
-import { matcher, conformsToMatcherProtocol } from './matcherProtocol';
+import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
@@ -61,9 +61,9 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
 
-    if (conformsToMatcherProtocol(valueToMatch)) {
-      assert(typeof valueToMatch[matcher] === 'function'); // <-- TODO: Test
-      valueToMatch[matcher](value, lookupPath);
+    if (conformsToValidatableProtocol(valueToMatch)) {
+      assert(typeof valueToMatch[validatable] === 'function'); // <-- TODO: Test
+      valueToMatch[validatable](value, lookupPath);
       return value;
     }
 

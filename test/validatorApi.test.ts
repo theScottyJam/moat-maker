@@ -60,28 +60,40 @@ describe('validator behavior', () => {
     });
   });
 
-  describe('validator.createMatcher()', () => {
-    test('accepts a value that conforms to the custom matcher function', () => {
-      const v = validator`${validator.createMatcher(x => typeof x === 'number' && x >= 0)}`;
+  describe('validator.createValidatable()', () => {
+    test('accepts a value that conforms to the custom validatable function', () => {
+      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
       v.assertMatches(2);
     });
 
-    test('rejects a value that does not conform to the custom matcher function', () => {
-      const v = validator`${validator.createMatcher(x => typeof x === 'number' && x >= 0)}`;
+    test('rejects a value that does not conform to the custom validatable function', () => {
+      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is -2, to match [object CustomMatcher] (via its matcher protocol).' });
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue>, which is -2, to match [object CustomValidatable] ' +
+          '(via its validatable protocol).'
+        ),
+      });
     });
 
-    test('Grabbing the `matcher` property and sticking it on another class to give it a name works', () => {
-      class MyMatcher {
-        [validator.matcher] = validator.createMatcher(x => typeof x === 'string').matcher;
+    test('Grabbing the `validatable` property and sticking it on another class to give it a name works', () => {
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
+      class MyValidatable {
+        static [validator.validatable] = validator.createValidatable(x => typeof x === 'string').validatable;
       }
 
-      const v = validator`${MyMatcher}`;
+      const v = validator`${MyValidatable}`;
+      v.assertMatches('xyz');
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match `MyMatcher` (via its matcher protocol).' });
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue>, which is 2, to match `MyValidatable` ' +
+          '(via its validatable protocol).'
+        ),
+      });
     });
   });
 });

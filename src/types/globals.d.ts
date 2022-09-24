@@ -1,8 +1,8 @@
-import type { matcher } from '../matcherProtocol';
-import type { MatcherProtocolFn } from './matcherProtocol';
+import type { validatable } from '../validatableProtocol';
+import type { ValidatableProtocolFn } from './validatableProtocol';
 
 declare global {
   interface Function {
-    [matcher]: MatcherProtocolFn
+    [validatable]: ValidatableProtocolFn
   }
 }

@@ -1,21 +1,21 @@
 /* eslint-disable no-extend-native */
 
-import { MatcherProtocol } from './types/matcherProtocol';
+import { ValidatableProtocol } from './types/validatableProtocol';
 import { ValidatorAssertionError } from './exceptions';
 import { reprUnknownValue } from './util';
 
-export const matcher = Symbol('validator matcher');
+export const validatable = Symbol('validatable');
 
-export function conformsToMatcherProtocol(value: unknown): value is MatcherProtocol {
-  return matcher in Object(value);
+export function conformsToValidatableProtocol(value: unknown): value is ValidatableProtocol {
+  return validatable in Object(value);
 }
 
 export function installProtocolOnBuiltins(): void {
-  Function.prototype[matcher] = function(value: unknown, lookupPath: string) {
+  Function.prototype[validatable] = function(value: unknown, lookupPath: string) {
     if (Object(value).constructor !== this) {
       throw new ValidatorAssertionError(
         `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
-        '(via its matcher protocol).',
+        '(via its validatable protocol).',
       );
     }
   };

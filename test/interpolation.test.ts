@@ -131,7 +131,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to match `Number` (via its validatable protocol).' });
     });
 
     test('the Number class does not match an inherited boxed primitive', () => {
@@ -139,7 +139,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches(new MyNumber(3));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber], to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber], to match `Number` (via its validatable protocol).' });
     });
   });
 
@@ -156,7 +156,7 @@ describe('interpolation', () => {
       assert.throws(act, {
         message: (
           'Expected <receivedValue>, which is [object Object], to match `Map` ' +
-          '(via its matcher protocol).'
+          '(via its validatable protocol).'
         ),
       });
     });
@@ -164,26 +164,26 @@ describe('interpolation', () => {
     describe('error formatting', () => {
       test('the Map class does not match a null-prototype object', () => {
         const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object], to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object], to match `Map` (via its validatable protocol).' });
       });
 
       test('the Map class does not match an inherited instance of Map', () => {
         class MyMap extends Map {}
         const act = (): any => validator`${Map}`.assertMatches(new MyMap());
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap], to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap], to match `Map` (via its validatable protocol).' });
       });
     });
   });
 
   describe('userland protocol implementations', () => {
-    test('accepts if matcher does not throw', () => {
-      const v = validator`${{ [validator.matcher]: () => ({ matched: true }) }}`;
+    test('accepts if validatable does not throw', () => {
+      const v = validator`${{ [validator.validatable]: () => ({ matched: true }) }}`;
       v.assertMatches(2);
     });
 
-    test('rejects if matcher throws', () => {
+    test('rejects if validatable throws', () => {
       const v = validator`${{
-        [validator.matcher]: () => {
+        [validator.validatable]: () => {
           throw new ValidatorAssertionError('Whoops');
         },
       }}`;
@@ -197,7 +197,7 @@ describe('interpolation', () => {
     test('protocol function receives value being matched', () => {
       let receivedValue;
       const v = validator`${{
-        [validator.matcher]: (receivedValue_: unknown) => {
+        [validator.validatable]: (receivedValue_: unknown) => {
           receivedValue = receivedValue_;
         },
       }}`;
@@ -207,12 +207,12 @@ describe('interpolation', () => {
 
     test('protocol function receives a lookupPath for the value being matched', () => {
       let lookupPath;
-      const matcher = {
-        [validator.matcher]: (_: unknown, lookupPath_: string) => {
+      const validatable = {
+        [validator.validatable]: (_: unknown, lookupPath_: string) => {
           lookupPath = lookupPath_;
         },
       };
-      const v = validator`{ x: { y: ${matcher} } }`;
+      const v = validator`{ x: { y: ${validatable} } }`;
       v.assertMatches({ x: { y: 0 } });
       expect(lookupPath).toBe('<receivedValue>.x.y');
     });

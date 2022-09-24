@@ -1,15 +1,15 @@
 import { parse, freezeRule } from './ruleParser';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
-import { matcher, installProtocolOnBuiltins } from './matcherProtocol';
+import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
 import type { Validator } from './types/validator';
-import type { MatcherProtocol, MatcherProtocolFn } from './types/matcherProtocol';
+import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
 import { ValidatorAssertionError } from './exceptions';
 
 export * from './exceptions';
 export * from './types/parseRules';
-export * from './types/matcherProtocol';
+export * from './types/validatableProtocol';
 export { Validator };
 
 export function validator(parts: TemplateStringsArray, ...interpolated: readonly unknown[]): Validator {
@@ -28,39 +28,47 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
     },
     rule,
     interpolated: Object.freeze(interpolated),
-    [matcher](value: unknown, lookupPath: string) {
+    [validatable](value: unknown, lookupPath: string) {
       assertMatches(rule, value, interpolated, lookupPath);
     },
   });
 };
 
-class CustomMatcher implements MatcherProtocol {
+class CustomValidatable implements ValidatableProtocol {
   #callback;
 
   /// Provides easy access to the protocol value, for use-cases where you want
   /// to copy it out and put it on a different object.
-  matcher: MatcherProtocolFn;
+  validatable: ValidatableProtocolFn;
 
   constructor(callback: (valueBeingMatched: unknown) => boolean) {
     this.#callback = callback;
-    this.matcher = this[matcher];
+    // TODO: Duplicate function
+    this.validatable = function(this: unknown, value: unknown, lookupPath: string) {
+      if (!callback(value)) {
+        throw new ValidatorAssertionError(
+          `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
+          '(via its validatable protocol).',
+        );
+      }
+    };
   }
 
-  [matcher](value: unknown, lookupPath: string): void {
+  [validatable](value: unknown, lookupPath: string): void {
     if (!this.#callback(value)) {
-      // TODO: Duplicate error message. (Also, it might be nice to just say `to match a custom matcher function` or something)
+      // TODO: Duplicate error message. (Also, it might be nice to just say `to match a custom validator function` or something)
       throw new ValidatorAssertionError(
         `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
-        '(via its matcher protocol).',
+        '(via its validatable protocol).',
       );
     }
   }
 }
 
-validator.createMatcher = function(callback: (valueBeingMatched: unknown) => boolean): any {
-  return new CustomMatcher(callback);
+validator.createValidatable = function(callback: (valueBeingMatched: unknown) => boolean): CustomValidatable {
+  return new CustomValidatable(callback);
 };
 
-validator.matcher = matcher;
+validator.validatable = validatable;
 
 installProtocolOnBuiltins();
