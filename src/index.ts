@@ -28,8 +28,8 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
     },
     rule,
     interpolated: Object.freeze(interpolated),
-    [matcher](value: unknown, path: string) {
-      assertMatches(rule, value, interpolated, path);
+    [matcher](value: unknown, lookupPath: string) {
+      assertMatches(rule, value, interpolated, lookupPath);
     },
   });
 };
@@ -46,11 +46,11 @@ class CustomMatcher implements MatcherProtocol {
     this.matcher = this[matcher];
   }
 
-  [matcher](value: unknown, path: string): void {
+  [matcher](value: unknown, lookupPath: string): void {
     if (!this.#callback(value)) {
       // TODO: Duplicate error message. (Also, it might be nice to just say `to match a custom matcher function` or something)
       throw new ValidatorAssertionError(
-        `Expected ${path}, which is ${reprUnknownValue(value)} to match ${reprUnknownValue(this)} ` +
+        `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
         '(via its matcher protocol).',
       );
     }

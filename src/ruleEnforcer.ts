@@ -11,13 +11,13 @@ const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
 );
 
-export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly unknown[], path = '<receivedValue>'): T {
+export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly unknown[], lookupPath = '<receivedValue>'): T {
   if (rule.category === 'noop') {
     // noop
   } else if (rule.category === 'simple') {
     if (getSimpleTypeOf(value) !== rule.type) { // eslint-disable-line valid-typeof
       throw new ValidatorAssertionError(
-        `Expected ${path} to be of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
+        `Expected ${lookupPath} to be of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
       );
     }
   } else if (rule.category === 'union') {
@@ -32,7 +32,7 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
     }
   } else if (rule.category === 'object') {
     if (!isObject(value)) {
-      throw new ValidatorAssertionError(`Expected ${path} to be an object but got ${reprUnknownValue(value)}.`);
+      throw new ValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(value)}.`);
     }
 
     const missingKeys = Object.keys(rule.content)
@@ -41,29 +41,29 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
 
     if (missingKeys.length > 0) {
       throw new ValidatorAssertionError(
-        `${path} is missing the required fields: ` +
+        `${lookupPath} is missing the required fields: ` +
         missingKeys.map(key => JSON.stringify(key)).join(', '),
       );
     }
 
     for (const [key, iterRuleInfo] of Object.entries(rule.content)) {
       if (iterRuleInfo.optional && !(key in value)) continue;
-      assertMatches(iterRuleInfo.rule, (value as any)[key], interpolated, `${path}.${key}`);
+      assertMatches(iterRuleInfo.rule, (value as any)[key], interpolated, `${lookupPath}.${key}`);
     }
   } else if (rule.category === 'array') {
     if (!Array.isArray(value)) {
-      throw new ValidatorAssertionError(`Expected ${path} to be an array but got ${reprUnknownValue(value)}.`);
+      throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(value)}.`);
     }
 
     for (const [i, element] of value.entries()) {
-      assertMatches(rule.content, element, interpolated, `${path}[${i}]`);
+      assertMatches(rule.content, element, interpolated, `${lookupPath}[${i}]`);
     }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
 
     if (conformsToMatcherProtocol(valueToMatch)) {
       assert(typeof valueToMatch[matcher] === 'function'); // <-- TODO: Test
-      valueToMatch[matcher](value, path);
+      valueToMatch[matcher](value, lookupPath);
       return value;
     }
 
@@ -71,7 +71,7 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
 
     if (!sameValueZero(value, valueToMatch)) {
       throw new ValidatorAssertionError(
-        `Expected ${path} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(value)}.`,
+        `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(value)}.`,
       );
     }
   } else {

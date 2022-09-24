@@ -131,7 +131,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz" to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to match `Number` (via its matcher protocol).' });
     });
 
     test('the Number class does not match an inherited boxed primitive', () => {
@@ -139,7 +139,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches(new MyNumber(3));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber] to match `Number` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber], to match `Number` (via its matcher protocol).' });
     });
   });
 
@@ -155,7 +155,7 @@ describe('interpolation', () => {
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is [object Object] to match `Map` ' +
+          'Expected <receivedValue>, which is [object Object], to match `Map` ' +
           '(via its matcher protocol).'
         ),
       });
@@ -164,13 +164,13 @@ describe('interpolation', () => {
     describe('error formatting', () => {
       test('the Map class does not match a null-prototype object', () => {
         const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object] to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object], to match `Map` (via its matcher protocol).' });
       });
 
       test('the Map class does not match an inherited instance of Map', () => {
         class MyMap extends Map {}
         const act = (): any => validator`${Map}`.assertMatches(new MyMap());
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap] to match `Map` (via its matcher protocol).' });
+        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap], to match `Map` (via its matcher protocol).' });
       });
     });
   });
@@ -205,16 +205,16 @@ describe('interpolation', () => {
       expect(receivedValue).toBe(2);
     });
 
-    test('protocol function receives path to value being matched', () => {
-      let path;
+    test('protocol function receives a lookupPath for the value being matched', () => {
+      let lookupPath;
       const matcher = {
-        [validator.matcher]: (_: unknown, path_: string) => {
-          path = path_;
+        [validator.matcher]: (_: unknown, lookupPath_: string) => {
+          lookupPath = lookupPath_;
         },
       };
       const v = validator`{ x: { y: ${matcher} } }`;
       v.assertMatches({ x: { y: 0 } });
-      expect(path).toBe('<receivedValue>.x.y');
+      expect(lookupPath).toBe('<receivedValue>.x.y');
     });
   });
 
@@ -227,7 +227,6 @@ describe('interpolation', () => {
     test('Rejects a value that does not match the interpolated validator', () => {
       const v = validator`{ x: ${validator`{ y: number }`}}`;
       const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
-      act();
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.x.y to be of type "number" but got type "string".' });
     });

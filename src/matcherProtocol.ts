@@ -11,10 +11,10 @@ export function conformsToMatcherProtocol(value: unknown): value is MatcherProto
 }
 
 export function installProtocolOnBuiltins(): void {
-  Function.prototype[matcher] = function(value: unknown, path: string) {
+  Function.prototype[matcher] = function(value: unknown, lookupPath: string) {
     if (Object(value).constructor !== this) {
       throw new ValidatorAssertionError(
-        `Expected ${path}, which is ${reprUnknownValue(value)} to match ${reprUnknownValue(this)} ` +
+        `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
         '(via its matcher protocol).',
       );
     }

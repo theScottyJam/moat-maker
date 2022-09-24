@@ -70,7 +70,7 @@ describe('validator behavior', () => {
       const v = validator`${validator.createMatcher(x => typeof x === 'number' && x >= 0)}`;
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is -2 to match [object CustomMatcher] (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is -2, to match [object CustomMatcher] (via its matcher protocol).' });
     });
 
     test('Grabbing the `matcher` property and sticking it on another class to give it a name works', () => {
@@ -81,7 +81,7 @@ describe('validator behavior', () => {
       const v = validator`${MyMatcher}`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is 2 to match `MyMatcher` (via its matcher protocol).' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match `MyMatcher` (via its matcher protocol).' });
     });
   });
 });
