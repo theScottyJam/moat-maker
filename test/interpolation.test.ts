@@ -219,21 +219,18 @@ describe('interpolation', () => {
   });
 
   describe('Interpolate validator instances', () => {
-    // TODO
-    // I can validate that the interpolated instance is a validator instance, than I can grab the contained rules
-    // and just use them.
-    // test('Allows a value that matches the interpolated validator', () => {
-    //   const v = validator`{ x: ${validator`{ y: number }`}}`;
-    //   v.assertMatches({ x: { y: 2 } });
-    // });
+    test('Allows a value that matches the interpolated validator', () => {
+      const v = validator`{ x: ${validator`{ y: number }`}}`;
+      v.assertMatches({ x: { y: 2 } });
+    });
 
-    // test('Rejects a value that does not match the interpolated validator', () => {
-    //   const v = validator`{ x: ${validator`{ y: number }`}}`;
-    //   const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
-    //   act();
-    //   assert.throws(act, ValidatorAssertionError);
-    //   assert.throws(act, { message: '??' });
-    // });
+    test('Rejects a value that does not match the interpolated validator', () => {
+      const v = validator`{ x: ${validator`{ y: number }`}}`;
+      const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
+      act();
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>.x.y to be of type "number" but got type "string".' });
+    });
   });
 
   describe('interpolating inside a comment', () => {

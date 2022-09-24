@@ -19,7 +19,7 @@ export function validator(parts: TemplateStringsArray, ...interpolated: readonly
 validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []): Validator {
   const rule = freezeRule(rule_);
 
-  const instance = Object.freeze({
+  return Object.freeze({
     assertMatches<T>(value: T): T {
       return assertMatches(rule, value, interpolated);
     },
@@ -28,13 +28,10 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
     },
     rule,
     interpolated: Object.freeze(interpolated),
-    [matcher]: (value: unknown) => ({
-      matched: instance.matches(value),
-      value: undefined,
-    }),
+    [matcher](value: unknown, path: string) {
+      assertMatches(rule, value, interpolated, path);
+    },
   });
-
-  return instance;
 };
 
 class CustomMatcher implements MatcherProtocol {
