@@ -109,16 +109,23 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
     throw new ValidatorSyntaxError('Failed to interpret this syntax.', sections, errorRange);
   };
 
-  let curToken = getNextToken();
+  let nextToken = getNextToken();
+  // lastTokenEndPos would be the same as peek().range.start if it weren't for the possibility
+  // of whitespace between them.
+  let lastTokenEndPos: TextPosition = { sectionIndex: 0, textIndex: 0, lineNumb: 1, colNumb: 1 };
   return Object.freeze({
     originalText: sections,
     next(): Token {
-      const lastToken = curToken;
-      curToken = getNextToken();
-      return lastToken;
+      const requestedToken = nextToken;
+      lastTokenEndPos = requestedToken.range.end;
+      nextToken = getNextToken();
+      return requestedToken;
     },
     peek(): Token {
-      return curToken;
+      return nextToken;
+    },
+    lastTokenEndPos(): TextPosition {
+      return lastTokenEndPos;
     },
   });
 }

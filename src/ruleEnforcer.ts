@@ -61,14 +61,25 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
   } else if (rule.category === 'tuple') {
     if (!Array.isArray(value)) {
       throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(value)}.`);
-    } else if (value.length !== rule.content.length) {
-      throw new ValidatorAssertionError(
-        `Expected the ${lookupPath} array to have ${rule.content.length} entries, but found ${value.length}.`,
-      );
+    }
+    const minSize = rule.content.length;
+    const maxSize = rule.content.length + rule.optionalContent.length;
+    if (value.length < minSize || value.length > maxSize) {
+      if (minSize === maxSize) {
+        throw new ValidatorAssertionError(
+          `Expected the ${lookupPath} array to have ${minSize} entries, but found ${value.length}.`,
+        );
+      } else {
+        throw new ValidatorAssertionError(
+          `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
+          `but found ${value.length}.`,
+        );
+      }
     }
 
     for (const [i, element] of value.entries()) {
-      assertMatches(rule.content[i], element, interpolated, `${lookupPath}[${i}]`);
+      const subRule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
+      assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
     }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];

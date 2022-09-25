@@ -165,6 +165,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
     rest: null,
   };
 
+  let optionalEntryFound = false;
   while (true) {
     if (tokenStream.peek().value === ']') {
       tokenStream.next();
@@ -174,8 +175,18 @@ function parseTuple(tokenStream: TokenStream): Rule {
       throw new ValidatorSyntaxError('Expected a tuple entry or a closing bracket (`]`).', tokenStream.originalText, tokenStream.peek().range);
     }
 
+    const valueRuleStartPos = tokenStream.peek().range.start;
     const valueRule = parseRule(tokenStream);
-    rule.content.push(valueRule);
+    if (tokenStream.peek().value === '?') {
+      tokenStream.next();
+      rule.optionalContent.push(valueRule);
+      optionalEntryFound = true;
+    } else if (optionalEntryFound) {
+      const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };
+      throw new ValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
+    } else {
+      rule.content.push(valueRule);
+    }
 
     const separatorToken = tokenStream.peek();
     if (separatorToken.value === ',') {

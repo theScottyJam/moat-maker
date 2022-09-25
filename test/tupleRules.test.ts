@@ -54,8 +54,36 @@ describe('tuple rules', () => {
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
   });
 
+  describe('optional entries', () => {
+    test('can choose to supply some of the optional entries', () => {
+      const v = validator`[string, number?, boolean?, bigint?]`;
+      v.assertMatches(['xyz', 2, true]);
+    });
+
+    test('optional fields must be of the correct type', () => {
+      const v = validator`[string, number?, boolean?]`;
+      const act = (): any => v.assertMatches(['xyz', 2, 4]);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>[2] to be of type "boolean" but got type "number".' });
+    });
+
+    test('rejects arrays that are larger than the max tuple size', () => {
+      const v = validator`[string, number?, boolean?]`;
+      const act = (): any => v.assertMatches(['xyz', 2, true, undefined]);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected the <receivedValue> array to have between 1 and 3 entries, but found 4.' });
+    });
+
+    test('rejects arrays that are smaller than the max tuple size', () => {
+      const v = validator`[string, number, boolean?]`;
+      const act = (): any => v.assertMatches(['xyz']);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected the <receivedValue> array to have between 2 and 3 entries, but found 1.' });
+    });
+  });
+
   test('produces the correct rule', () => {
-    const v = validator`[string, number]`;
+    const v = validator`[string, number?, boolean?]`;
     expect(v.rule).toMatchObject({
       category: 'tuple',
       content: [
@@ -63,12 +91,17 @@ describe('tuple rules', () => {
           category: 'simple',
           type: 'string',
         },
+      ],
+      optionalContent: [
         {
           category: 'simple',
           type: 'number',
         },
+        {
+          category: 'simple',
+          type: 'boolean',
+        },
       ],
-      optionalContent: [],
       rest: null,
     });
     expect(Object.isFrozen(v.rule)).toBe(true);
@@ -99,6 +132,19 @@ describe('tuple rules', () => {
           'Expected a tuple entry or a closing bracket (`]`). (line 1, col 2)',
           '  [,]',
           '   ~',
+        ].join('\n'),
+      });
+    });
+
+    test('forbids an optional entry before a required one', () => {
+      // Intentionally left padding after `}` to see if the error ends the `~` at the correct place.
+      const act = (): any => validator`[string, number?, { x: number } ]`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Required entries can not appear after optional entries. (line 1, col 19)',
+          '  [string, number?, { x: number } ]',
+          '                    ~~~~~~~~~~~~~',
         ].join('\n'),
       });
     });

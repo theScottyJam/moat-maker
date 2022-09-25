@@ -31,4 +31,5 @@ export interface TokenStream {
   readonly originalText: readonly string[]
   readonly next: () => Token
   readonly peek: () => Token
+  readonly lastTokenEndPos: () => TextPosition
 }
