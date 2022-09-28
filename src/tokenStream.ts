@@ -93,7 +93,7 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/[[\]{}:;,|?]/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(/[[\]{}:;,|?]|(\.\.\.)/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'specialChar',

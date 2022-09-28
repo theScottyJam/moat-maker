@@ -11,6 +11,20 @@ describe('simple rules', () => {
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "null".' });
     });
+
+    test('gives the correct error when matching a primitive against an array', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertMatches([2]);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got an array.' });
+    });
+
+    test('gives the correct error when matching a primitive against a function', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(() => {});
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got a function.' });
+    });
   });
 
   describe('string', () => {

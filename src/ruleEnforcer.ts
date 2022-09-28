@@ -16,8 +16,14 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
     // noop
   } else if (rule.category === 'simple') {
     if (getSimpleTypeOf(value) !== rule.type) { // eslint-disable-line valid-typeof
+      let whatWasGot = `type "${getSimpleTypeOf(value)}"`;
+      if (Array.isArray(value)) {
+        whatWasGot = 'an array';
+      } else if (value instanceof Function) {
+        whatWasGot = 'a function';
+      }
       throw new ValidatorAssertionError(
-        `Expected ${lookupPath} to be of type "${rule.type}" but got type "${getSimpleTypeOf(value)}".`,
+        `Expected ${lookupPath} to be of type "${rule.type}" but got ${whatWasGot}.`,
       );
     }
   } else if (rule.category === 'union') {
@@ -62,24 +68,42 @@ export function assertMatches<T>(rule: Rule, value: T, interpolated: readonly un
     if (!Array.isArray(value)) {
       throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(value)}.`);
     }
+
     const minSize = rule.content.length;
-    const maxSize = rule.content.length + rule.optionalContent.length;
+    const maxSize = rule.rest !== null
+      ? Infinity
+      : rule.content.length + rule.optionalContent.length;
+
     if (value.length < minSize || value.length > maxSize) {
       if (minSize === maxSize) {
         throw new ValidatorAssertionError(
           `Expected the ${lookupPath} array to have ${minSize} entries, but found ${value.length}.`,
         );
-      } else {
+      } else if (maxSize !== Infinity) {
         throw new ValidatorAssertionError(
           `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
           `but found ${value.length}.`,
         );
+      } else {
+        throw new ValidatorAssertionError(
+          `Expected the ${lookupPath} array to have at least ${minSize} entries, but found ${value.length}.`,
+        );
       }
     }
 
+    const restItems = [];
     for (const [i, element] of value.entries()) {
       const subRule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
-      assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
+      if (subRule !== undefined) {
+        assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
+      } else {
+        restItems.push(element);
+      }
+    }
+
+    if (rule.rest !== null) {
+      const restStartIndex = rule.content.length + rule.optionalContent.length;
+      assertMatches(rule.rest, restItems, interpolated, `${lookupPath}.slice(${restStartIndex})`);
     }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
