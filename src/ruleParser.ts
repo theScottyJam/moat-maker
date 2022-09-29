@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { ValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import { Rule, ObjectRule, simpleTypeVariant } from './types/parseRules';
+import { Rule, ObjectRule, ObjectRuleContentValue, simpleTypeVariant } from './types/parseRules';
 import { TokenStream } from './types/tokenizer';
-import { UnreachableCaseError } from './util';
+import { UnreachableCaseError, FrozenMap } from './util';
 
 const allSimpleTypes: simpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
@@ -104,10 +104,9 @@ function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
 
 function parseObject(tokenStream: TokenStream): Rule {
   assert(tokenStream.next().value === '{');
-  const rule = {
+  const ruleTemplate = {
     category: 'object' as const,
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    content: {} as { [index: string]: ObjectRule['content']['any'] },
+    contentEntries: [] as Array<[string, ObjectRuleContentValue]>,
     index: null,
   };
 
@@ -140,10 +139,10 @@ function parseObject(tokenStream: TokenStream): Rule {
 
     const valueRule = parseRule(tokenStream);
 
-    rule.content[keyToken.value] = {
+    ruleTemplate.contentEntries.push([keyToken.value, {
       optional,
       rule: valueRule,
-    };
+    }]);
 
     const separatorToken = tokenStream.peek();
     if (([',', ';'] as unknown[]).includes(separatorToken.value)) {
@@ -153,7 +152,11 @@ function parseObject(tokenStream: TokenStream): Rule {
     }
   }
 
-  return rule;
+  return {
+    category: 'object' as const,
+    content: new FrozenMap(ruleTemplate.contentEntries),
+    index: ruleTemplate.index,
+  };
 }
 
 function parseTuple(tokenStream: TokenStream): Rule {
@@ -261,10 +264,10 @@ export function freezeRule(rule: Rule): Rule {
   } else if (rule.category === 'object') {
     return f({
       ...rule,
-      content: f(Object.fromEntries(
-        Object.entries(rule.content)
+      content: new FrozenMap(
+        [...rule.content.entries()]
           .map(([k, v]) => f([k, f({ ...v })])),
-      )),
+      ),
     });
   } else if (rule.category === 'tuple') {
     return f({

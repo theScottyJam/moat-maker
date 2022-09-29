@@ -1,5 +1,7 @@
 // Everything in here is publicly exported
 
+import type { FrozenMap } from '../util';
+
 export type simpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
 export interface SimpleRule {
@@ -11,14 +13,16 @@ export interface NoopRule {
   readonly category: 'noop'
 }
 
+export interface ObjectRuleContentValue {
+  readonly optional: boolean
+  readonly rule: Rule
+}
+
 export interface ObjectRule {
   readonly category: 'object'
-  readonly content: {
-    readonly [key: string]: {
-      readonly optional: boolean
-      readonly rule: Rule
-    }
-  }
+  // We only ever return rules with frozen maps, but we accept rules of type map,
+  // which is the reason for this union type.
+  readonly content: FrozenMap<string, ObjectRuleContentValue> | Map<string, ObjectRuleContentValue>
   readonly index: Rule | null
 }
 

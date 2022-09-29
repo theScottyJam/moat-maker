@@ -4,13 +4,14 @@ import { Rule } from './types/parseRules';
 import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
 import type { Validator } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
-import { reprUnknownValue } from './util';
+import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
 import { ValidatorAssertionError } from './exceptions';
 
 export * from './exceptions';
 export * from './types/parseRules';
 export * from './types/validatableProtocol';
 export { Validator };
+export type FrozenMap<K, V> = InstanceType<typeof FrozenMapClass>;
 
 export function validator(parts: TemplateStringsArray, ...interpolated: readonly unknown[]): Validator {
   return validator.fromRule(parse(parts), interpolated);

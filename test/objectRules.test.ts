@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { FrozenMap } from '../src/util';
 
 describe('object rules', () => {
   test('accepts an object with matching fields', () => {
@@ -85,27 +86,27 @@ describe('object rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`{ numKey: number, strKey?: string }`;
-    expect(v.rule).toMatchObject({
-      category: 'object',
-      content: {
-        numKey: {
-          optional: false,
-          rule: {
-            category: 'simple',
-            type: 'number',
-          },
-        },
-        strKey: {
-          optional: true,
-          rule: {
-            category: 'simple',
-            type: 'string',
-          },
-        },
+    assert(v.rule.category === 'object');
+    expect(v.rule.index).toBe(null);
+    expect(v.rule.content).toBeInstanceOf(FrozenMap);
+    expect(v.rule.content.size).toBe(2);
+    expect(v.rule.content.get('numKey')).toMatchObject({
+      optional: false,
+      rule: {
+        category: 'simple',
+        type: 'number',
       },
-      index: null,
+    });
+    expect(v.rule.content.get('strKey')).toMatchObject({
+      optional: true,
+      rule: {
+        category: 'simple',
+        type: 'string',
+      },
     });
     expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.rule.content.get('numKey'))).toBe(true);
+    expect(Object.isFrozen(v.rule.content.get('strKey'))).toBe(true);
   });
 
   describe('Syntax errors', () => {
