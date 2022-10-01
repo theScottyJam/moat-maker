@@ -9,7 +9,7 @@ const allSimpleTypes: simpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
 ];
 
-export function parse(parts: TemplateStringsArray): Rule {
+export function parse(parts: TemplateStringsArray | readonly string[]): Rule {
   const tokenStream = createTokenStream(parts);
   if (tokenStream.peek().category === 'eof') {
     throw new ValidatorSyntaxError('The validator had no content.');

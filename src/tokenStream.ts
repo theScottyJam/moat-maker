@@ -31,7 +31,7 @@ function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition)
   return [theExtract, pos_, Object.freeze(pos)];
 }
 
-export function createTokenStream(sections: TemplateStringsArray): TokenStream {
+export function createTokenStream(sections: TemplateStringsArray | readonly string[]): TokenStream {
   let currentPos = {
     sectionIndex: 0,
     textIndex: 0,
@@ -130,7 +130,10 @@ export function createTokenStream(sections: TemplateStringsArray): TokenStream {
   });
 }
 
-function ignoreWhitespaceAndComments(sections: TemplateStringsArray, startingPos: TextPosition): { foundNewLine: boolean, newPos: TextPosition } {
+function ignoreWhitespaceAndComments(
+  sections: TemplateStringsArray | readonly string[],
+  startingPos: TextPosition,
+): { foundNewLine: boolean, newPos: TextPosition } {
   let currentPos = startingPos;
 
   while (true) {
@@ -172,7 +175,11 @@ function ignoreWhitespaceAndComments(sections: TemplateStringsArray, startingPos
 /// Keeps moving currentPos (including across interpolation points) until
 /// the provided pattern is matched. currentPos will be set to the position
 /// right after the matched text.
-function eatUntil(sections: TemplateStringsArray, startingPos: TextPosition, pattern: RegExp): { newPos: TextPosition, matchFound: boolean } {
+function eatUntil(
+  sections: TemplateStringsArray | readonly string[],
+  startingPos: TextPosition,
+  pattern: RegExp,
+): { newPos: TextPosition, matchFound: boolean } {
   let currentPos = startingPos;
   while (true) {
     let segment;

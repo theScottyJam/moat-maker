@@ -22,6 +22,20 @@ describe('validator behavior', () => {
     expect(v.assertMatches('xyz')).toBe('xyz');
   });
 
+  describe('validator.from()', () => {
+    it('converts a string to a validator', () => {
+      const v = validator.from('string');
+      expect(v.matches('xyz')).toBe(true);
+      expect(v.matches(2)).toBe(false);
+    });
+
+    it('returns validator instances as-is', () => {
+      const v1 = validator`string`;
+      const v2 = validator.from(v1);
+      expect(v1).toBe(v2);
+    });
+  });
+
   // A small handful of random tests to make sure this function works.
   describe('validator.fromRules()', () => {
     test('allows string inputs when given a simple string rule', () => {

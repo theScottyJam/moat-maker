@@ -2,7 +2,7 @@ import { parse, freezeRule } from './ruleParser';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
 import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
-import type { Validator } from './types/validator';
+import { isValidatorInstance, Validator } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
 import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
 import { ValidatorAssertionError } from './exceptions';
@@ -10,10 +10,10 @@ import { ValidatorAssertionError } from './exceptions';
 export * from './exceptions';
 export * from './types/parseRules';
 export * from './types/validatableProtocol';
-export { Validator };
+export type { Validator };
 export type FrozenMap<K, V> = InstanceType<typeof FrozenMapClass>;
 
-export function validator(parts: TemplateStringsArray, ...interpolated: readonly unknown[]): Validator {
+export function validator(parts: TemplateStringsArray | readonly string[], ...interpolated: readonly unknown[]): Validator {
   return validator.fromRule(parse(parts), interpolated);
 }
 
@@ -21,6 +21,7 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
   const rule = freezeRule(rule_);
 
   return Object.freeze({
+    [isValidatorInstance]: true as const,
     assertMatches<T>(value: T): T {
       return assertMatches(rule, value, interpolated);
     },
@@ -33,6 +34,16 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
       assertMatches(rule, value, interpolated, lookupPath);
     },
   });
+};
+
+validator.from = function(unknownValue: string | Validator): Validator {
+  if (typeof unknownValue === 'string') {
+    return validator([unknownValue]);
+  } else if (Object(unknownValue)[isValidatorInstance] === true) {
+    return unknownValue;
+  } else {
+    throw new Error('Unexpected input value'); // TODO: Test
+  }
 };
 
 class CustomValidatable implements ValidatableProtocol {
