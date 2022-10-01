@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { Rule } from './types/parseRules';
+import { Rule, UnionRule } from './types/parseRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
 import { ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
@@ -27,13 +27,13 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
       );
     }
   } else if (rule.category === 'union') {
-    if (!rule.variants.some(v => doesMatch(v, target, interpolated))) {
+    const unionVariants = flattenUnionVariants(rule);
+    if (!unionVariants.some(v => doesMatch(v, target, interpolated))) {
       throw new ValidatorAssertionError(
         "Received value did not match any of the union's variants.\n" +
-        collectAssertionErrors(rule.variants, target, interpolated)
+        collectAssertionErrors(unionVariants, target, interpolated)
           .map((message, i) => `  Variant ${i + 1}: ${message}`)
           .join('\n'),
-        "Received value did not match any of the union's variants.",
       );
     }
   } else if (rule.category === 'object') {
@@ -141,6 +141,14 @@ export function doesMatch(rule: Rule, value: unknown, interpolated: readonly unk
   }
 }
 
+function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
+  return rule.variants.flatMap(variant => {
+    return variant.category === 'union'
+      ? flattenUnionVariants(variant)
+      : [variant];
+  });
+}
+
 function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpolated: readonly unknown[]): readonly string[] {
   return rules
     .map(rule => {
@@ -149,7 +157,7 @@ function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpol
         throw new Error('Internal error: Expected assertMatches() to throw');
       } catch (err) {
         if (err instanceof ValidatorAssertionError) {
-          return err.conciseMessage;
+          return err.message;
         }
         throw err;
       }

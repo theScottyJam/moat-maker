@@ -3,14 +3,6 @@ import type { TextRange } from './types/tokenizer';
 
 export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
-  public readonly conciseMessage;
-
-  /// `message` will sometimes be multiline while `conciseMessage` should always fit on one line.
-  /// `conciseMessage` is useful when you need to combine multiple error messages together into one.
-  constructor(message: string, conciseMessage = message) {
-    super(message);
-    this.conciseMessage = conciseMessage;
-  }
 }
 
 export class ValidatorSyntaxError extends Error {

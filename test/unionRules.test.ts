@@ -74,7 +74,7 @@ describe('union rules', () => {
     expect(v.matches(2)).toBe(false);
   });
 
-  test('provides concise errors when nested in longer error messages', () => {
+  test('Flattens nested union errors', () => {
     const v = validator.fromRule({
       category: 'union',
       variants: [
@@ -103,7 +103,8 @@ describe('union rules', () => {
       message: [
         "Received value did not match any of the union's variants.",
         '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
-        "  Variant 2: Received value did not match any of the union's variants.", // <-- the concise error
+        '  Variant 2: Expected <receivedValue> to be of type "string" but got type "null".',
+        '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
   });
