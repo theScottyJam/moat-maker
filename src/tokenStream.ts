@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ValidatorSyntaxError } from './exceptions';
+import { createValidatorSyntaxError } from './exceptions';
 import { TextPosition, Token, TokenStream } from './types/tokenizer';
 
 /// Returns the extracted result, the first position in the extracted range range
@@ -106,7 +106,7 @@ export function createTokenStream(sections: TemplateStringsArray | readonly stri
     [segment, lastPos, currentPos] = extract(/\S+/y, sections, currentPos);
     assert(segment);
     const errorRange = { start: lastPos, end: currentPos };
-    throw new ValidatorSyntaxError('Failed to interpret this syntax.', sections, errorRange);
+    throw createValidatorSyntaxError('Failed to interpret this syntax.', sections, errorRange);
   };
 
   let nextToken = getNextToken();
@@ -149,7 +149,7 @@ function ignoreWhitespaceAndComments(
       const { newPos, matchFound } = eatUntil(sections, currentPos, /(.|\n)*?\*\//y);
       if (!matchFound) {
         const errorRange = { start: lastPos, end: currentPos };
-        throw new ValidatorSyntaxError('This block comment never got closed.', sections, errorRange);
+        throw createValidatorSyntaxError('This block comment never got closed.', sections, errorRange);
       }
       currentPos = newPos;
     }

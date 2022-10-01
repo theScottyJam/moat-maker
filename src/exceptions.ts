@@ -5,9 +5,19 @@ export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
 }
 
+const validatorSyntaxErrorConstructorKey = Symbol('validatorSyntaxError constructor key');
+
 export class ValidatorSyntaxError extends Error {
   name = 'ValidatorSyntaxError';
-  constructor(message: string, rawText?: readonly string[], range?: TextRange) {
+  constructor(
+    key: typeof validatorSyntaxErrorConstructorKey,
+    message: string,
+    rawText?: readonly string[],
+    range?: TextRange,
+  ) {
+    if (key !== validatorSyntaxErrorConstructorKey) {
+      throw new Error('The ValidatorSyntaxError constructor is private.');
+    }
     super(ValidatorSyntaxError.#formatMessage(message, rawText, range));
   }
 
@@ -26,4 +36,8 @@ export class ValidatorSyntaxError extends Error {
       ' '.repeat(range.start.colNumb - 1 + 2) + '~'.repeat(underlineLength),
     ].join('\n');
   }
+}
+
+export function createValidatorSyntaxError(message: string, rawText?: readonly string[], range?: TextRange): ValidatorSyntaxError {
+  return new ValidatorSyntaxError(validatorSyntaxErrorConstructorKey, message, rawText, range);
 }

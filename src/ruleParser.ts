@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ValidatorSyntaxError } from './exceptions';
+import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { Rule, ObjectRule, ObjectRuleContentValue, simpleTypeVariant } from './types/parseRules';
 import { TokenStream } from './types/tokenizer';
@@ -12,14 +12,14 @@ const allSimpleTypes: simpleTypeVariant[] = [
 export function parse(parts: TemplateStringsArray | readonly string[]): Rule {
   const tokenStream = createTokenStream(parts);
   if (tokenStream.peek().category === 'eof') {
-    throw new ValidatorSyntaxError('The validator had no content.');
+    throw createValidatorSyntaxError('The validator had no content.');
   }
 
   const rule = parseRule(tokenStream);
 
   const lastToken = tokenStream.peek();
   if (lastToken.category !== 'eof') {
-    throw new ValidatorSyntaxError('Expected EOF.', tokenStream.originalText, lastToken.range);
+    throw createValidatorSyntaxError('Expected EOF.', tokenStream.originalText, lastToken.range);
   }
 
   return rule;
@@ -27,7 +27,7 @@ export function parse(parts: TemplateStringsArray | readonly string[]): Rule {
 
 function parseRule(tokenStream: TokenStream): Rule {
   if (tokenStream.peek().category === 'eof') {
-    throw new ValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, tokenStream.peek().range);
+    throw createValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, tokenStream.peek().range);
   }
 
   let rule: Rule = parseRuleWithoutModifiers(tokenStream);
@@ -35,7 +35,7 @@ function parseRule(tokenStream: TokenStream): Rule {
   while (tokenStream.peek().value === '[') {
     tokenStream.next();
     if (tokenStream.peek().value !== ']') {
-      throw new ValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
+      throw createValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
     }
     tokenStream.next();
     rule = freezeRule({
@@ -123,7 +123,7 @@ function parseObject(tokenStream: TokenStream): Rule {
       (keyToken.category === 'number' && containsOnlyNumbers(keyToken.value))
     );
     if (!isValidKey) {
-      throw new ValidatorSyntaxError('Expected an object key or closing bracket (`}`).', tokenStream.originalText, keyToken.range);
+      throw createValidatorSyntaxError('Expected an object key or closing bracket (`}`).', tokenStream.originalText, keyToken.range);
     }
 
     let optional = false;
@@ -134,7 +134,7 @@ function parseObject(tokenStream: TokenStream): Rule {
 
     const colonToken = tokenStream.next();
     if (colonToken.value !== ':') {
-      throw new ValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
+      throw createValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
     }
 
     const valueRule = parseRule(tokenStream);
@@ -148,7 +148,7 @@ function parseObject(tokenStream: TokenStream): Rule {
     if (([',', ';'] as unknown[]).includes(separatorToken.value)) {
       tokenStream.next();
     } else if (separatorToken.value !== '}' && !separatorToken.afterNewline) {
-      throw new ValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`}`).', tokenStream.originalText, separatorToken.range);
+      throw createValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`}`).', tokenStream.originalText, separatorToken.range);
     }
   }
 
@@ -174,7 +174,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
   }
 
   if (tokenStream.peek().value === ',') {
-    throw new ValidatorSyntaxError('Expected a tuple entry or a closing bracket (`]`).', tokenStream.originalText, tokenStream.peek().range);
+    throw createValidatorSyntaxError('Expected a tuple entry or a closing bracket (`]`).', tokenStream.originalText, tokenStream.peek().range);
   }
 
   let requiredFieldsAllowed = true;
@@ -199,7 +199,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
       }
 
       if (token.value !== ',') {
-        throw new ValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`]`).', tokenStream.originalText, token.range);
+        throw createValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`]`).', tokenStream.originalText, token.range);
       }
     }
 
@@ -207,7 +207,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
       requiredFieldsAllowed = false;
     } else if (behaviorCategory === 'REST') {
       // TODO: This error is probably being thrown, even if there's simply an EOF after the rest entry.
-      throw new ValidatorSyntaxError(
+      throw createValidatorSyntaxError(
         'Found unexpected content after a rest entry. A rest entry must be the last item in the tuple.',
         tokenStream.originalText,
         tokenStream.peek().range,
@@ -244,7 +244,7 @@ function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: Pa
     return { behaviorCategory: 'REQUIRED', rule };
   } else {
     const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };
-    throw new ValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
+    throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
   }
 }
 

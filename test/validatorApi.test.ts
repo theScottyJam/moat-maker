@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError } from '../src';
+import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 
 describe('validator behavior', () => {
   test('returns a frozen object', () => {
@@ -34,6 +34,12 @@ describe('validator behavior', () => {
       const v2 = validator.from(v1);
       expect(v1).toBe(v2);
     });
+  });
+
+  it('forbid outside users from instantiating ValidatorSyntaxError', () => {
+    const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
+    assert.throws(act, (err: Error) => err.constructor === Error);
+    assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
   });
 
   // A small handful of random tests to make sure this function works.
