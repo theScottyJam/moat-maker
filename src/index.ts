@@ -3,7 +3,7 @@ import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
 import { validatable } from './validatableProtocol';
-import { isValidatorInstance, Validator } from './types/validator';
+import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
 import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
 import { ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
@@ -47,6 +47,30 @@ validator.from = function(unknownValue: string | Validator): Validator {
   } else {
     throw new Error('Unexpected input value'); // TODO: Test
   }
+};
+
+validator.createRef = function(): ValidatorRef {
+  let validator: Validator | null = null;
+  return {
+    [validatable](...args: Parameters<ValidatableProtocolFn>) {
+      if (validator === null) {
+        throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
+      }
+      return validator[validatable](...args);
+    },
+    set(validator_: Validator) {
+      if (validator !== null) {
+        throw new Error('Can not call ref.set(...) multiple times.');
+      }
+      if (Object(validator_)[isValidatorInstance] !== true) {
+        throw new Error(
+          'Must call ref.set(...) with a validator instance. ' +
+          `Received the non-validator ${reprUnknownValue(validator_)}.`,
+        );
+      }
+      validator = validator_;
+    },
+  };
 };
 
 class CustomValidatable implements ValidatableProtocol {
