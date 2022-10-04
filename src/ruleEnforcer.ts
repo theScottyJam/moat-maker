@@ -133,7 +133,18 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
       return target;
     }
 
-    if (typeof valueToMatch === 'function' || typeof valueToMatch === 'object') throw new Error('Not Implemented');
+    if (typeof valueToMatch === 'function') {
+      // TODO: Maybe also do an instanceof check to prevent { constructor: ... } from working
+      if (Object(target).constructor !== valueToMatch) {
+        throw new ValidatorAssertionError(
+          `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to match ${reprUnknownValue(valueToMatch)} ` +
+          '(via its validatable protocol).',
+        );
+      }
+      return target;
+    }
+
+    if (typeof valueToMatch === 'object') throw new Error('Not Implemented');
 
     if (!sameValueZero(target, valueToMatch)) {
       throw new ValidatorAssertionError(

@@ -2,7 +2,7 @@ import { parse } from './ruleParser';
 import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
-import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
+import { validatable } from './validatableProtocol';
 import { isValidatorInstance, Validator } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
 import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
@@ -85,5 +85,3 @@ validator.createValidatable = function(callback: (valueBeingMatched: unknown) =>
 };
 
 validator.validatable = validatable;
-
-installProtocolOnBuiltins();
