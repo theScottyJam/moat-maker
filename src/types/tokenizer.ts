@@ -17,6 +17,14 @@ export interface TextToken {
   readonly range: TextRange
 }
 
+export interface StringToken {
+  readonly category: 'string'
+  readonly value: undefined
+  readonly parsedValue: string
+  readonly afterNewline: boolean
+  readonly range: TextRange
+}
+
 export interface InterpolationToken {
   readonly category: 'interpolation'
   readonly value: undefined
@@ -25,7 +33,7 @@ export interface InterpolationToken {
   readonly range: TextRange
 }
 
-export type Token = TextToken | InterpolationToken;
+export type Token = TextToken | StringToken | InterpolationToken;
 
 export interface TokenStream {
   readonly originalText: readonly string[]

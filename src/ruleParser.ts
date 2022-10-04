@@ -10,7 +10,7 @@ const allSimpleTypes: simpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
 ];
 
-export function parse(parts: TemplateStringsArray | readonly string[]): Rule {
+export function parse(parts: readonly string[]): Rule {
   const tokenStream = createTokenStream(parts);
   if (tokenStream.peek().category === 'eof') {
     throw createValidatorSyntaxError('The validator had no content.');
@@ -89,6 +89,12 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
   const token = tokenStream.peek();
   if (token.category === 'identifier') {
     return parseLiteralOrNoop(tokenStream);
+  } else if (token.category === 'string') {
+    tokenStream.next();
+    return {
+      category: 'primitiveLiteral',
+      value: token.parsedValue,
+    };
   } else if (token.category === 'interpolation') {
     tokenStream.next();
     return {

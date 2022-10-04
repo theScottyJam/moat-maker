@@ -14,8 +14,11 @@ export * from './types/validatableProtocol';
 export type { Validator };
 export type FrozenMap<K, V> = InstanceType<typeof FrozenMapClass>;
 
-export function validator<T=unknown>(parts: TemplateStringsArray | readonly string[], ...interpolated: readonly unknown[]): Validator<T> {
-  return fromRule<T>(parse(parts), interpolated);
+export function validator<T=unknown>(
+  parts: TemplateStringsArray | { readonly raw: readonly string[] },
+  ...interpolated: readonly unknown[]
+): Validator<T> {
+  return fromRule<T>(parse(parts.raw), interpolated);
 }
 
 validator.fromRule = function<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
@@ -54,7 +57,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
 
 validator.from = function(unknownValue: string | Validator): Validator {
   if (typeof unknownValue === 'string') {
-    return validator([unknownValue]);
+    return validator({ raw: [unknownValue] });
   } else if (Object(unknownValue)[isValidatorInstance] === true) {
     return unknownValue;
   } else {

@@ -7,6 +7,11 @@ export function freezeRule(rule: Rule): Rule {
       category: rule.category,
       type: rule.type,
     });
+  } else if (rule.category === 'primitiveLiteral') {
+    return f({
+      category: rule.category,
+      value: rule.value,
+    });
   } else if (rule.category === 'noop') {
     return f({
       category: rule.category,

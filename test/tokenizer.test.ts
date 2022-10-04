@@ -45,7 +45,7 @@ describe('tokenizer', () => {
   });
 
   test('throws on whitespace-only input', () => {
-    const act = (): any => validator` \t\n`;
+    const act = (): any => validator({ raw: [' \t\n'] });
     assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, { message: 'The validator had no content.' });
   });

@@ -30,6 +30,12 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
         `Expected ${lookupPath} to be of type "${rule.type}" but got ${whatWasGot}.`,
       );
     }
+  } else if (rule.category === 'primitiveLiteral') {
+    if (target !== rule.value) {
+      throw new ValidatorAssertionError(
+        `Expected ${lookupPath} to be ${reprUnknownValue(rule.value)} but got ${reprUnknownValue(target)}.`,
+      );
+    }
   } else if (rule.category === 'union') {
     const unionVariants = flattenUnionVariants(rule);
     if (!unionVariants.some(v => doesMatch(v, target, interpolated))) {

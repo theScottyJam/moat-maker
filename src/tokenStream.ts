@@ -31,7 +31,56 @@ function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition)
   return [theExtract, pos_, Object.freeze(pos)];
 }
 
-export function createTokenStream(sections: TemplateStringsArray | readonly string[]): TokenStream {
+type ExtractStringReturn = [{ parsed: string } | null, TextPosition, TextPosition];
+
+function extractString(sections: readonly string[], startPos: TextPosition): ExtractStringReturn {
+  const currentPos = { ...startPos };
+
+  const targetSection = sections[currentPos.sectionIndex];
+  const openingQuote = targetSection[currentPos.textIndex];
+  if (!['"', "'"].includes(openingQuote)) {
+    return [null, startPos, startPos];
+  }
+
+  let result = '';
+  let escaping = false;
+  while (true) {
+    currentPos.textIndex++;
+    currentPos.colNumb++;
+    const char = targetSection[currentPos.textIndex];
+    if (char === undefined) {
+      const errorRange = { start: startPos, end: currentPos };
+      throw createValidatorSyntaxError('Expected to find a quote to end the string literal.', sections, errorRange);
+    }
+
+    if (!escaping && char === openingQuote) {
+      break;
+    } else if (!escaping && char === '\\') {
+      escaping = true;
+    } else if (escaping) {
+      const mapSpecialChars: { [index: string]: string | undefined } = {
+        0: '\0',
+        '\\': '\\',
+        n: '\n',
+        r: '\r',
+        v: '\v',
+        t: '\t',
+        b: '\b',
+        f: '\f',
+      };
+      result += mapSpecialChars[char] ?? char;
+      escaping = false;
+    } else {
+      result += char;
+    }
+  }
+
+  currentPos.textIndex++;
+  currentPos.colNumb++;
+  return [{ parsed: result }, startPos, Object.freeze(currentPos)];
+}
+
+export function createTokenStream(sections: readonly string[]): TokenStream {
   let currentPos = {
     sectionIndex: 0,
     textIndex: 0,
@@ -93,6 +142,18 @@ export function createTokenStream(sections: TemplateStringsArray | readonly stri
       };
     }
 
+    let strSegmentInfo: { parsed: string } | null;
+    [strSegmentInfo, lastPos, currentPos] = extractString(sections, currentPos);
+    if (strSegmentInfo !== null) {
+      return {
+        category: 'string',
+        value: undefined,
+        parsedValue: strSegmentInfo.parsed,
+        afterNewline,
+        range: { start: lastPos, end: currentPos },
+      };
+    }
+
     [segment, lastPos, currentPos] = extract(/[[\]{}@<>:;,|?]|(\.\.\.)/y, sections, currentPos);
     if (segment !== null) {
       return {
@@ -131,7 +192,7 @@ export function createTokenStream(sections: TemplateStringsArray | readonly stri
 }
 
 function ignoreWhitespaceAndComments(
-  sections: TemplateStringsArray | readonly string[],
+  sections: readonly string[],
   startingPos: TextPosition,
 ): { foundNewLine: boolean, newPos: TextPosition } {
   let currentPos = startingPos;
@@ -176,7 +237,7 @@ function ignoreWhitespaceAndComments(
 /// the provided pattern is matched. currentPos will be set to the position
 /// right after the matched text.
 function eatUntil(
-  sections: TemplateStringsArray | readonly string[],
+  sections: readonly string[],
   startingPos: TextPosition,
   pattern: RegExp,
 ): { newPos: TextPosition, matchFound: boolean } {

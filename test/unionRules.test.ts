@@ -43,7 +43,7 @@ describe('union rules', () => {
   });
 
   test('works with funky whitespace', () => {
-    const v = validator` \tnumber|string \t|\t undefined \t`;
+    const v = validator({ raw: [' \tnumber|string \t|\t undefined \t'] });
     expect(v.rule).toMatchObject({
       category: 'union',
       variants: [

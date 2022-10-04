@@ -9,6 +9,11 @@ export interface SimpleRule {
   readonly type: simpleTypeVariant
 }
 
+export interface PrimitiveLiteralRule {
+  readonly category: 'primitiveLiteral'
+  readonly value: string
+}
+
 export interface NoopRule {
   readonly category: 'noop'
 }
@@ -56,6 +61,7 @@ export interface InterpolationRule {
 
 export type Rule = (
   SimpleRule
+  | PrimitiveLiteralRule
   | NoopRule
   | ObjectRule
   | ArrayRule
