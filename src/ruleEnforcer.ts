@@ -15,7 +15,7 @@ const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
 );
 
-export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly unknown[], lookupPath = '<receivedValue>'): T {
+export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly unknown[], lookupPath = '<receivedValue>'): asserts target is T {
   if (rule.category === 'noop') {
     // noop
   } else if (rule.category === 'simple') {
@@ -98,7 +98,7 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
 
     const restItems = [];
     for (const [i, element] of target.entries()) {
-      const subRule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
+      const subRule: Rule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
       if (subRule !== undefined) {
         assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
       } else {
@@ -130,7 +130,7 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
     if (conformsToValidatableProtocol(valueToMatch)) {
       assert(typeof valueToMatch[validatable] === 'function'); // <-- TODO: Test
       valueToMatch[validatable](target, lookupPath);
-      return target;
+      return;
     }
 
     if (typeof valueToMatch === 'function') {
@@ -141,7 +141,7 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
           '(via its validatable protocol).',
         );
       }
-      return target;
+      return;
     }
 
     if (typeof valueToMatch === 'object') throw new Error('Not Implemented');
@@ -154,8 +154,6 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
   } else {
     throw new UnreachableCaseError(rule);
   }
-
-  return target;
 }
 
 export function doesMatch(rule: Rule, value: unknown, interpolated: readonly unknown[]): boolean {

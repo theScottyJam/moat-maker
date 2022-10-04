@@ -26,19 +26,19 @@ describe('interpolation', () => {
   describe('primitive value interpolation', () => {
     test('accepts an identical number', () => {
       const v = validator`${23}`;
-      v.assertMatches(23);
+      v.getAsserted(23);
     });
 
     test('Rejects different values of the same type', () => {
       const v = validator`${23}`;
-      const act = (): any => v.assertMatches(24);
+      const act = (): any => v.getAsserted(24);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got 24.' });
     });
 
     test('Rejects a different value type', () => {
       const v = validator`${23}`;
-      const act = (): any => v.assertMatches('xyz');
+      const act = (): any => v.getAsserted('xyz');
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got "xyz".' });
     });
@@ -51,66 +51,66 @@ describe('interpolation', () => {
     describe('uses sameValueZero comparison algorithm', () => {
       test('considers zero and negative zero as equal', () => {
         const v = validator`${0}`;
-        v.assertMatches(-0);
+        v.getAsserted(-0);
       });
 
       test('considers NaN to be equal to NaN', () => {
         const v = validator`${NaN}`;
-        v.assertMatches(NaN);
+        v.getAsserted(NaN);
       });
     });
 
     describe('error formatting', () => {
       test('formats a string with special characters', () => {
-        const act = (): any => validator`${2}`.assertMatches('x\ny');
+        const act = (): any => validator`${2}`.getAsserted('x\ny');
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got "x\\ny".' });
       });
 
       test('formats a number', () => {
-        const act = (): any => validator`${2}`.assertMatches(3);
+        const act = (): any => validator`${2}`.getAsserted(3);
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got 3.' });
       });
 
       test('formats a bigint', () => {
-        const act = (): any => validator`${2}`.assertMatches(2n);
+        const act = (): any => validator`${2}`.getAsserted(2n);
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got 2n.' });
       });
 
       test('formats a boolean', () => {
         // eslint-disable-next-line symbol-description
-        const act = (): any => validator`${Symbol('a')}`.assertMatches(Symbol());
+        const act = (): any => validator`${Symbol('a')}`.getAsserted(Symbol());
         assert.throws(act, { message: 'Expected <receivedValue> to be the value Symbol(a) but got Symbol().' });
       });
 
       test('formats null', () => {
-        const act = (): any => validator`${2}`.assertMatches(null);
+        const act = (): any => validator`${2}`.getAsserted(null);
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got null.' });
       });
 
       test('formats undefined', () => {
-        const act = (): any => validator`${2}`.assertMatches(undefined);
+        const act = (): any => validator`${2}`.getAsserted(undefined);
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got undefined.' });
       });
 
       test('formats a received object', () => {
-        const act = (): any => validator`${2}`.assertMatches({ x: 2 });
+        const act = (): any => validator`${2}`.getAsserted({ x: 2 });
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [object Object].' });
       });
 
       test('formats a received function', () => {
         // eslint-disable-next-line prefer-arrow-callback
-        const act = (): any => validator`${2}`.assertMatches(function test() {});
+        const act = (): any => validator`${2}`.getAsserted(function test() {});
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got `test`.' });
       });
 
       test('formats a received anonymous function', () => {
-        const act = (): any => validator`${2}`.assertMatches(() => {});
+        const act = (): any => validator`${2}`.getAsserted(() => {});
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [anonymous function/class].' });
       });
 
       test('formats a primitive wrapper instances as an object', () => {
         // eslint-disable-next-line no-new-wrappers
-        const act = (): any => validator`${2}`.assertMatches(new Number(2));
+        const act = (): any => validator`${2}`.getAsserted(new Number(2));
         assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got [object Number].' });
       });
     });
@@ -119,17 +119,17 @@ describe('interpolation', () => {
   describe('primitive class interpolation', () => {
     test('the Number class matches a numeric primitive', () => {
       const v = validator`${Number}`;
-      v.assertMatches(23);
+      v.getAsserted(23);
     });
 
     test('the Number class matches a boxed number', () => {
       const v = validator`${Number}`;
-      v.assertMatches(Number(23));
+      v.getAsserted(Number(23));
     });
 
     test('the Number class does not match a string primitive', () => {
       const v = validator`${Number}`;
-      const act = (): any => v.assertMatches('xyz');
+      const act = (): any => v.getAsserted('xyz');
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to match `Number` (via its validatable protocol).' });
     });
@@ -137,7 +137,7 @@ describe('interpolation', () => {
     test('the Number class does not match an inherited boxed primitive', () => {
       class MyNumber extends Number {}
       const v = validator`${Number}`;
-      const act = (): any => v.assertMatches(new MyNumber(3));
+      const act = (): any => v.getAsserted(new MyNumber(3));
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber], to match `Number` (via its validatable protocol).' });
     });
@@ -146,12 +146,12 @@ describe('interpolation', () => {
   describe('native class interpolation', () => {
     test('the Map class matches a map instance', () => {
       const v = validator`${Map}`;
-      v.assertMatches(new Map());
+      v.getAsserted(new Map());
     });
 
     test('the Map class does not match a normal object', () => {
       const v = validator`${Map}`;
-      const act = (): any => v.assertMatches({ x: 2 });
+      const act = (): any => v.getAsserted({ x: 2 });
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
@@ -163,13 +163,13 @@ describe('interpolation', () => {
 
     describe('error formatting', () => {
       test('the Map class does not match a null-prototype object', () => {
-        const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
+        const act = (): any => validator`${Map}`.getAsserted(Object.create(null));
         assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object], to match `Map` (via its validatable protocol).' });
       });
 
       test('the Map class does not match an inherited instance of Map', () => {
         class MyMap extends Map {}
-        const act = (): any => validator`${Map}`.assertMatches(new MyMap());
+        const act = (): any => validator`${Map}`.getAsserted(new MyMap());
         assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap], to match `Map` (via its validatable protocol).' });
       });
     });
@@ -178,7 +178,7 @@ describe('interpolation', () => {
   describe('userland protocol implementations', () => {
     test('accepts if validatable does not throw', () => {
       const v = validator`${{ [validator.validatable]: () => ({ matched: true }) }}`;
-      v.assertMatches(2);
+      v.getAsserted(2);
     });
 
     test('rejects if validatable throws', () => {
@@ -187,7 +187,7 @@ describe('interpolation', () => {
           throw new ValidatorAssertionError('Whoops');
         },
       }}`;
-      const act = (): any => v.assertMatches(2);
+      const act = (): any => v.getAsserted(2);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: 'Whoops',
@@ -201,7 +201,7 @@ describe('interpolation', () => {
           receivedValue = receivedValue_;
         },
       }}`;
-      v.assertMatches(2);
+      v.getAsserted(2);
       expect(receivedValue).toBe(2);
     });
 
@@ -213,7 +213,7 @@ describe('interpolation', () => {
         },
       };
       const v = validator`{ x: { y: ${validatable} } }`;
-      v.assertMatches({ x: { y: 0 } });
+      v.getAsserted({ x: { y: 0 } });
       expect(lookupPath).toBe('<receivedValue>.x.y');
     });
   });
@@ -221,12 +221,12 @@ describe('interpolation', () => {
   describe('Interpolate validator instances', () => {
     test('Allows a value that matches the interpolated validator', () => {
       const v = validator`{ x: ${validator`{ y: number }`}}`;
-      v.assertMatches({ x: { y: 2 } });
+      v.getAsserted({ x: { y: 2 } });
     });
 
     test('Rejects a value that does not match the interpolated validator', () => {
       const v = validator`{ x: ${validator`{ y: number }`}}`;
-      const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
+      const act = (): any => v.getAsserted({ x: { y: 'xyz' } });
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.x.y to be of type "number" but got type "string".' });
     });

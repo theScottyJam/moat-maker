@@ -4,31 +4,31 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 describe('iterator rules', () => {
   test('accepts iterables with correct entry types an input', () => {
     const v = validator`${Array}@<number>`;
-    v.assertMatches([2, 3, 4]);
+    v.getAsserted([2, 3, 4]);
   });
 
   test('accepts an empty iterable', () => {
     const v = validator`${Array}@<number>`;
-    v.assertMatches([]);
+    v.getAsserted([]);
   });
 
   test('rejects when input iterable is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
-    const act = (): any => v.assertMatches(2);
+    const act = (): any => v.getAsserted(2);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match `Array` (via its validatable protocol).' });
   });
 
   test('rejects when iterable entry is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
-    const act = (): any => v.assertMatches([2, 'xyz']);
+    const act = (): any => v.getAsserted([2, 'xyz']);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected [...<receivedValue>][1] to be of type "number" but got type "string".' });
   });
 
   test('rejects non-iterable inputs', () => {
     const v = validator`unknown@<string>`;
-    const act = (): any => v.assertMatches(42);
+    const act = (): any => v.getAsserted(42);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
   });
@@ -37,7 +37,7 @@ describe('iterator rules', () => {
     // number is not an iterator, but we put it before the @<...> anyways.
     const v = validator`number@<number>`;
     // Now you shouldn't be able to pass any valid inputs into it.
-    const act = (): any => v.assertMatches(42);
+    const act = (): any => v.getAsserted(42);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
   });

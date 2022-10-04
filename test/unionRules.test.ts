@@ -4,14 +4,14 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
     const v = validator`number | string | undefined`;
-    v.assertMatches('xyz');
-    v.assertMatches(2);
-    v.assertMatches(undefined);
+    v.getAsserted('xyz');
+    v.getAsserted(2);
+    v.getAsserted(undefined);
   });
 
   test("rejects value that does not match any of the union's variants", () => {
     const v = validator`number | string | undefined`;
-    const act = (): any => v.assertMatches(null);
+    const act = (): any => v.getAsserted(null);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
@@ -70,7 +70,7 @@ describe('union rules', () => {
       }],
     });
 
-    v.assertMatches('xyz');
+    v.getAsserted('xyz');
     expect(v.matches(2)).toBe(false);
   });
 
@@ -97,7 +97,7 @@ describe('union rules', () => {
       ],
     });
 
-    const act = (): any => v.assertMatches(null);
+    const act = (): any => v.getAsserted(null);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [

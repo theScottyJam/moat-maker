@@ -4,38 +4,38 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 describe('tuple rules', () => {
   test('accepts an array with matching entries', () => {
     const v = validator`[string, number]`;
-    v.assertMatches(['abc', 2]);
+    v.getAsserted(['abc', 2]);
   });
 
   test('accepts an empty array', () => {
     const v = validator`[]`;
-    v.assertMatches([]);
+    v.getAsserted([]);
   });
 
   test('rejects a non-array', () => {
     const v = validator`[string, number]`;
-    const act = (): any => v.assertMatches({});
+    const act = (): any => v.getAsserted({});
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Object].' });
   });
 
   test('rejects a typed-array', () => {
     const v = validator`[string, number]`;
-    const act = (): any => v.assertMatches(new Uint8Array());
+    const act = (): any => v.getAsserted(new Uint8Array());
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Uint8Array].' });
   });
 
   test('rejects an array of the wrong length', () => {
     const v = validator`[string, number]`;
-    const act = (): any => v.assertMatches(['xyz']);
+    const act = (): any => v.getAsserted(['xyz']);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected the <receivedValue> array to have 2 entries, but found 1.' });
   });
 
   test('rejects an array with the wrong fields', () => {
     const v = validator`[string, number]`;
-    const act = (): any => v.assertMatches(['abc', 'def']);
+    const act = (): any => v.getAsserted(['abc', 'def']);
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
   });
@@ -43,13 +43,13 @@ describe('tuple rules', () => {
   test('accepts an inherited array', () => {
     class MyArray extends Array {}
     const v = validator`[string, number]`;
-    v.assertMatches(new (MyArray as any)('abc', 2));
+    v.getAsserted(new (MyArray as any)('abc', 2));
   });
 
   test('rejects an inherited array with the wrong fields', () => {
     class MyArray extends Array {}
     const v = validator`[string, number]`;
-    const act = (): any => v.assertMatches(new (MyArray as any)('abc', 'def'));
+    const act = (): any => v.getAsserted(new (MyArray as any)('abc', 'def'));
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
   });
@@ -57,26 +57,26 @@ describe('tuple rules', () => {
   describe('optional entries', () => {
     test('can choose to supply some of the optional entries', () => {
       const v = validator`[string, number?, boolean?, bigint?]`;
-      v.assertMatches(['xyz', 2, true]);
+      v.getAsserted(['xyz', 2, true]);
     });
 
     test('optional fields must be of the correct type', () => {
       const v = validator`[string, number?, boolean?]`;
-      const act = (): any => v.assertMatches(['xyz', 2, 4]);
+      const act = (): any => v.getAsserted(['xyz', 2, 4]);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>[2] to be of type "boolean" but got type "number".' });
     });
 
     test('rejects arrays that are larger than the max tuple size', () => {
       const v = validator`[string, number?, boolean?]`;
-      const act = (): any => v.assertMatches(['xyz', 2, true, undefined]);
+      const act = (): any => v.getAsserted(['xyz', 2, true, undefined]);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 1 and 3 entries, but found 4.' });
     });
 
     test('rejects arrays that are smaller than the max tuple size', () => {
       const v = validator`[string, number, boolean?]`;
-      const act = (): any => v.assertMatches(['xyz']);
+      const act = (): any => v.getAsserted(['xyz']);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 2 and 3 entries, but found 1.' });
     });
@@ -92,34 +92,34 @@ describe('tuple rules', () => {
   describe('tuples with the rest operator', () => {
     test('can supply extra entries', () => {
       const v = validator`[string, number, ...boolean[]]`;
-      v.assertMatches(['xyz', 2, false, true]);
+      v.getAsserted(['xyz', 2, false, true]);
     });
 
     test('can supply the minimum number of required entries', () => {
       const v = validator`[string, number, ...boolean[]]`;
-      v.assertMatches(['xyz', 2]);
+      v.getAsserted(['xyz', 2]);
     });
 
     test('can avoid supplying both rest and optional entries', () => {
       const v = validator`[string, number, string?, ...boolean[]]`;
-      v.assertMatches(['xyz', 2]);
+      v.getAsserted(['xyz', 2]);
     });
 
     test('can supply an optional field without supplying values to the "rest"', () => {
       const v = validator`[string, number, string?, ...boolean[]]`;
-      v.assertMatches(['xyz', 2, 'abc']);
+      v.getAsserted(['xyz', 2, 'abc']);
     });
 
     test('rejects when not enough entries are supplied', () => {
       const v = validator`[string, number, ...string[]]`;
-      const act = (): any => v.assertMatches(['xyz']);
+      const act = (): any => v.getAsserted(['xyz']);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have at least 2 entries, but found 1.' });
     });
 
     test('rejects when the rest entry is of the wrong type', () => {
       const v = validator`[string, number, ...boolean[]]`;
-      const act = (): any => v.assertMatches(['xyz', 2, true, 'xyz']);
+      const act = (): any => v.getAsserted(['xyz', 2, true, 'xyz']);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(2)[1] to be of type "boolean" but got type "string".' });
     });
@@ -133,7 +133,7 @@ describe('tuple rules', () => {
 
     test('rejects when rest type does not accept an array', () => {
       const v = validator`[string, ...boolean]`;
-      const act = (): any => v.assertMatches(['xyz', true]);
+      const act = (): any => v.getAsserted(['xyz', true]);
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(1) to be of type "boolean" but got an array.' });
     });
@@ -145,7 +145,7 @@ describe('tuple rules', () => {
         return true;
       });
       const v = validator`[string, ...${validatable}]`;
-      v.assertMatches(['xyz']);
+      v.getAsserted(['xyz']);
       expect(calledWith).toMatchObject([]);
     });
   });

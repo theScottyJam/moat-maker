@@ -5,22 +5,22 @@ import { FrozenMap } from '../src/util';
 describe('object rules', () => {
   test('accepts an object with matching fields', () => {
     const v = validator`{ str: string, numb?: number }`;
-    v.assertMatches({ numb: 2, str: '' });
+    v.getAsserted({ numb: 2, str: '' });
   });
 
   test('accepts an object with extra fields', () => {
     const v = validator`{ str: string }`;
-    v.assertMatches({ str: '', numb: 2 });
+    v.getAsserted({ str: '', numb: 2 });
   });
 
   test('accepts inherited fields', () => {
     const v = validator`{ toString: ${Function} }`;
-    v.assertMatches({});
+    v.getAsserted({});
   });
 
   test('rejects a primitive', () => {
     const v = validator`{ str: string }`;
-    const act = (): any => v.assertMatches('xyz');
+    const act = (): any => v.getAsserted('xyz');
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
   });
@@ -28,7 +28,7 @@ describe('object rules', () => {
   // TODO: Check that this error works when using string keys with odd characters
   test('rejects an object missing a required field', () => {
     const v = validator`{ str: string, numb: number, bool: boolean }`;
-    const act = (): any => v.assertMatches({ str: '' });
+    const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb", "bool"' });
   });
@@ -36,20 +36,20 @@ describe('object rules', () => {
   // TODO: Check that this error works when using string keys with odd characters
   test('rejects an object missing both required and optional fields', () => {
     const v = validator`{ str: string, numb: number, bool?: boolean }`;
-    const act = (): any => v.assertMatches({ str: '' });
+    const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb"' });
   });
 
   test('accepts a missing optional field', () => {
     const v = validator`{ numb: number, str?: string }`;
-    v.assertMatches({ numb: 2 });
+    v.getAsserted({ numb: 2 });
   });
 
   // TODO: Check that this error works when using string keys with odd characters
   test('rejects when an object field does not match the expected type', () => {
     const v = validator`{ str: string, numb: number, bool: boolean }`;
-    const act = (): any => v.assertMatches({ str: '', numb: true, bool: 2 });
+    const act = (): any => v.getAsserted({ str: '', numb: true, bool: 2 });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: 'Expected <receivedValue>.numb to be of type "number" but got type "boolean".',
@@ -58,7 +58,7 @@ describe('object rules', () => {
 
   test('rejects when a nested object field does not match the expected type', () => {
     const v = validator`{ sub: { sub2: { value: {} } } }`;
-    const act = (): any => v.assertMatches({ sub: { sub2: { value: 2 } } });
+    const act = (): any => v.getAsserted({ sub: { sub2: { value: 2 } } });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: 'Expected <receivedValue>.sub.sub2.value to be an object but got 2.',
@@ -67,19 +67,19 @@ describe('object rules', () => {
 
   describe('object type checks', () => {
     test('accepts an array', () => {
-      validator`{}`.assertMatches([2]);
+      validator`{}`.getAsserted([2]);
     });
 
     test('accepts a function', () => {
-      validator`{}`.assertMatches(() => {});
+      validator`{}`.getAsserted(() => {});
     });
 
     test('accepts a boxed primitive', () => {
-      validator`{}`.assertMatches(new Number(2)); // eslint-disable-line no-new-wrappers
+      validator`{}`.getAsserted(new Number(2)); // eslint-disable-line no-new-wrappers
     });
 
     test('rejects a symbol', () => {
-      const act = (): any => validator`{}`.assertMatches(Symbol('mySymb'));
+      const act = (): any => validator`{}`.getAsserted(Symbol('mySymb'));
       assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
     });
   });
@@ -124,12 +124,12 @@ describe('object rules', () => {
 
     test('allows "$" and "_" in keys', () => {
       const v = validator`{ $_: string }`;
-      v.assertMatches({ $_: 'xyz' });
+      v.getAsserted({ $_: 'xyz' });
     });
 
     test('allows numeric keys', () => {
       const v = validator`{ 42: string }`;
-      v.assertMatches({ 42: 'xyz' });
+      v.getAsserted({ 42: 'xyz' });
     });
 
     test('throws on number keys with special characters', () => {
