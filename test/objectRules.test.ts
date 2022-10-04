@@ -122,6 +122,11 @@ describe('object rules', () => {
       });
     });
 
+    test('allows "$" and "_" in keys', () => {
+      const v = validator`{ $_: string }`;
+      v.assertMatches({ $_: 'xyz' });
+    });
+
     test('allows numeric keys', () => {
       const v = validator`{ 42: string }`;
       v.assertMatches({ 42: 'xyz' });
