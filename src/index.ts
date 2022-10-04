@@ -6,9 +6,9 @@ import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
 import { isValidatorInstance, Validator } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
 import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
-import { ValidatorAssertionError } from './exceptions';
+import { ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
 
-export * from './exceptions';
+export { ValidatorAssertionError, ValidatorSyntaxError };
 export * from './types/parseRules';
 export * from './types/validatableProtocol';
 export type { Validator };
