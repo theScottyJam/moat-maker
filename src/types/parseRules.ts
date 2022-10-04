@@ -38,6 +38,12 @@ export interface TupleRule {
   readonly rest: Rule | null
 }
 
+export interface IteratorRule {
+  readonly category: 'iterator'
+  readonly iterableType: Rule
+  readonly entryType: Rule
+}
+
 export interface UnionRule {
   readonly category: 'union'
   readonly variants: readonly Rule[]
@@ -48,4 +54,13 @@ export interface InterpolationRule {
   readonly interpolationIndex: number
 }
 
-export type Rule = SimpleRule | NoopRule | ObjectRule | ArrayRule | TupleRule | UnionRule | InterpolationRule;
+export type Rule = (
+  SimpleRule
+  | NoopRule
+  | ObjectRule
+  | ArrayRule
+  | TupleRule
+  | IteratorRule
+  | UnionRule
+  | InterpolationRule
+);

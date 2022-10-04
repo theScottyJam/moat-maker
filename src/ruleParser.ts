@@ -32,16 +32,38 @@ function parseRule(tokenStream: TokenStream): Rule {
 
   let rule: Rule = parseRuleWithoutModifiers(tokenStream);
 
-  while (tokenStream.peek().value === '[') {
-    tokenStream.next();
-    if (tokenStream.peek().value !== ']') {
-      throw createValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
+  while (true) {
+    if (tokenStream.peek().value === '@') {
+      tokenStream.next();
+      if (tokenStream.peek().value !== '<') {
+        throw createValidatorSyntaxError('Expected an opening angled bracket (`<`).', tokenStream.originalText, tokenStream.peek().range);
+      }
+      tokenStream.next();
+
+      const entryType = parseRule(tokenStream);
+      rule = freezeRule({
+        category: 'iterator' as const,
+        iterableType: rule,
+        entryType,
+      });
+
+      if (tokenStream.peek().value !== '>') {
+        throw createValidatorSyntaxError('Expected a closing angled bracket (`>`).', tokenStream.originalText, tokenStream.peek().range);
+      }
+      tokenStream.next();
+    } else if (tokenStream.peek().value === '[') {
+      tokenStream.next();
+      if (tokenStream.peek().value !== ']') {
+        throw createValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
+      }
+      tokenStream.next();
+      rule = freezeRule({
+        category: 'array',
+        content: rule,
+      });
+    } else {
+      break;
     }
-    tokenStream.next();
-    rule = freezeRule({
-      category: 'array',
-      content: rule,
-    });
   }
 
   if (tokenStream.peek().value === '|') {
@@ -259,7 +281,13 @@ export function freezeRule(rule: Rule): Rule {
     ) as T;
   };
 
-  if (rule.category === 'simple' || rule.category === 'noop' || rule.category === 'array' || rule.category === 'interpolation') {
+  if (
+    rule.category === 'simple' ||
+    rule.category === 'noop' ||
+    rule.category === 'array' ||
+    rule.category === 'iterator' ||
+    rule.category === 'interpolation'
+  ) {
     return f({ ...rule });
   } else if (rule.category === 'object') {
     return f({

@@ -15,24 +15,24 @@ describe('tokenizer', () => {
   });
 
   test('throws on an invalid token', () => {
-    const act = (): any => validator`string | @#xy! !! X`;
+    const act = (): any => validator`string | #@xy! !! X`;
     assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, {
       message: [
         'Failed to interpret this syntax. (line 1, col 10)',
-        '  string | @#xy! !! X',
+        '  string | #@xy! !! X',
         '           ~~~~~',
       ].join('\n'),
     });
   });
 
   test('throws on an invalid token at the end of the input', () => {
-    const act = (): any => validator`string | @#xy!X`;
+    const act = (): any => validator`string | #@xy!X`;
     assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, {
       message: [
         'Failed to interpret this syntax. (line 1, col 10)',
-        '  string | @#xy!X',
+        '  string | #@xy!X',
         '           ~~~~~~',
       ].join('\n'),
     });

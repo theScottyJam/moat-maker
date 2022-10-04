@@ -197,7 +197,7 @@ describe('tuple rules', () => {
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
 
-  describe('Syntax errors', () => {
+  describe('syntax errors', () => {
     test('forbids an omitted separator', () => {
       const act = (): any => validator`[number string]`;
       assert.throws(act, ValidatorSyntaxError);

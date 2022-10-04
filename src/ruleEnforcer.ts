@@ -6,6 +6,10 @@ import { validatable, conformsToValidatableProtocol } from './validatableProtoco
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
+const isIterable = (value: unknown): value is { [Symbol.iterator]: () => Iterator<unknown> } => (
+  typeof Object(value)[Symbol.iterator] === 'function'
+);
+
 // Compares two values using JavaScript's SameValueZero algorithm.
 const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
@@ -105,6 +109,20 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
     if (rule.rest !== null) {
       const restStartIndex = rule.content.length + rule.optionalContent.length;
       assertMatches(rule.rest, restItems, interpolated, `${lookupPath}.slice(${restStartIndex})`);
+    }
+  } else if (rule.category === 'iterator') {
+    assertMatches(rule.iterableType, target, interpolated, lookupPath);
+
+    if (!isIterable(target)) {
+      throw new ValidatorAssertionError(
+        `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
+      );
+    }
+
+    let i = 0;
+    for (const entry of target) {
+      assertMatches(rule.entryType, entry, interpolated, `[...${lookupPath}][${i}]`);
+      ++i;
     }
   } else if (rule.category === 'interpolation') {
     const valueToMatch = interpolated[rule.interpolationIndex];
