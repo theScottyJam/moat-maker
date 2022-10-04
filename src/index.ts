@@ -1,4 +1,5 @@
-import { parse, freezeRule } from './ruleParser';
+import { parse } from './ruleParser';
+import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parseRules';
 import { validatable, installProtocolOnBuiltins } from './validatableProtocol';
@@ -14,12 +15,14 @@ export type { Validator };
 export type FrozenMap<K, V> = InstanceType<typeof FrozenMapClass>;
 
 export function validator(parts: TemplateStringsArray | readonly string[], ...interpolated: readonly unknown[]): Validator {
-  return validator.fromRule(parse(parts), interpolated);
+  return fromRule(parse(parts), interpolated);
 }
 
-validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []): Validator {
-  const rule = freezeRule(rule_);
+validator.fromRule = function(rule: Rule, interpolated: readonly unknown[] = []): Validator {
+  return fromRule(freezeRule(rule));
+};
 
+function fromRule(rule: Rule, interpolated: readonly unknown[] = []): Validator {
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches<T>(value: T): T {
@@ -34,7 +37,7 @@ validator.fromRule = function(rule_: Rule, interpolated: readonly unknown[] = []
       assertMatches(rule, value, interpolated, lookupPath);
     },
   });
-};
+}
 
 validator.from = function(unknownValue: string | Validator): Validator {
   if (typeof unknownValue === 'string') {

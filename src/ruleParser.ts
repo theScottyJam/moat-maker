@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import { Rule, ObjectRule, ObjectRuleContentValue, simpleTypeVariant } from './types/parseRules';
+import { freezeRule } from './ruleFreezer';
+import { Rule, ObjectRuleContentValue, simpleTypeVariant } from './types/parseRules';
 import { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap } from './util';
 
@@ -22,7 +23,7 @@ export function parse(parts: TemplateStringsArray | readonly string[]): Rule {
     throw createValidatorSyntaxError('Expected EOF.', tokenStream.originalText, lastToken.range);
   }
 
-  return rule;
+  return freezeRule(rule);
 }
 
 function parseRule(tokenStream: TokenStream): Rule {
@@ -41,11 +42,11 @@ function parseRule(tokenStream: TokenStream): Rule {
       tokenStream.next();
 
       const entryType = parseRule(tokenStream);
-      rule = freezeRule({
+      rule = {
         category: 'iterator' as const,
         iterableType: rule,
         entryType,
-      });
+      };
 
       if (tokenStream.peek().value !== '>') {
         throw createValidatorSyntaxError('Expected a closing angled bracket (`>`).', tokenStream.originalText, tokenStream.peek().range);
@@ -57,10 +58,10 @@ function parseRule(tokenStream: TokenStream): Rule {
         throw createValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);
       }
       tokenStream.next();
-      rule = freezeRule({
+      rule = {
         category: 'array',
         content: rule,
-      });
+      };
     } else {
       break;
     }
@@ -73,10 +74,10 @@ function parseRule(tokenStream: TokenStream): Rule {
       ? subRule.variants
       : [subRule];
 
-    return freezeRule({
+    return {
       category: 'union',
       variants: [rule, ...subRules],
-    });
+    };
   } else {
     return rule;
   }
@@ -90,10 +91,10 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
     return parseLiteralOrNoop(tokenStream);
   } else if (token.category === 'interpolation') {
     tokenStream.next();
-    return freezeRule({
+    return {
       category: 'interpolation',
       interpolationIndex: token.range.start.sectionIndex,
-    });
+    };
   } else if (token.value === '{') {
     return parseObject(tokenStream);
   } else if (token.value === '[') {
@@ -110,14 +111,14 @@ function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
 
   const identifier = token.value;
   if (identifier === 'unknown' || identifier === 'any') {
-    return freezeRule({
+    return {
       category: 'noop',
-    });
+    };
   } else if ((allSimpleTypes as string[]).includes(identifier)) {
-    return freezeRule({
+    return {
       category: 'simple',
       type: identifier as simpleTypeVariant,
-    });
+    };
   } else {
     // TODO: Add tests for this
     throw new Error('Invalid input');
@@ -267,48 +268,5 @@ function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: Pa
   } else {
     const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };
     throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
-  }
-}
-
-export function freezeRule(rule: Rule): Rule {
-  // shallow-copy-and-freeze function
-  const f = <T>(objOrArray: T): T => {
-    if (Object.isFrozen(objOrArray)) {
-      return objOrArray;
-    }
-    return Object.freeze(
-      Array.isArray(objOrArray) ? [...objOrArray] : { ...objOrArray },
-    ) as T;
-  };
-
-  if (
-    rule.category === 'simple' ||
-    rule.category === 'noop' ||
-    rule.category === 'array' ||
-    rule.category === 'iterator' ||
-    rule.category === 'interpolation'
-  ) {
-    return f({ ...rule });
-  } else if (rule.category === 'object') {
-    return f({
-      ...rule,
-      content: new FrozenMap(
-        [...rule.content.entries()]
-          .map(([k, v]) => f([k, f({ ...v })])),
-      ),
-    });
-  } else if (rule.category === 'tuple') {
-    return f({
-      ...rule,
-      content: f([...rule.content]),
-      optionalContent: f([...rule.optionalContent]),
-    });
-  } else if (rule.category === 'union') {
-    return f({
-      ...rule,
-      variants: f([...rule.variants]),
-    });
-  } else {
-    throw new UnreachableCaseError(rule);
   }
 }
