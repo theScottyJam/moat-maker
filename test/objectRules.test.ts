@@ -4,8 +4,8 @@ import { FrozenMap } from '../src/util';
 
 describe('object rules', () => {
   test('accepts an object with matching fields', () => {
-    const v = validator`{ str: string, numb?: number }`;
-    v.getAsserted({ numb: 2, str: '' });
+    const v = validator`{ "str!": string, numb?: number }`;
+    v.getAsserted({ numb: 2, 'str!': '' });
   });
 
   test('accepts an object with extra fields', () => {
@@ -25,20 +25,18 @@ describe('object rules', () => {
     assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
   });
 
-  // TODO: Check that this error works when using string keys with odd characters
   test('rejects an object missing a required field', () => {
-    const v = validator`{ str: string, numb: number, bool: boolean }`;
+    const v = validator`{ str: string, "numb\"": number, bool: boolean }`;
     const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb", "bool"' });
+    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb\\"", "bool"' });
   });
 
-  // TODO: Check that this error works when using string keys with odd characters
   test('rejects an object missing both required and optional fields', () => {
-    const v = validator`{ str: string, numb: number, bool?: boolean }`;
+    const v = validator`{ str: string, "numb\"": number, bool?: boolean }`;
     const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb"' });
+    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb\\""' });
   });
 
   test('accepts a missing optional field', () => {
@@ -46,22 +44,21 @@ describe('object rules', () => {
     v.getAsserted({ numb: 2 });
   });
 
-  // TODO: Check that this error works when using string keys with odd characters
   test('rejects when an object field does not match the expected type', () => {
-    const v = validator`{ str: string, numb: number, bool: boolean }`;
-    const act = (): any => v.getAsserted({ str: '', numb: true, bool: 2 });
+    const v = validator`{ str: string, "numb.\t": number, bool: boolean }`;
+    const act = (): any => v.getAsserted({ str: '', 'numb.\t': true, bool: 2 });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
-      message: 'Expected <receivedValue>.numb to be of type "number" but got type "boolean".',
+      message: 'Expected <receivedValue>["numb.\\t"] to be of type "number" but got type "boolean".',
     });
   });
 
   test('rejects when a nested object field does not match the expected type', () => {
-    const v = validator`{ sub: { sub2: { value: {} } } }`;
-    const act = (): any => v.getAsserted({ sub: { sub2: { value: 2 } } });
+    const v = validator`{ sub: { "sub 2": { value: {} } } }`;
+    const act = (): any => v.getAsserted({ sub: { 'sub 2': { value: 2 } } });
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
-      message: 'Expected <receivedValue>.sub.sub2.value to be an object but got 2.',
+      message: 'Expected <receivedValue>.sub["sub 2"].value to be an object but got 2.',
     });
   });
 
@@ -85,12 +82,12 @@ describe('object rules', () => {
   });
 
   test('produces the correct rule', () => {
-    const v = validator`{ numKey: number, strKey?: string }`;
+    const v = validator`{ "numKey\n": number, strKey?: string }`;
     assert(v.rule.category === 'object');
     expect(v.rule.index).toBe(null);
     expect(v.rule.content).toBeInstanceOf(FrozenMap);
     expect(v.rule.content.size).toBe(2);
-    expect(v.rule.content.get('numKey')).toMatchObject({
+    expect(v.rule.content.get('numKey\n')).toMatchObject({
       optional: false,
       rule: {
         category: 'simple',
@@ -105,7 +102,7 @@ describe('object rules', () => {
       },
     });
     expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.content.get('numKey'))).toBe(true);
+    expect(Object.isFrozen(v.rule.content.get('numKey\n'))).toBe(true);
     expect(Object.isFrozen(v.rule.content.get('strKey'))).toBe(true);
   });
 

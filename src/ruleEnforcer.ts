@@ -3,6 +3,7 @@ import { Rule, UnionRule } from './types/parseRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
 import { ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
+import { isIdentifier } from './tokenStream';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
@@ -65,7 +66,8 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
 
     for (const [key, iterRuleInfo] of rule.content) {
       if (iterRuleInfo.optional && !(key in target)) continue;
-      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, `${lookupPath}.${key}`);
+      const newLookupPath = isIdentifier(key) ? `${lookupPath}.${key}` : `${lookupPath}[${JSON.stringify(key)}]`;
+      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, newLookupPath);
     }
   } else if (rule.category === 'array') {
     if (!Array.isArray(target)) {

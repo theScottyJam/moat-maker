@@ -2,6 +2,10 @@ import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { TextPosition, Token, TokenStream } from './types/tokenizer';
 
+// The regex is stateful with the sticky flag, so we create a new one each time
+// we need one.
+const getIdentifierPattern = (): RegExp => /[a-zA-Z$_][a-zA-Z0-9$_]*/y;
+
 /// Returns the extracted result, the first position in the extracted range range
 /// (i.e. the passed in pos object), and the last position in the extracted range.
 function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition): [string | null, TextPosition, TextPosition] {
@@ -122,7 +126,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
     let lastPos: TextPosition;
     let segment: string | null;
 
-    [segment, lastPos, currentPos] = extract(/[a-zA-Z$_][a-zA-Z0-9$_]*/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(getIdentifierPattern(), sections, currentPos);
     if (segment !== null) {
       return {
         category: 'identifier',
@@ -262,4 +266,9 @@ function eatUntil(
       };
     }
   }
+}
+
+export function isIdentifier(text: string): boolean {
+  const match = getIdentifierPattern().exec(text);
+  return match !== null && match[0].length === text.length;
 }

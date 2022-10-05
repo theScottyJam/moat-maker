@@ -149,11 +149,13 @@ function parseObject(tokenStream: TokenStream): Rule {
     const keyToken = tokenStream.next();
     const isValidKey = (
       keyToken.category === 'identifier' ||
-      (keyToken.category === 'number' && containsOnlyNumbers(keyToken.value))
+      (keyToken.category === 'number' && containsOnlyNumbers(keyToken.value)) ||
+      keyToken.category === 'string'
     );
     if (!isValidKey) {
       throw createValidatorSyntaxError('Expected an object key or closing bracket (`}`).', tokenStream.originalText, keyToken.range);
     }
+    const key = keyToken.category === 'string' ? keyToken.parsedValue : keyToken.value;
 
     let optional = false;
     if (tokenStream.peek().value === '?') {
@@ -168,7 +170,7 @@ function parseObject(tokenStream: TokenStream): Rule {
 
     const valueRule = parseRule(tokenStream);
 
-    ruleTemplate.contentEntries.push([keyToken.value, {
+    ruleTemplate.contentEntries.push([key, {
       optional,
       rule: valueRule,
     }]);
