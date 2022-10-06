@@ -179,8 +179,6 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
       return;
     }
 
-    if (typeof valueToMatch === 'object') throw new Error('Not Implemented');
-
     if (!sameValueZero(target, valueToMatch)) {
       throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(target)}.`,

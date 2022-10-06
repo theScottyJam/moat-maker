@@ -116,6 +116,21 @@ describe('interpolation', () => {
     });
   });
 
+  describe('object without validatable protocol interpolation', () => {
+    test('allows strict equal objects to match', () => {
+      const obj = { x: 2 };
+      const v = validator`${obj}`;
+      v.getAsserted(obj);
+    });
+
+    test('forbids objects of the same shape but different identities from matching', () => {
+      const getObj = (): any => ({ x: 2 });
+      const v = validator`${getObj()}`;
+      const act = (): any => v.getAsserted(getObj());
+      assert.throws(act, { message: 'Expected <receivedValue> to be the value [object Object] but got [object Object].' });
+    });
+  });
+
   describe('primitive class interpolation', () => {
     test('the Number class matches a numeric primitive', () => {
       const v = validator`${Number}`;
