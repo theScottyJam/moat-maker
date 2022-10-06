@@ -15,7 +15,7 @@ describe('union rules', () => {
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
-        "Received value did not match any of the union's variants.",
+        'Failed to match against every variant of a union.',
         '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
         '  Variant 2: Expected <receivedValue> to be of type "string" but got type "null".',
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
@@ -101,7 +101,7 @@ describe('union rules', () => {
     assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
-        "Received value did not match any of the union's variants.",
+        'Failed to match against every variant of a union.',
         '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
         '  Variant 2: Expected <receivedValue> to be of type "string" but got type "null".',
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',

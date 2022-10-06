@@ -1,4 +1,4 @@
-import { ObjectRuleContentValue, Rule } from './types/parseRules';
+import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from './types/parseRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
 export function freezeRule(rule: Rule): Rule {
@@ -21,13 +21,17 @@ export function freezeRule(rule: Rule): Rule {
       optional: contentValue.optional,
       rule: freezeRule(contentValue.rule),
     });
+    const freezeIndexValue = (indexValue: ObjectRuleIndexValue): ObjectRuleIndexValue => f({
+      key: freezeRule(indexValue.key),
+      value: freezeRule(indexValue.value),
+    });
     return f({
       category: rule.category,
       content: new FrozenMap(
         [...rule.content.entries()]
           .map(([k, v]) => f([k, freezeContentValue(v)])),
       ),
-      index: rule.index === null ? null : freezeRule(rule.index),
+      index: rule.index === null ? null : freezeIndexValue(rule.index),
     });
   } else if (rule.category === 'array') {
     return f({

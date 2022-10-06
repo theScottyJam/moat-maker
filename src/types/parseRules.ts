@@ -23,12 +23,17 @@ export interface ObjectRuleContentValue {
   readonly rule: Rule
 }
 
+export interface ObjectRuleIndexValue {
+  readonly key: Rule
+  readonly value: Rule
+}
+
 export interface ObjectRule {
   readonly category: 'object'
   // We only ever return rules with frozen maps, but we accept rules of type map,
   // which is the reason for this union type.
   readonly content: FrozenMap<string, ObjectRuleContentValue> | Map<string, ObjectRuleContentValue>
-  readonly index: Rule | null
+  readonly index: ObjectRuleIndexValue | null
 }
 
 export interface ArrayRule {

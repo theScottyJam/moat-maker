@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { validator, ValidatorSyntaxError } from '../src';
 
-describe('tokenizer', () => {
+describe('generic syntax', () => {
   test('throws an error when EOF is expected but more content is found', () => {
     const act = (): any => validator`string xyz`;
     assert.throws(act, ValidatorSyntaxError);
@@ -48,5 +48,29 @@ describe('tokenizer', () => {
     const act = (): any => validator({ raw: [' \t\n'] });
     assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, { message: 'The validator had no content.' });
+  });
+
+  test('throws when an unexpected token is found where a type is expected', () => {
+    const act = (): any => validator`string | @`;
+    assert.throws(act, ValidatorSyntaxError);
+    assert.throws(act, {
+      message: [
+        'Expected to find a type here. (line 1, col 10)',
+        '  string | @',
+        '           ~',
+      ].join('\n'),
+    });
+  });
+
+  test('throws when an invalid identifier is found where a type is expected', () => {
+    const act = (): any => validator`string | TRUE`;
+    assert.throws(act, ValidatorSyntaxError);
+    assert.throws(act, {
+      message: [
+        'Expected to find a type here. (line 1, col 10)',
+        '  string | TRUE',
+        '           ~~~~',
+      ].join('\n'),
+    });
   });
 });

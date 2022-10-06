@@ -16,6 +16,16 @@ const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
 );
 
+/// Returns all object entries, regardless of if they're enumerable or have symbol keys.
+function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
+  for (const key of Object.getOwnPropertyNames(obj)) {
+    yield [key, obj[key]];
+  }
+  for (const symb of Object.getOwnPropertySymbols(obj)) {
+    yield [symb, obj[symb]];
+  }
+}
+
 export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly unknown[], lookupPath = '<receivedValue>'): asserts target is T {
   if (rule.category === 'noop') {
     // noop
@@ -41,8 +51,8 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
     const unionVariants = flattenUnionVariants(rule);
     if (!unionVariants.some(v => doesMatch(v, target, interpolated))) {
       throw new ValidatorAssertionError(
-        "Received value did not match any of the union's variants.\n" +
-        collectAssertionErrors(unionVariants, target, interpolated)
+        'Failed to match against every variant of a union.\n' +
+        collectAssertionErrors(unionVariants, target, interpolated, lookupPath)
           .map((message, i) => `  Variant ${i + 1}: ${message}`)
           .join('\n'),
       );
@@ -51,6 +61,16 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
     if (!isObject(target)) {
       throw new ValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
     }
+
+    const calcSubLookupPath = (lookupPath: string, key: string | symbol): string => {
+      if (typeof key === 'string' && isIdentifier(key)) {
+        return `${lookupPath}.${key}`;
+      } else if (typeof key === 'string') {
+        return `${lookupPath}[${JSON.stringify(key)}]`;
+      } else {
+        return `${lookupPath}[Symbol(${key.description ?? ''})]`;
+      }
+    };
 
     const missingKeys = [...rule.content.entries()]
       .filter(([key, value]) => !value.optional)
@@ -64,10 +84,17 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
       );
     }
 
+    if (rule.index !== null) {
+      for (const [key, value] of allObjectEntries(target)) {
+        if (doesMatch(rule.index.key, key, interpolated)) {
+          assertMatches(rule.index.value, value, interpolated, calcSubLookupPath(lookupPath, key));
+        }
+      }
+    }
+
     for (const [key, iterRuleInfo] of rule.content) {
       if (iterRuleInfo.optional && !(key in target)) continue;
-      const newLookupPath = isIdentifier(key) ? `${lookupPath}.${key}` : `${lookupPath}[${JSON.stringify(key)}]`;
-      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, newLookupPath);
+      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
     }
   } else if (rule.category === 'array') {
     if (!Array.isArray(target)) {
@@ -184,11 +211,11 @@ function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
   });
 }
 
-function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpolated: readonly unknown[]): readonly string[] {
+function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpolated: readonly unknown[], lookupPath: string): readonly string[] {
   return rules
     .map(rule => {
       try {
-        assertMatches(rule, value, interpolated);
+        assertMatches(rule, value, interpolated, lookupPath);
         throw new Error('Internal error: Expected assertMatches() to throw');
       } catch (err) {
         if (err instanceof ValidatorAssertionError) {

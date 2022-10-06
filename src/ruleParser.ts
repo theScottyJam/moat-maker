@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
-import { Rule, ObjectRuleContentValue, simpleTypeVariant } from './types/parseRules';
+import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parseRules';
 import { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap } from './util';
 
@@ -106,8 +106,7 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
   } else if (token.value === '[') {
     return parseTuple(tokenStream);
   } else {
-    // TODO: Add tests for this
-    throw new Error('Invalid input');
+    throw createValidatorSyntaxError('Expected to find a type here.', tokenStream.originalText, tokenStream.peek().range);
   }
 }
 
@@ -126,8 +125,7 @@ function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
       type: identifier as simpleTypeVariant,
     };
   } else {
-    // TODO: Add tests for this
-    throw new Error('Invalid input');
+    throw createValidatorSyntaxError('Expected to find a type here.', tokenStream.originalText, token.range);
   }
 }
 
@@ -136,7 +134,7 @@ function parseObject(tokenStream: TokenStream): Rule {
   const ruleTemplate = {
     category: 'object' as const,
     contentEntries: [] as Array<[string, ObjectRuleContentValue]>,
-    index: null,
+    index: null as ObjectRuleIndexValue | null,
   };
 
   while (true) {
@@ -145,6 +143,77 @@ function parseObject(tokenStream: TokenStream): Rule {
       break;
     }
 
+    const keyInfo = parseObjectKey(tokenStream);
+
+    const colonToken = tokenStream.next();
+    if (colonToken.value !== ':') {
+      throw createValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
+    }
+
+    const valueRule = parseRule(tokenStream);
+
+    if ('indexType' in keyInfo) {
+      if (ruleTemplate.index !== null) throw new Error('index type already exists'); // TODO: Test
+      ruleTemplate.index = {
+        key: keyInfo.indexType,
+        value: valueRule,
+      };
+    } else {
+      const { key, optional } = keyInfo;
+      ruleTemplate.contentEntries.push([key, {
+        optional,
+        rule: valueRule,
+      }]);
+    }
+
+    const separatorToken = tokenStream.peek();
+    if (([',', ';'] as unknown[]).includes(separatorToken.value)) {
+      tokenStream.next();
+    } else if (separatorToken.value !== '}' && !separatorToken.afterNewline) {
+      throw createValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`}`).', tokenStream.originalText, separatorToken.range);
+    }
+  }
+
+  return {
+    category: 'object' as const,
+    content: new FrozenMap(ruleTemplate.contentEntries),
+    index: ruleTemplate.index,
+  };
+}
+
+type ParseObjectKeyReturn = {
+  readonly key: string
+  readonly optional: boolean
+} | {
+  readonly indexType: Rule
+};
+
+function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
+  if (tokenStream.peek().value === '[') {
+    tokenStream.next();
+    const nameToken = tokenStream.next();
+    if (nameToken.category !== 'identifier') {
+      throw createValidatorSyntaxError('Expected an identifier, followed by ":" and a type.', tokenStream.originalText, nameToken.range);
+    }
+
+    const colonToken = tokenStream.next();
+    if (colonToken.value !== ':') {
+      throw createValidatorSyntaxError(
+        "Expected a colon here to separate the index key's name on the left, from a type on the right.",
+        tokenStream.originalText,
+        colonToken.range,
+      );
+    }
+
+    const indexType = parseRule(tokenStream);
+
+    const endBracketToken = tokenStream.next();
+    if (endBracketToken.value !== ']') {
+      throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
+    }
+
+    return { indexType };
+  } else {
     const containsOnlyNumbers = (text: string): boolean => /^\d+$/.exec(text) !== null;
     const keyToken = tokenStream.next();
     const isValidKey = (
@@ -163,31 +232,8 @@ function parseObject(tokenStream: TokenStream): Rule {
       optional = true;
     }
 
-    const colonToken = tokenStream.next();
-    if (colonToken.value !== ':') {
-      throw createValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
-    }
-
-    const valueRule = parseRule(tokenStream);
-
-    ruleTemplate.contentEntries.push([key, {
-      optional,
-      rule: valueRule,
-    }]);
-
-    const separatorToken = tokenStream.peek();
-    if (([',', ';'] as unknown[]).includes(separatorToken.value)) {
-      tokenStream.next();
-    } else if (separatorToken.value !== '}' && !separatorToken.afterNewline) {
-      throw createValidatorSyntaxError('Expected a comma (`,`) or closing bracket (`}`).', tokenStream.originalText, separatorToken.range);
-    }
+    return { key, optional };
   }
-
-  return {
-    category: 'object' as const,
-    content: new FrozenMap(ruleTemplate.contentEntries),
-    index: ruleTemplate.index,
-  };
 }
 
 function parseTuple(tokenStream: TokenStream): Rule {
