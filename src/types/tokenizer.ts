@@ -12,7 +12,7 @@ export interface TextRange {
 
 // Note that a number like "Infinity" get classified as an identifier,
 export interface TextToken {
-  readonly category: 'identifier' | 'number' | 'specialChar' | 'eof'
+  readonly category: 'identifier' | 'number' | 'bigint' | 'specialChar' | 'eof'
   readonly value: string
   readonly afterNewline: boolean
   readonly range: TextRange

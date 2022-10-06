@@ -4,6 +4,87 @@ import { strict as assert } from 'node:assert';
 import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 
 describe('primitive literal rules', () => {
+  describe('boolean', () => {
+    test('accepts equivalent boolean inputs', () => {
+      const v = validator`true`;
+      v.getAsserted(true);
+    });
+
+    test('rejects incorrect boolean', () => {
+      const v = validator`false`;
+      const act = (): any => v.getAsserted(true);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be false but got true.' });
+    });
+
+    test('rejects strings', () => {
+      const v = validator`true`;
+      const act = (): any => v.getAsserted('true');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be true but got "true".' });
+    });
+
+    test('rejects boolean objects', () => {
+      const v = validator`true`;
+      const act = (): any => v.getAsserted(new Boolean(false));
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be true but got [object Boolean].' });
+    });
+
+    test('produces the correct rule', () => {
+      const v = validator`true`;
+      expect(v.rule).toMatchObject({
+        category: 'primitiveLiteral',
+        value: true,
+      });
+      expect(Object.isFrozen(v.rule)).toBe(true);
+    });
+  });
+
+  describe('bigint', () => {
+    test('accepts equivalent bigint inputs', () => {
+      const v = validator`2n`;
+      v.getAsserted(2n);
+    });
+
+    test('rejects incorrect bigints', () => {
+      const v = validator`2n`;
+      const act = (): any => v.getAsserted(3n);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 3n.' });
+    });
+
+    test('rejects non-bigint numbers', () => {
+      const v = validator`2n`;
+      const act = (): any => v.getAsserted(2);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 2.' });
+    });
+
+    test('produces the correct rule', () => {
+      const v = validator`42n`;
+      expect(v.rule).toMatchObject({
+        category: 'primitiveLiteral',
+        value: 42n,
+      });
+      expect(Object.isFrozen(v.rule)).toBe(true);
+    });
+
+    describe('syntax', () => {
+      test('Only allows a lowercase n as a bigint suffix', () => {
+        const act = (): any => validator`2N`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Expected EOF. (line 1, col 2)',
+            '  2N',
+            '   ~',
+          ].join('\n'),
+        });
+      });
+    });
+  });
+
   describe('string', () => {
     test('accepts equivalent string inputs', () => {
       const v = validator`'xyz'`;

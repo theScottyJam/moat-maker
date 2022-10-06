@@ -9,9 +9,11 @@ export interface SimpleRule {
   readonly type: simpleTypeVariant
 }
 
+// Note that the "undefined" and "null" values are categorized as a type under SimpleRule,
+// not as a literal under PrimitiveLiteralRule.
 export interface PrimitiveLiteralRule {
   readonly category: 'primitiveLiteral'
-  readonly value: string | number
+  readonly value: string | number | bigint | boolean
 }
 
 export interface NoopRule {

@@ -159,6 +159,16 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
       };
     }
 
+    [segment, lastPos, currentPos] = extract(/\d+n/y, sections, currentPos);
+    if (segment !== null) {
+      return {
+        category: 'bigint',
+        value: segment,
+        afterNewline,
+        range: { start: lastPos, end: currentPos },
+      };
+    }
+
     [segment, lastPos, currentPos] = extractNumber(sections, currentPos);
     if (segment !== null) {
       return {

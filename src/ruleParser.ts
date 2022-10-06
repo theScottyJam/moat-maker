@@ -92,6 +92,20 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
       category: 'primitiveLiteral',
       value: parseNumber(tokenStream),
     };
+  } else if (token.category === 'bigint') {
+    tokenStream.next();
+    assert(token.value.at(-1) === 'n');
+    const numberWithoutSuffix = token.value.slice(0, -1);
+    return {
+      category: 'primitiveLiteral',
+      value: BigInt(numberWithoutSuffix),
+    };
+  } else if ((['true', 'false'] as unknown[]).includes(token.value)) {
+    tokenStream.next();
+    return {
+      category: 'primitiveLiteral',
+      value: token.value === 'true',
+    };
   } else if (token.category === 'string') {
     tokenStream.next();
     return {
