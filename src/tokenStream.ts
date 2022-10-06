@@ -84,6 +84,29 @@ function extractString(sections: readonly string[], startPos: TextPosition): Ext
   return [{ parsed: result }, startPos, Object.freeze(currentPos)];
 }
 
+function extractNumber(sections: readonly string[], startPos: TextPosition): [string | null, TextPosition, TextPosition] {
+  let segment: string | null;
+  let currentPos = startPos;
+
+  // hexadecimal literal
+  [segment, , currentPos] = extract(/0[xX]([0-9a-fA-F]+_)*[0-9a-fA-F]+/y, sections, currentPos);
+  if (segment !== null) return [segment, startPos, currentPos];
+
+  // octal literal
+  [segment, , currentPos] = extract(/0[oO]([0-7]+_)*[0-7]+/y, sections, currentPos);
+  if (segment !== null) return [segment, startPos, currentPos];
+
+  // binary literal
+  [segment, , currentPos] = extract(/0[bB]([01]+_)*[01]+/y, sections, currentPos);
+  if (segment !== null) return [segment, startPos, currentPos];
+
+  // base-10 literal with decimal and scientific notation support
+  [segment, , currentPos] = extract(/(((\d+_)*\d+)?\.)?(\d+_)*\d+([eE](\d+_)*\d+)?/y, sections, currentPos);
+  if (segment !== null) return [segment, startPos, currentPos];
+
+  return [null, startPos, startPos];
+}
+
 export function createTokenStream(sections: readonly string[]): TokenStream {
   let currentPos = {
     sectionIndex: 0,
@@ -136,7 +159,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/(\d*\.)?\d+/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extractNumber(sections, currentPos);
     if (segment !== null) {
       return {
         category: 'number',
@@ -158,7 +181,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/[[\]{}@<>:;,|?]|(\.\.\.)/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(/[[\]{}@<>:;,\-+|?]|(\.\.\.)/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'specialChar',

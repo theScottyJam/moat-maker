@@ -94,4 +94,265 @@ describe('primitive literal rules', () => {
       });
     });
   });
+
+  describe('number', () => {
+    test('accepts equivalent numeric inputs', () => {
+      const v = validator`2`;
+      v.getAsserted(2);
+    });
+
+    test('rejects incorrect numbers', () => {
+      const v = validator`2`;
+      const act = (): any => v.getAsserted(3);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got 3.' });
+    });
+
+    test('rejects string inputs', () => {
+      const v = validator`2`;
+      const act = (): any => v.getAsserted('xyz');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got "xyz".' });
+    });
+
+    test('rejects number objects', () => {
+      const v = validator`2`;
+      const act = (): any => v.getAsserted(new Number(2));
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got [object Number].' });
+    });
+
+    test('produces the correct rule', () => {
+      const v = validator`2`;
+      expect(v.rule).toMatchObject({
+        category: 'primitiveLiteral',
+        value: 2,
+      });
+      expect(Object.isFrozen(v.rule)).toBe(true);
+    });
+
+    test('-0 matches 0', () => {
+      const v = validator`-0`;
+      expect(v.matches(0)).toBe(true);
+      expect(v.matches(-0)).toBe(true);
+    });
+
+    describe('syntax', () => {
+      test('handles negative numbers', () => {
+        const v = validator({ raw: ['- \t\n2'] });
+        expect(v.matches(-2)).toBe(true);
+        expect(validator`-23_45`.matches(-2345)).toBe(true);
+        assert.throws((): any => validator`-_2345`, ValidatorSyntaxError);
+        assert.throws((): any => validator`-2345_`, ValidatorSyntaxError);
+      });
+
+      test('ignores positive sign', () => {
+        const v = validator({ raw: ['+ \t\n2'] });
+        expect(v.matches(2)).toBe(true);
+        expect(validator`+23_45`.matches(2345)).toBe(true);
+        assert.throws((): any => validator`+_2345`, ValidatorSyntaxError);
+        assert.throws((): any => validator`+2345_`, ValidatorSyntaxError);
+      });
+
+      test('handles decimals', () => {
+        const v = validator`0.12`;
+        expect(v.matches(0.12)).toBe(true);
+        expect(v.matches(0.13)).toBe(false);
+
+        expect(validator`+0.12`.matches(0.12)).toBe(true);
+        expect(validator`-0.12`.matches(-0.12)).toBe(true);
+        expect(validator`0.1_2`.matches(0.12)).toBe(true);
+        expect(validator`1_2.34`.matches(12.34)).toBe(true);
+        assert.throws((): any => validator`_12.34`, ValidatorSyntaxError);
+        assert.throws((): any => validator`12_.34`, ValidatorSyntaxError);
+        assert.throws((): any => validator`12._34`, ValidatorSyntaxError);
+        assert.throws((): any => validator`12.34_`, ValidatorSyntaxError);
+      });
+
+      test('handles decimals without leading zero', () => {
+        const v = validator`.12`;
+        expect(v.matches(0.12)).toBe(true);
+        expect(v.matches(0.13)).toBe(false);
+
+        expect(validator`+.12`.matches(0.12)).toBe(true);
+        expect(validator`-.12`.matches(-0.12)).toBe(true);
+        assert.throws((): any => validator`._34`, ValidatorSyntaxError);
+        assert.throws((): any => validator`.34_`, ValidatorSyntaxError);
+      });
+
+      test('looses precision as normal for long decimals', () => {
+        const v = validator`0.12000000000000000000000000001`;
+        // eslint-disable-next-line no-loss-of-precision
+        expect(v.matches(0.12000000000000000000000000001)).toBe(true);
+        expect(v.matches(0.12)).toBe(true);
+        expect(v.matches(0.13)).toBe(false);
+      });
+
+      test('scientific notation', () => {
+        expect(validator`2e3`.matches(2e3)).toBe(true);
+        expect(validator`2E3`.matches(2e3)).toBe(true);
+        expect(validator`+2e3`.matches(2e3)).toBe(true);
+        expect(validator`- 2e3`.matches(-2e3)).toBe(true);
+        expect(validator`2.4e3`.matches(2.4e3)).toBe(true);
+        expect(validator`+2.4e3`.matches(+2.4e3)).toBe(true);
+        expect(validator`-2.4e3`.matches(-2.4e3)).toBe(true);
+        expect(validator`2.4e1_0`.matches(2.4e10)).toBe(true);
+        assert.throws((): any => validator`2.4_e3`, ValidatorSyntaxError);
+        assert.throws((): any => validator`2.4e_3`, ValidatorSyntaxError);
+        assert.throws((): any => validator`2.4e3_`, ValidatorSyntaxError);
+      });
+
+      test('hexadecimal', () => {
+        expect(validator`0x2ef`.matches(0x2ef)).toBe(true);
+        expect(validator`0X2F`.matches(0x2f)).toBe(true);
+        expect(validator`+ 0x2f`.matches(0x2f)).toBe(true);
+        expect(validator`- 0x2f`.matches(-0x2f)).toBe(true);
+        expect(validator`0x2_f`.matches(0x2f)).toBe(true);
+        assert.throws((): any => validator`0x_2f`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0x2f_`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0_x2f`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_0x2f`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_0x2f.3`, ValidatorSyntaxError);
+      });
+
+      test('binary', () => {
+        expect(validator`0b1011`.matches(0b1011)).toBe(true);
+        expect(validator`0B1011`.matches(0b1011)).toBe(true);
+        expect(validator`+ 0b1011`.matches(0b1011)).toBe(true);
+        expect(validator`- 0b1011`.matches(-0b1011)).toBe(true);
+        expect(validator`0b10_11`.matches(0b1011)).toBe(true);
+        assert.throws((): any => validator`0b_1011`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0b1011_`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0_b1011`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_0b1011`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0b1011e1`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0b1011.1`, ValidatorSyntaxError);
+      });
+
+      test('octal', () => {
+        expect(validator`0o167`.matches(0o167)).toBe(true);
+        expect(validator`0O167`.matches(0o167)).toBe(true);
+        expect(validator`+ 0o167`.matches(0o167)).toBe(true);
+        expect(validator`- 0o167`.matches(-0o167)).toBe(true);
+        expect(validator`0o1_67`.matches(0o1_67)).toBe(true);
+        assert.throws((): any => validator`0o_167`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0o167_`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0_o167`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_0o167`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0o167e2`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0o167.2`, ValidatorSyntaxError);
+      });
+
+      test('infinity', () => {
+        expect(validator`Infinity`.matches(Infinity)).toBe(true);
+        expect(validator`+Infinity`.matches(Infinity)).toBe(true);
+        expect(validator`- Infinity`.matches(-Infinity)).toBe(true);
+      });
+
+      test('overly large number', () => {
+        const v = validator`1234567890123456789012345678901234567890`;
+        // eslint-disable-next-line no-loss-of-precision
+        expect(v.matches(1234567890123456789012345678901234567890)).toBe(true);
+        // eslint-disable-next-line no-loss-of-precision
+        expect(v.matches(1234567890123456789012345678901234567000)).toBe(true);
+      });
+
+      test('numbers with leading zero that contain non-base-8 digits are interpreted in base-10', () => {
+        expect(validator`0182`.matches(182)).toBe(true);
+        expect(validator`00182`.matches(182)).toBe(true);
+        expect(validator`+0182`.matches(182)).toBe(true);
+        expect(validator`-0182`.matches(-182)).toBe(true);
+        expect(validator`01_82`.matches(182)).toBe(true);
+        expect(validator`0_182`.matches(182)).toBe(true);
+        expect(validator`00_182`.matches(182)).toBe(true);
+        assert.throws((): any => validator`0182_`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_0182`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0182e2`, ValidatorSyntaxError);
+        // This case got its own error message, simply because it was easier to catch this issue later,
+        // instead of during tokenization.
+        assert.throws((): any => validator`0182e2`, {
+          message: [
+            'Can not mix scientific notation with numbers starting with leading zeros. (line 1, col 1)',
+            '  0182e2',
+            '  ~~~~~~',
+          ].join('\n'),
+        });
+        expect(validator`018.2`.matches(18.2)).toBe(true);
+      });
+
+      test('numbers with leading zeros that only contain base-8 digits create an error', () => {
+        const act = (): any => validator`+ 01234567`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Not allowed to use legacy octal syntax. Use 0o123 syntax instead. (line 1, col 3)',
+            '  + 01234567',
+            '    ~~~~~~~~',
+          ].join('\n'),
+        });
+
+        assert.throws((): any => validator`001234567`, ValidatorSyntaxError);
+        assert.throws((): any => validator`00123_4567`, ValidatorSyntaxError);
+        assert.throws((): any => validator`00_1234567`, ValidatorSyntaxError);
+        assert.throws((): any => validator`0_01234567`, ValidatorSyntaxError);
+        assert.throws((): any => validator`_001234567`, ValidatorSyntaxError);
+        assert.throws((): any => validator`001234567_`, ValidatorSyntaxError);
+        assert.throws((): any => validator`001234567e2`, ValidatorSyntaxError);
+        assert.throws((): any => validator`001234567.2`, ValidatorSyntaxError);
+      });
+
+      test('numbers with multiple zeros create an error', () => {
+        const act = (): any => validator`+ 000`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Not allowed to use legacy octal syntax. Use 0o123 syntax instead. (line 1, col 3)',
+            '  + 000',
+            '    ~~~',
+          ].join('\n'),
+        });
+        assert.throws((): any => validator`0_0`, ValidatorSyntaxError);
+        assert.throws((): any => validator`00e1`, ValidatorSyntaxError);
+        assert.throws((): any => validator`00.0`, ValidatorSyntaxError);
+      });
+
+      test('throws when a non-number appears after a sign', () => {
+        const act = (): any => validator`- xyz`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Expected a number after the sign. (line 1, col 3)',
+            '  - xyz',
+            '    ~~~',
+          ].join('\n'),
+        });
+        assert.throws(() => validator`+ xyz`, ValidatorSyntaxError);
+      });
+
+      test('Not allowed to use a decimal that is not followed by anything', () => {
+        const act = (): any => validator`23.`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Failed to interpret this syntax. (line 1, col 3)',
+            '  23.',
+            '    ~',
+          ].join('\n'),
+        });
+        assert.throws(() => validator`+ xyz`, ValidatorSyntaxError);
+      });
+
+      test("NaN isn't a valid numeric literal to match against", () => {
+        const act = (): any => validator`NaN`;
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Expected to find a type here. (line 1, col 1)',
+            '  NaN',
+            '  ~~~',
+          ].join('\n'),
+        });
+      });
+    });
+  });
 });

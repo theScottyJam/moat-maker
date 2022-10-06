@@ -87,14 +87,19 @@ function parseRule(tokenStream: TokenStream): Rule {
 /// to make it an array, or `|` to "union" it with another rule.
 function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
   const token = tokenStream.peek();
-  if (token.category === 'identifier') {
-    return parseLiteralOrNoop(tokenStream);
+  if (token.category === 'number' || (['Infinity', '+', '-'] as unknown[]).includes(token.value)) {
+    return {
+      category: 'primitiveLiteral',
+      value: parseNumber(tokenStream),
+    };
   } else if (token.category === 'string') {
     tokenStream.next();
     return {
       category: 'primitiveLiteral',
       value: token.parsedValue,
     };
+  } else if (token.category === 'identifier') {
+    return parseLiteralOrNoop(tokenStream);
   } else if (token.category === 'interpolation') {
     tokenStream.next();
     return {
@@ -323,4 +328,37 @@ function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: Pa
     const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };
     throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
   }
+}
+function parseNumber(tokenStream: TokenStream): number {
+  let sign = '+';
+  if ((['-', '+'] as unknown[]).includes(tokenStream.peek().value)) {
+    const signToken = tokenStream.next();
+    assert(signToken.category === 'specialChar');
+    sign = signToken.value;
+  }
+
+  const numberToken = tokenStream.next();
+
+  if (numberToken.category !== 'number' && numberToken.value !== 'Infinity') {
+    throw createValidatorSyntaxError('Expected a number after the sign.', tokenStream.originalText, numberToken.range);
+  }
+
+  if (/^0[0-7_]+([e.].*)?$/.exec(numberToken.value) !== null) {
+    throw createValidatorSyntaxError(
+      'Not allowed to use legacy octal syntax. Use 0o123 syntax instead.',
+      tokenStream.originalText,
+      numberToken.range,
+    );
+  }
+  if (/^0\d+e\d*$/.exec(numberToken.value) !== null) {
+    throw createValidatorSyntaxError(
+      'Can not mix scientific notation with numbers starting with leading zeros.',
+      tokenStream.originalText,
+      numberToken.range,
+    );
+  }
+
+  const value = Number(numberToken.value.replace(/_/g, '')) * (sign === '-' ? -1 : 1);
+  assert(!isNaN(value));
+  return value;
 }

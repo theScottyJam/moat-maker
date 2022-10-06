@@ -10,6 +10,7 @@ export interface TextRange {
   readonly end: TextPosition
 }
 
+// Note that a number like "Infinity" get classified as an identifier,
 export interface TextToken {
   readonly category: 'identifier' | 'number' | 'specialChar' | 'eof'
   readonly value: string

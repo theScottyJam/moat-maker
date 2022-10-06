@@ -11,7 +11,7 @@ export interface SimpleRule {
 
 export interface PrimitiveLiteralRule {
   readonly category: 'primitiveLiteral'
-  readonly value: string
+  readonly value: string | number
 }
 
 export interface NoopRule {
