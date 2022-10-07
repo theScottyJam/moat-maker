@@ -180,10 +180,18 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
           '(via its validatable protocol).',
         );
       }
-      return;
-    }
-
-    if (!sameValueZero(target, valueToMatch)) {
+    } else if (valueToMatch instanceof RegExp) {
+      if (typeof target !== 'string') {
+        throw new ValidatorAssertionError(
+          `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to be a string that matches the regular expression ${valueToMatch.toString()}`,
+        );
+      }
+      if (target.match(valueToMatch) === null) {
+        throw new ValidatorAssertionError(
+          `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
+        );
+      }
+    } else if (!sameValueZero(target, valueToMatch)) {
       throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(target)}.`,
       );

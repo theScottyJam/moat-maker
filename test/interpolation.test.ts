@@ -207,6 +207,52 @@ describe('interpolation', () => {
     });
   });
 
+  describe('interpolate regular expressions', () => {
+    test('accepts a matching value', () => {
+      const v = validator`${/^\d{3}$/}`;
+      v.getAsserted('234');
+    });
+
+    test('rejects a non-matching value', () => {
+      const v = validator`${/^\d{3}$/g}`;
+      const act = (): any => v.getAsserted('2345');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
+    });
+
+    test('rejects a non-string value', () => {
+      const v = validator`${/^\d{3}$/g}`;
+      const act = (): any => v.getAsserted(2345);
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>, which is 2345, to be a string that matches the regular expression /^\\d{3}$/g' });
+    });
+
+    test('can match against an inherited regular expression', () => {
+      class MyRegExp extends RegExp {}
+      const v = validator`${new MyRegExp(String.raw`^\d{3}$`, 'g')}`;
+      v.getAsserted('234');
+      const act = (): any => v.getAsserted('2345');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
+    });
+
+    test('resets the lastIndex property when `g` flag is set (because it internally uses string.matches(regex))', () => {
+      const regex = /ab/g;
+      const v = validator`${regex}`;
+      regex.lastIndex = 3;
+      v.getAsserted('abxxxabxxxab');
+      expect(regex.lastIndex).toBe(0);
+    });
+
+    test('does not reset the lastIndex property when `g` flag is not set', () => {
+      const regex = /ab/;
+      const v = validator`${regex}`;
+      regex.lastIndex = 3;
+      v.getAsserted('abxxxabxxxab');
+      expect(regex.lastIndex).toBe(3);
+    });
+  });
+
   describe('userland protocol implementations', () => {
     test('accepts if validatable does not throw', () => {
       const v = validator`${{ [validator.validatable]: () => ({ matched: true }) }}`;
