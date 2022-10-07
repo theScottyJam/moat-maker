@@ -302,9 +302,9 @@ function parseTuple(tokenStream: TokenStream): Rule {
     throw createValidatorSyntaxError('Expected a tuple entry or a closing bracket (`]`).', tokenStream.originalText, tokenStream.peek().range);
   }
 
-  let requiredFieldsAllowed = true;
+  let requiredPropertiesAllowed = true;
   while (true) {
-    const { behaviorCategory, rule: entryRule } = parseTupleEntry(tokenStream, { requiredFieldsAllowed });
+    const { behaviorCategory, rule: entryRule } = parseTupleEntry(tokenStream, { requiredPropertiesAllowed });
     if (behaviorCategory === 'REQUIRED') {
       rule.content.push(entryRule);
     } else if (behaviorCategory === 'OPTIONAL') {
@@ -329,7 +329,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
     }
 
     if (behaviorCategory === 'OPTIONAL') {
-      requiredFieldsAllowed = false;
+      requiredPropertiesAllowed = false;
     } else if (behaviorCategory === 'REST') {
       // TODO: This error is probably being thrown, even if there's simply an EOF after the rest entry.
       throw createValidatorSyntaxError(
@@ -344,7 +344,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
 }
 
 interface ParseTupleEntryOpts {
-  readonly requiredFieldsAllowed: boolean
+  readonly requiredPropertiesAllowed: boolean
 }
 
 interface ParseTupleEntryReturn {
@@ -352,7 +352,7 @@ interface ParseTupleEntryReturn {
   readonly rule: Rule
 }
 
-function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: ParseTupleEntryOpts): ParseTupleEntryReturn {
+function parseTupleEntry(tokenStream: TokenStream, { requiredPropertiesAllowed }: ParseTupleEntryOpts): ParseTupleEntryReturn {
   if (tokenStream.peek().value === '...') {
     tokenStream.next();
     return { behaviorCategory: 'REST', rule: parseRuleAtPrecedence1(tokenStream) };
@@ -365,7 +365,7 @@ function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: Pa
     return { behaviorCategory: 'OPTIONAL', rule };
   }
 
-  if (requiredFieldsAllowed) {
+  if (requiredPropertiesAllowed) {
     return { behaviorCategory: 'REQUIRED', rule };
   } else {
     const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };

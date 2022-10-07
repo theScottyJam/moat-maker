@@ -83,7 +83,7 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
 
     if (missingKeys.length > 0) {
       throw new ValidatorAssertionError(
-        `${lookupPath} is missing the required fields: ` +
+        `${lookupPath} is missing the required properties: ` +
         missingKeys.map(key => JSON.stringify(key)).join(', '),
       );
     }

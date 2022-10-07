@@ -11,7 +11,7 @@ describe('intersection rules', () => {
     const v = validator`{ x: number } & { y: number } & { z: number }`;
     const act = (): any => v.getAsserted({ x: 2, y: 3 });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: '<receivedValue> is missing the required fields: "z"' });
+    assert.throws(act, { message: '<receivedValue> is missing the required properties: "z"' });
     assert.throws((): any => v.getAsserted({ x: 2, z: 3 }), ValidatorAssertionError);
     assert.throws((): any => v.getAsserted({ y: 2, z: 3 }), ValidatorAssertionError);
     assert.throws((): any => v.getAsserted({}), ValidatorAssertionError);

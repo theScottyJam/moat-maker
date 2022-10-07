@@ -3,17 +3,17 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 import { FrozenMap } from '../src/util';
 
 describe('object rules', () => {
-  test('accepts an object with matching fields', () => {
+  test('accepts an object with matching properties', () => {
     const v = validator`{ "str!": string, numb?: number }`;
     v.getAsserted({ numb: 2, 'str!': '' });
   });
 
-  test('accepts an object with extra fields', () => {
+  test('accepts an object with extra properties', () => {
     const v = validator`{ str: string }`;
     v.getAsserted({ str: '', numb: 2 });
   });
 
-  test('accepts inherited fields', () => {
+  test('accepts inherited properties', () => {
     const v = validator`{ toString: ${Function} }`;
     v.getAsserted({});
   });
@@ -25,26 +25,26 @@ describe('object rules', () => {
     assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
   });
 
-  test('rejects an object missing a required field', () => {
+  test('rejects an object missing a required property', () => {
     const v = validator`{ str: string, "numb\"": number, bool: boolean }`;
     const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb\\"", "bool"' });
+    assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\"", "bool"' });
   });
 
-  test('rejects an object missing both required and optional fields', () => {
+  test('rejects an object missing both required and optional properties', () => {
     const v = validator`{ str: string, "numb\"": number, bool?: boolean }`;
     const act = (): any => v.getAsserted({ str: '' });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: '<receivedValue> is missing the required fields: "numb\\""' });
+    assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\""' });
   });
 
-  test('accepts a missing optional field', () => {
+  test('accepts a missing optional property', () => {
     const v = validator`{ numb: number, str?: string }`;
     v.getAsserted({ numb: 2 });
   });
 
-  test('rejects when an object field does not match the expected type', () => {
+  test('rejects when an object property does not match the expected type', () => {
     const v = validator`{ str: string, "numb.\t": number, bool: boolean }`;
     const act = (): any => v.getAsserted({ str: '', 'numb.\t': true, bool: 2 });
     assert.throws(act, ValidatorAssertionError);
@@ -53,7 +53,7 @@ describe('object rules', () => {
     });
   });
 
-  test('rejects when a nested object field does not match the expected type', () => {
+  test('rejects when a nested object property does not match the expected type', () => {
     const v = validator`{ sub: { "sub 2": { value: {} } } }`;
     const act = (): any => v.getAsserted({ sub: { 'sub 2': { value: 2 } } });
     assert.throws(act, ValidatorAssertionError);
@@ -68,7 +68,7 @@ describe('object rules', () => {
       v.getAsserted({ num: 2, str: 'x', another: 1, andAnother: '2' });
     });
 
-    test('rejects when an extra field in the input value does not match the index type', () => {
+    test('rejects when an extra property in the input value does not match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
       const act = (): any => v.getAsserted({ num: 2, str: 'x', another: true });
       assert.throws(act, ValidatorAssertionError);
@@ -81,7 +81,7 @@ describe('object rules', () => {
       });
     });
 
-    test('rejects when a required field in the input value does not match the index type', () => {
+    test('rejects when a required property in the input value does not match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
       const act = (): any => v.getAsserted({ num: true, str: 'x' });
       assert.throws(act, ValidatorAssertionError);
@@ -94,7 +94,7 @@ describe('object rules', () => {
       });
     });
 
-    test('rejects when an optional field in the input value does not match the index type', () => {
+    test('rejects when an optional property in the input value does not match the index type', () => {
       const v = validator`{ num: number, str?: string | boolean, [index: string]: string | number }`;
       const act = (): any => v.getAsserted({ num: 2, str: true });
       assert.throws(act, ValidatorAssertionError);
@@ -107,7 +107,7 @@ describe('object rules', () => {
       });
     });
 
-    test('explicit fields are still enforced, even when an index type is also present', () => {
+    test('explicit properties are still enforced, even when an index type is also present', () => {
       const v = validator`{ [index: string]: string | number, num: number }`;
       // Object the index type, but not the `num` type.
       const act = (): any => v.getAsserted({ num: 'xyz' });
@@ -411,7 +411,7 @@ describe('object rules', () => {
       });
     });
 
-    test('can not mix index type syntax with optional field syntax', () => {
+    test('can not mix index type syntax with optional property syntax', () => {
       const act = (): any => validator`{ [index: string]?: number }`;
       assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {

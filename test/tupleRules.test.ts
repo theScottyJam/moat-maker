@@ -33,7 +33,7 @@ describe('tuple rules', () => {
     assert.throws(act, { message: 'Expected the <receivedValue> array to have 2 entries, but found 1.' });
   });
 
-  test('rejects an array with the wrong fields', () => {
+  test('rejects an array with the wrong properties', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(['abc', 'def']);
     assert.throws(act, ValidatorAssertionError);
@@ -46,7 +46,7 @@ describe('tuple rules', () => {
     v.getAsserted(new (MyArray as any)('abc', 2));
   });
 
-  test('rejects an inherited array with the wrong fields', () => {
+  test('rejects an inherited array with the wrong properties', () => {
     class MyArray extends Array {}
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(new (MyArray as any)('abc', 'def'));
@@ -60,7 +60,7 @@ describe('tuple rules', () => {
       v.getAsserted(['xyz', 2, true]);
     });
 
-    test('optional fields must be of the correct type', () => {
+    test('optional properties must be of the correct type', () => {
       const v = validator`[string, number?, boolean?]`;
       const act = (): any => v.getAsserted(['xyz', 2, 4]);
       assert.throws(act, ValidatorAssertionError);
@@ -105,7 +105,7 @@ describe('tuple rules', () => {
       v.getAsserted(['xyz', 2]);
     });
 
-    test('can supply an optional field without supplying values to the "rest"', () => {
+    test('can supply an optional property without supplying values to the "rest"', () => {
       const v = validator`[string, number, string?, ...boolean[]]`;
       v.getAsserted(['xyz', 2, 'abc']);
     });

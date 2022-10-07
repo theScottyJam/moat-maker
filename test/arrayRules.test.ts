@@ -26,7 +26,7 @@ describe('array rules', () => {
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Uint8Array].' });
   });
 
-  test('rejects an array with the wrong fields', () => {
+  test('rejects an array with the wrong properties', () => {
     const v = validator`string[]`;
     const act = (): any => v.getAsserted(['abc', 2, 'xyz']);
     assert.throws(act, ValidatorAssertionError);
@@ -40,7 +40,7 @@ describe('array rules', () => {
     expect(v.matches(new (MyArray as any)('abc', 2))).toBe(false);
   });
 
-  test('rejects an inherited array with the wrong fields', () => {
+  test('rejects an inherited array with the wrong properties', () => {
     class MyArray extends Array {}
     const v = validator`string[]`;
     const act = (): any => v.getAsserted(new (MyArray as any)('xyz', 3));
