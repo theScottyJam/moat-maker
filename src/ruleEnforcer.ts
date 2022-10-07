@@ -176,8 +176,8 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
       // TODO: Maybe also do an instanceof check to prevent { constructor: ... } from working
       if (Object(target).constructor !== valueToMatch) {
         throw new ValidatorAssertionError(
-          `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to match ${reprUnknownValue(valueToMatch)} ` +
-          '(via its validatable protocol).',
+          `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
+          '(and not an instance of a subclass).',
         );
       }
     } else if (valueToMatch instanceof RegExp) {

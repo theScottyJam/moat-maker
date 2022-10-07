@@ -16,7 +16,9 @@ describe('iterator rules', () => {
     const v = validator`${Array}@<number>`;
     const act = (): any => v.getAsserted(2);
     assert.throws(act, ValidatorAssertionError);
-    assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match `Array` (via its validatable protocol).' });
+    assert.throws(act, {
+      message: 'Expected <receivedValue>, which is 2, to be an instance of `Array` (and not an instance of a subclass).',
+    });
   });
 
   test('rejects when iterable entry is of the incorrect type', () => {

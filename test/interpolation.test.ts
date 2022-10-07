@@ -163,7 +163,9 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.getAsserted('xyz');
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to match `Number` (via its validatable protocol).' });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which is "xyz", to be an instance of `Number` (and not an instance of a subclass).',
+      });
     });
 
     test('the Number class does not match an inherited boxed primitive', () => {
@@ -171,7 +173,9 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.getAsserted(new MyNumber(3));
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyNumber], to match `Number` (via its validatable protocol).' });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which is [object MyNumber], to be an instance of `Number` (and not an instance of a subclass).',
+      });
     });
   });
 
@@ -187,8 +191,8 @@ describe('interpolation', () => {
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is [object Object], to match `Map` ' +
-          '(via its validatable protocol).'
+          'Expected <receivedValue>, which is [object Object], to be an instance of `Map` ' +
+          '(and not an instance of a subclass).'
         ),
       });
     });
@@ -196,13 +200,17 @@ describe('interpolation', () => {
     describe('error formatting', () => {
       test('the Map class does not match a null-prototype object', () => {
         const act = (): any => validator`${Map}`.getAsserted(Object.create(null));
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object Object], to match `Map` (via its validatable protocol).' });
+        assert.throws(act, {
+          message: 'Expected <receivedValue>, which is [object Object], to be an instance of `Map` (and not an instance of a subclass).',
+        });
       });
 
       test('the Map class does not match an inherited instance of Map', () => {
         class MyMap extends Map {}
         const act = (): any => validator`${Map}`.getAsserted(new MyMap());
-        assert.throws(act, { message: 'Expected <receivedValue>, which is [object MyMap], to match `Map` (via its validatable protocol).' });
+        assert.throws(act, {
+          message: 'Expected <receivedValue>, which is [object MyMap], to be an instance of `Map` (and not an instance of a subclass).',
+        });
       });
     });
   });
