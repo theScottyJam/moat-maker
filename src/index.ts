@@ -89,39 +89,30 @@ validator.createRef = function(): ValidatorRef {
   };
 };
 
-class CustomValidatable implements ValidatableProtocol {
-  #callback;
-
-  /// Provides easy access to the protocol value, for use-cases where you want
-  /// to copy it out and put it on a different object.
-  validatable: ValidatableProtocolFn;
-
-  constructor(callback: (valueBeingMatched: unknown) => boolean) {
-    this.#callback = callback;
-    // TODO: Duplicate function
-    this.validatable = function(this: unknown, value: unknown, lookupPath: string) {
-      if (!callback(value)) {
-        throw new ValidatorAssertionError(
-          `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
-          '(via its validatable protocol).',
-        );
-      }
-    };
-  }
-
-  [validatable](value: unknown, lookupPath: string): void {
-    if (!this.#callback(value)) {
-      // TODO: Duplicate error message. (Also, it might be nice to just say `to match a custom validator function` or something)
-      throw new ValidatorAssertionError(
-        `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, to match ${reprUnknownValue(this)} ` +
-        '(via its validatable protocol).',
-      );
-    }
-  }
+interface CustomValidatable extends ValidatableProtocol {
+  protocolFn: ValidatableProtocolFn
 }
 
-validator.createValidatable = function(callback: (valueBeingMatched: unknown) => boolean): CustomValidatable {
-  return new CustomValidatable(callback);
+validator.createValidatable = function(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomValidatable {
+  const protocolFn = (value: unknown, lookupPath: string): void => {
+    if (!callback(value)) {
+      const endOfError = opts.to === undefined
+        ? 'to match a custom validatable.'
+        : `to ${opts.to}`;
+
+      throw new ValidatorAssertionError(
+        `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, ${endOfError}`,
+      );
+    }
+  };
+
+  return {
+    [validatable]: protocolFn,
+
+    /// Provides easy access to the protocol value, for use-cases where you want
+    /// to copy it out and put it on a different object.
+    protocolFn,
+  };
 };
 
 validator.validatable = validatable;

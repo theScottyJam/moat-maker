@@ -170,28 +170,29 @@ describe('validator behavior', () => {
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is -2, to match [object CustomValidatable] ' +
-          '(via its validatable protocol).'
+          'Expected <receivedValue>, which is -2, to match a custom validatable.'
         ),
       });
     });
 
-    test('Grabbing the `validatable` property and sticking it on another class to give it a name works', () => {
+    test('you can give your validatable object a custom description for error messages to use', () => {
+      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
+      const act = (): any => v.getAsserted('xyz');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
+    });
+
+    test('you can move the custom validatable protocol to your own class', () => {
       // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class MyValidatable {
-        static [validator.validatable] = validator.createValidatable(x => typeof x === 'string').validatable;
+        static [validator.validatable] = validator.createValidatable(x => typeof x === 'string').protocolFn;
       }
 
       const v = validator`${MyValidatable}`;
       v.getAsserted('xyz');
       const act = (): any => v.getAsserted(2);
       assert.throws(act, ValidatorAssertionError);
-      assert.throws(act, {
-        message: (
-          'Expected <receivedValue>, which is 2, to match `MyValidatable` ' +
-          '(via its validatable protocol).'
-        ),
-      });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
     });
   });
 });
