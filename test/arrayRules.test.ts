@@ -82,6 +82,17 @@ describe('array rules', () => {
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
 
+  test('works with funky whitespace', () => {
+    const v = validator`string [ ]`;
+    expect(v.rule).toMatchObject({
+      category: 'array',
+      content: {
+        category: 'simple',
+        type: 'string',
+      },
+    });
+  });
+
   test('Gives the right error when the right `]` is missing', () => {
     const act = (): any => validator`string[ | number`;
     assert.throws(act, ValidatorSyntaxError);

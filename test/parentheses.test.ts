@@ -30,6 +30,14 @@ describe('parentheses', () => {
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
 
+  test('works with funky whitespace', () => {
+    const v = validator`( string  )`;
+    expect(v.rule).toMatchObject({
+      category: 'simple',
+      type: 'string',
+    });
+  });
+
   test('union types are flattened through parentheses (test 1)', () => {
     const v = validator`number | (string | boolean) | ((null)) | undefined`;
     expect(v.rule).toMatchObject({

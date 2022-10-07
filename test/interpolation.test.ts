@@ -21,6 +21,23 @@ describe('interpolation', () => {
       expect(v.interpolated).toMatchObject(['xyz', 23]);
       expect(Object.isFrozen(v.interpolated)).toBe(true);
     });
+
+    test('works with funky whitespace', () => {
+      const v = validator`${'xyz'}|${23}`;
+      expect(v.rule).toMatchObject({
+        category: 'union',
+        variants: [
+          {
+            category: 'interpolation',
+            interpolationIndex: 0,
+          }, {
+            category: 'interpolation',
+            interpolationIndex: 1,
+          },
+        ],
+      });
+      expect(v.interpolated).toMatchObject(['xyz', 23]);
+    });
   });
 
   describe('primitive value interpolation', () => {

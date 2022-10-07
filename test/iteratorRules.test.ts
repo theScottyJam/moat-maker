@@ -57,6 +57,20 @@ describe('iterator rules', () => {
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
 
+  test('works with funky whitespace', () => {
+    const v = validator`unknown @ < string >`;
+    expect(v.rule).toMatchObject({
+      category: 'iterator',
+      iterableType: {
+        category: 'noop',
+      },
+      entryType: {
+        category: 'simple',
+        type: 'string',
+      },
+    });
+  });
+
   describe('syntax errors', () => {
     test('forbids a `@` without a `<`', () => {
       const act = (): any => validator`unknown@string`;

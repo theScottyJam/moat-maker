@@ -197,6 +197,27 @@ describe('tuple rules', () => {
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
 
+  test('works with funky whitespace', () => {
+    const v = validator`[  string ,... boolean [ ] ]`;
+    expect(v.rule).toMatchObject({
+      category: 'tuple',
+      content: [
+        {
+          category: 'simple',
+          type: 'string',
+        },
+      ],
+      optionalContent: [],
+      rest: {
+        category: 'array',
+        content: {
+          category: 'simple',
+          type: 'boolean',
+        },
+      },
+    });
+  });
+
   describe('syntax errors', () => {
     test('forbids an omitted separator', () => {
       const act = (): any => validator`[number string]`;

@@ -233,6 +233,37 @@ describe('object rules', () => {
     expect(Object.isFrozen(v.rule.index)).toBe(true);
   });
 
+  test('works with funky whitespace', () => {
+    const v = validator`{x :string ,y ? :number, [ index :"someOtherKey" ] :string}`;
+    assert(v.rule.category === 'object');
+    expect(v.rule.content).toBeInstanceOf(FrozenMap);
+    expect(v.rule.content.size).toBe(2);
+    expect(v.rule.content.get('x')).toMatchObject({
+      optional: false,
+      rule: {
+        category: 'simple',
+        type: 'string',
+      },
+    });
+    expect(v.rule.content.get('y')).toMatchObject({
+      optional: true,
+      rule: {
+        category: 'simple',
+        type: 'number',
+      },
+    });
+    expect(v.rule.index).toMatchObject({
+      key: {
+        category: 'primitiveLiteral',
+        value: 'someOtherKey',
+      },
+      value: {
+        category: 'simple',
+        type: 'string',
+      },
+    });
+  });
+
   describe('Syntax errors', () => {
     test('throws on invalid object key', () => {
       const act = (): any => validator`{ ||`;
