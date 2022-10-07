@@ -24,7 +24,7 @@ describe('union rules', () => {
   });
 
   test('produces the correct rule', () => {
-    const v = validator`string | null`;
+    const v = validator`string | null | undefined`;
     expect(v.rule).toMatchObject({
       category: 'union',
       variants: [
@@ -34,6 +34,9 @@ describe('union rules', () => {
         }, {
           category: 'simple',
           type: 'null',
+        }, {
+          category: 'simple',
+          type: 'undefined',
         },
       ],
     });

@@ -61,6 +61,11 @@ export interface UnionRule {
   readonly variants: readonly Rule[]
 }
 
+export interface IntersectionRule {
+  readonly category: 'intersection'
+  readonly variants: readonly Rule[]
+}
+
 export interface InterpolationRule {
   readonly category: 'interpolation'
   readonly interpolationIndex: number
@@ -75,5 +80,6 @@ export type Rule = (
   | TupleRule
   | IteratorRule
   | UnionRule
+  | IntersectionRule
   | InterpolationRule
 );

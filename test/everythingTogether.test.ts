@@ -2,12 +2,37 @@ import { strict as assert } from 'node:assert';
 import { validator, ValidatorAssertionError } from '../src';
 
 describe('order of operations', () => {
-  test('array syntax has higher precedence than union syntax', () => {
-    // Parsed as `(string[]) | (number[]), not (string[] | number)[]
-    const v = validator`string[] | number[]`;
-    expect(v.matches(['xyz'])).toBe(true);
-    expect(v.matches([2])).toBe(true);
-    expect(v.matches([['xyz']])).toBe(false);
+  test('intersection syntax has a higher precedence than union syntax (test 1)', () => {
+    // Parsed as `({ x: number } & { y: number }) | string`
+    const v = validator`{ x: number } & { y: number } | string`;
+    expect(v.matches('xyz')).toBe(true);
+    expect(v.matches({ x: 2, y: 3 })).toBe(true);
+    expect(v.matches({ x: 2 })).toBe(false);
+    expect(v.matches({ y: 3 })).toBe(false);
+  });
+
+  test('intersection syntax has a higher precedence than union syntax (test 2)', () => {
+    // Parsed as `string | ({ x: number } & { y: number })`
+    const v = validator`string | { x: number } & { y: number }`;
+    expect(v.matches('xyz')).toBe(true);
+    expect(v.matches({ x: 2, y: 3 })).toBe(true);
+    expect(v.matches({ x: 2 })).toBe(false);
+    expect(v.matches({ y: 3 })).toBe(false);
+  });
+
+  test('intersection syntax has a higher precedence than union syntax (test 3)', () => {
+    const v = validator`(string) | ({ x: number }) & ({ y: number })`;
+    expect(v.matches('xyz')).toBe(true);
+    expect(v.matches({ x: 2, y: 3 })).toBe(true);
+    expect(v.matches({ x: 2 })).toBe(false);
+    expect(v.matches({ y: 3 })).toBe(false);
+  });
+
+  test('array syntax has higher precedence than intersection syntax', () => {
+    // Parsed as `({ x: number }[]) & ({ y: number }[])`, not `({ x: number }[] & { y: number })[]`
+    const v = validator`{ x: number }[] & { y: number }[]`;
+    expect(v.matches([{ x: 2, y: 3 }])).toBe(true);
+    expect(v.matches([{ y: 3 }])).toBe(false);
   });
 
   test('iterator syntax has higher precedence than union syntax', () => {
@@ -36,10 +61,5 @@ describe('order of operations', () => {
     const v = validator`[][]`;
     expect(v.matches([[], []])).toBe(true);
     expect(v.matches([[1], []])).toBe(false);
-  });
-
-  test('parentheses can change normal order of operations', () => {
-    const v = validator`(string | number)[]`;
-    expect(v.matches(['x', 2])).toBe(true);
   });
 });

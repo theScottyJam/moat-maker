@@ -56,6 +56,11 @@ export function freezeRule(rule: Rule): Rule {
       category: rule.category,
       variants: f(rule.variants.map(variant => freezeRule(variant))),
     });
+  } else if (rule.category === 'intersection') {
+    return f({
+      category: rule.category,
+      variants: f(rule.variants.map(variant => freezeRule(variant))),
+    });
   } else if (rule.category === 'interpolation') {
     return f({
       category: rule.category,

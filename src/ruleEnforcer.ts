@@ -57,6 +57,10 @@ export function assertMatches<T>(rule: Rule, target: T, interpolated: readonly u
           .join('\n'),
       );
     }
+  } else if (rule.category === 'intersection') {
+    for (const variant of rule.variants) {
+      assertMatches(variant, target, interpolated, lookupPath);
+    }
   } else if (rule.category === 'object') {
     if (!isObject(target)) {
       throw new ValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);

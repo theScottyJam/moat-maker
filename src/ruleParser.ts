@@ -16,7 +16,7 @@ export function parse(parts: readonly string[]): Rule {
     throw createValidatorSyntaxError('The validator had no content.');
   }
 
-  const rule = parseRule(tokenStream);
+  const rule = parseRuleAtPrecedence1(tokenStream);
 
   const lastToken = tokenStream.peek();
   if (lastToken.category !== 'eof') {
@@ -26,12 +26,35 @@ export function parse(parts: readonly string[]): Rule {
   return freezeRule(rule);
 }
 
-function parseRule(tokenStream: TokenStream): Rule {
+function parseRuleAtPrecedence1(tokenStream: TokenStream): Rule {
   if (tokenStream.peek().category === 'eof') {
     throw createValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, tokenStream.peek().range);
   }
 
-  let rule: Rule = parseRuleWithoutModifiers(tokenStream);
+  const rule: Rule = parseRuleAtPrecedence2(tokenStream);
+
+  if (tokenStream.peek().value === '|') {
+    tokenStream.next();
+    const nextRule = parseRuleAtPrecedence1(tokenStream);
+
+    return {
+      category: 'union',
+      variants: [
+        ...rule.category === 'union' ? rule.variants : [rule],
+        ...nextRule.category === 'union' ? nextRule.variants : [nextRule],
+      ],
+    };
+  } else {
+    return rule;
+  }
+}
+
+function parseRuleAtPrecedence2(tokenStream: TokenStream): Rule {
+  if (tokenStream.peek().category === 'eof') {
+    throw createValidatorSyntaxError('Unexpected EOF.', tokenStream.originalText, tokenStream.peek().range);
+  }
+
+  let rule: Rule = parseRuleAtPrecedence3(tokenStream);
 
   while (true) {
     if (tokenStream.peek().value === '@') {
@@ -41,7 +64,7 @@ function parseRule(tokenStream: TokenStream): Rule {
       }
       tokenStream.next();
 
-      const entryType = parseRule(tokenStream);
+      const entryType = parseRuleAtPrecedence1(tokenStream);
       rule = {
         category: 'iterator' as const,
         iterableType: rule,
@@ -67,15 +90,15 @@ function parseRule(tokenStream: TokenStream): Rule {
     }
   }
 
-  if (tokenStream.peek().value === '|') {
+  if (tokenStream.peek().value === '&') {
     tokenStream.next();
-    const nextRule = parseRule(tokenStream);
+    const nextRule = parseRuleAtPrecedence2(tokenStream);
 
     return {
-      category: 'union',
+      category: 'intersection',
       variants: [
-        ...rule.category === 'union' ? rule.variants : [rule],
-        ...nextRule.category === 'union' ? nextRule.variants : [nextRule],
+        ...rule.category === 'intersection' ? rule.variants : [rule],
+        ...nextRule.category === 'intersection' ? nextRule.variants : [nextRule],
       ],
     };
   } else {
@@ -83,9 +106,7 @@ function parseRule(tokenStream: TokenStream): Rule {
   }
 }
 
-/// Parse a rule, without worrying about things tacked onto it, like `[]`
-/// to make it an array, or `|` to "union" it with another rule.
-function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
+function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
   const token = tokenStream.peek();
   if (token.category === 'number' || (['Infinity', '+', '-'] as unknown[]).includes(token.value)) {
     return {
@@ -122,7 +143,7 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
     };
   } else if (token.value === '(') {
     tokenStream.next();
-    const rule = parseRule(tokenStream);
+    const rule = parseRuleAtPrecedence1(tokenStream);
     const closingParenToken = tokenStream.next();
     if (closingParenToken.value !== ')') {
       throw createValidatorSyntaxError('Expected to find a closing parentheses (`)`) here.', tokenStream.originalText, closingParenToken.range);
@@ -177,7 +198,7 @@ function parseObject(tokenStream: TokenStream): Rule {
       throw createValidatorSyntaxError('Expected a colon (`:`) to separate the key from the value.', tokenStream.originalText, colonToken.range);
     }
 
-    const valueRule = parseRule(tokenStream);
+    const valueRule = parseRuleAtPrecedence1(tokenStream);
 
     if ('indexType' in keyInfo) {
       if (ruleTemplate.index !== null) throw new Error('index type already exists'); // TODO: Test
@@ -232,7 +253,7 @@ function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
       );
     }
 
-    const indexType = parseRule(tokenStream);
+    const indexType = parseRuleAtPrecedence1(tokenStream);
 
     const endBracketToken = tokenStream.next();
     if (endBracketToken.value !== ']') {
@@ -334,11 +355,11 @@ interface ParseTupleEntryReturn {
 function parseTupleEntry(tokenStream: TokenStream, { requiredFieldsAllowed }: ParseTupleEntryOpts): ParseTupleEntryReturn {
   if (tokenStream.peek().value === '...') {
     tokenStream.next();
-    return { behaviorCategory: 'REST', rule: parseRule(tokenStream) };
+    return { behaviorCategory: 'REST', rule: parseRuleAtPrecedence1(tokenStream) };
   }
 
   const valueRuleStartPos = tokenStream.peek().range.start;
-  const rule = parseRule(tokenStream);
+  const rule = parseRuleAtPrecedence1(tokenStream);
   if (tokenStream.peek().value === '?') {
     tokenStream.next();
     return { behaviorCategory: 'OPTIONAL', rule };
