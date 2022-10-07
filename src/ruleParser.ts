@@ -69,14 +69,14 @@ function parseRule(tokenStream: TokenStream): Rule {
 
   if (tokenStream.peek().value === '|') {
     tokenStream.next();
-    const subRule = parseRule(tokenStream);
-    const subRules = subRule.category === 'union'
-      ? subRule.variants
-      : [subRule];
+    const nextRule = parseRule(tokenStream);
 
     return {
       category: 'union',
-      variants: [rule, ...subRules],
+      variants: [
+        ...rule.category === 'union' ? rule.variants : [rule],
+        ...nextRule.category === 'union' ? nextRule.variants : [nextRule],
+      ],
     };
   } else {
     return rule;
@@ -120,6 +120,14 @@ function parseRuleWithoutModifiers(tokenStream: TokenStream): Rule {
       category: 'interpolation',
       interpolationIndex: token.range.start.sectionIndex,
     };
+  } else if (token.value === '(') {
+    tokenStream.next();
+    const rule = parseRule(tokenStream);
+    const closingParenToken = tokenStream.next();
+    if (closingParenToken.value !== ')') {
+      throw createValidatorSyntaxError('Expected to find a closing parentheses (`)`) here.', tokenStream.originalText, closingParenToken.range);
+    }
+    return rule;
   } else if (token.value === '{') {
     return parseObject(tokenStream);
   } else if (token.value === '[') {

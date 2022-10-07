@@ -191,7 +191,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
       };
     }
 
-    [segment, lastPos, currentPos] = extract(/[[\]{}@<>:;,\-+|?]|(\.\.\.)/y, sections, currentPos);
+    [segment, lastPos, currentPos] = extract(/[[\]{}()@<>:;,\-+|?]|(\.\.\.)/y, sections, currentPos);
     if (segment !== null) {
       return {
         category: 'specialChar',

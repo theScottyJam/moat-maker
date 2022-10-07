@@ -37,4 +37,9 @@ describe('order of operations', () => {
     expect(v.matches([[], []])).toBe(true);
     expect(v.matches([[1], []])).toBe(false);
   });
+
+  test('parentheses can change normal order of operations', () => {
+    const v = validator`(string | number)[]`;
+    expect(v.matches(['x', 2])).toBe(true);
+  });
 });
