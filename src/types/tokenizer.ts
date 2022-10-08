@@ -1,14 +1,4 @@
-export interface TextPosition {
-  readonly sectionIndex: number
-  readonly textIndex: number
-  readonly lineNumb: number
-  readonly colNumb: number
-}
-
-export interface TextRange {
-  readonly start: TextPosition
-  readonly end: TextPosition
-}
+import type { TextPosition, TextRange } from '../TextPosition';
 
 // Note that a number like "Infinity" get classified as an identifier,
 export interface TextToken {

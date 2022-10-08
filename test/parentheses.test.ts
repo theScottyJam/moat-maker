@@ -136,13 +136,11 @@ describe('parentheses', () => {
     test('throws a syntax error if an interpolation point is reaches without a closing parentheses', () => {
       const act = (): any => validator`(string ${42} number)`;
       assert.throws(act, ValidatorSyntaxError);
-      // TODO: It would be nice if we put `${…}` in the output error string, and put the error squiggle
-      // underline underneath it
       assert.throws(act, {
         message: [
           'Expected to find a closing parentheses (`)`) here. (line 1, col 9)',
-          '  (string  number)',
-          '          ~',
+          '  (string  number)', // eslint-disable-line no-template-curly-in-string
+          '          ',
         ].join('\n'),
       });
     });

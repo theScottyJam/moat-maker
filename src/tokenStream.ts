@@ -1,15 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
-import { TextPosition, Token, TokenStream } from './types/tokenizer';
+import { TextPosition, TextRange } from './TextPosition';
+import { Token, TokenStream } from './types/tokenizer';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
 // we need one.
 const getIdentifierPattern = (): RegExp => /[a-zA-Z$_][a-zA-Z0-9$_]*/y;
 
+type ExtractResult = { value: string, range: TextRange } | null;
+
 /// Returns the extracted result, the first position in the extracted range range
 /// (i.e. the passed in pos object), and the last position in the extracted range.
-function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition): [string | null, TextPosition, TextPosition] {
-  const pos = { ...pos_ };
+function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult {
   assert(regex.sticky, 'Internal error: The sticky flag must be set');
   assert(regex.lastIndex === 0);
 
@@ -18,39 +20,29 @@ function extract(regex: RegExp, sections: readonly string[], pos_: TextPosition)
   regex.lastIndex = 0;
 
   if (match === null || match[0] === '') {
-    return [null, pos_, pos_];
+    return null;
+  } else {
+    const theExtract = match[0];
+    const newPos = pos.advanceInSection(theExtract.length);
+    return { value: theExtract, range: { start: pos, end: newPos } };
   }
-
-  const theExtract = match[0];
-  pos.textIndex += theExtract.length;
-  for (const c of theExtract) {
-    if (c === '\n') {
-      pos.lineNumb++;
-      pos.colNumb = 1;
-    } else {
-      pos.colNumb++;
-    }
-  }
-
-  return [theExtract, pos_, Object.freeze(pos)];
 }
 
-type ExtractStringReturn = [{ parsed: string } | null, TextPosition, TextPosition];
+type ExtractStringResult = { parsedValue: string, range: TextRange } | null;
 
-function extractString(sections: readonly string[], startPos: TextPosition): ExtractStringReturn {
-  const currentPos = { ...startPos };
+function extractString(sections: readonly string[], startPos: TextPosition): ExtractStringResult {
+  let currentPos = startPos;
 
   const targetSection = sections[currentPos.sectionIndex];
   const openingQuote = targetSection[currentPos.textIndex];
   if (!['"', "'"].includes(openingQuote)) {
-    return [null, startPos, startPos];
+    return null;
   }
 
   let result = '';
   let escaping = false;
   while (true) {
-    currentPos.textIndex++;
-    currentPos.colNumb++;
+    currentPos = currentPos.advanceInSection(1);
     const char = targetSection[currentPos.textIndex];
     if (char === undefined) {
       const errorRange = { start: startPos, end: currentPos };
@@ -79,182 +71,134 @@ function extractString(sections: readonly string[], startPos: TextPosition): Ext
     }
   }
 
-  currentPos.textIndex++;
-  currentPos.colNumb++;
-  return [{ parsed: result }, startPos, Object.freeze(currentPos)];
+  currentPos = currentPos.advanceInSection(1);
+  return { parsedValue: result, range: { start: startPos, end: currentPos } };
 }
 
-function extractNumber(sections: readonly string[], startPos: TextPosition): [string | null, TextPosition, TextPosition] {
-  let segment: string | null;
-  let currentPos = startPos;
-
-  // hexadecimal literal
-  [segment, , currentPos] = extract(/0[xX]([0-9a-fA-F]+_)*[0-9a-fA-F]+/y, sections, currentPos);
-  if (segment !== null) return [segment, startPos, currentPos];
-
-  // octal literal
-  [segment, , currentPos] = extract(/0[oO]([0-7]+_)*[0-7]+/y, sections, currentPos);
-  if (segment !== null) return [segment, startPos, currentPos];
-
-  // binary literal
-  [segment, , currentPos] = extract(/0[bB]([01]+_)*[01]+/y, sections, currentPos);
-  if (segment !== null) return [segment, startPos, currentPos];
-
-  // base-10 literal with decimal and scientific notation support
-  [segment, , currentPos] = extract(/(((\d+_)*\d+)?\.)?(\d+_)*\d+([eE](\d+_)*\d+)?/y, sections, currentPos);
-  if (segment !== null) return [segment, startPos, currentPos];
-
-  return [null, startPos, startPos];
+function extractNumber(sections: readonly string[], startPos: TextPosition): ExtractResult {
+  return (
+    // hexadecimal literal
+    extract(/0[xX]([0-9a-fA-F]+_)*[0-9a-fA-F]+/y, sections, startPos) ??
+    // octal literal
+    extract(/0[oO]([0-7]+_)*[0-7]+/y, sections, startPos) ??
+    // binary literal
+    extract(/0[bB]([01]+_)*[01]+/y, sections, startPos) ??
+    // base-10 literal with decimal and scientific notation support
+    extract(/(((\d+_)*\d+)?\.)?(\d+_)*\d+([eE](\d+_)*\d+)?/y, sections, startPos) ??
+    // nothing matched
+    null
+  );
 }
 
 export function createTokenStream(sections: readonly string[]): TokenStream {
-  let currentPos = {
-    sectionIndex: 0,
-    textIndex: 0,
-    lineNumb: 1,
-    colNumb: 1,
-  };
-
-  const getNextToken = (): Token => {
-    let afterNewline;
-    ({ newPos: currentPos, foundNewLine: afterNewline } = ignoreWhitespaceAndComments(sections, currentPos));
-
-    if (currentPos.textIndex === sections[currentPos.sectionIndex].length) {
-      // If reached end of entire string
-      if (currentPos.sectionIndex === sections.length - 1) {
-        return {
-          category: 'eof',
-          value: '',
-          afterNewline,
-          range: { start: currentPos, end: currentPos },
-        };
-      } else {
-        const lastPos = currentPos;
-        currentPos = {
-          ...lastPos,
-          sectionIndex: lastPos.sectionIndex + 1,
-          textIndex: 0,
-        };
-        const token = {
-          category: 'interpolation' as const,
-          value: undefined,
-          afterNewline,
-          interpolationIndex: currentPos.sectionIndex,
-          range: { start: lastPos, end: currentPos },
-        };
-        return token;
-      }
-    }
-
-    let lastPos: TextPosition;
-    let segment: string | null;
-
-    [segment, lastPos, currentPos] = extract(getIdentifierPattern(), sections, currentPos);
-    if (segment !== null) {
-      return {
-        category: 'identifier',
-        value: segment,
-        afterNewline,
-        range: { start: lastPos, end: currentPos },
-      };
-    }
-
-    [segment, lastPos, currentPos] = extract(/\d+n/y, sections, currentPos);
-    if (segment !== null) {
-      return {
-        category: 'bigint',
-        value: segment,
-        afterNewline,
-        range: { start: lastPos, end: currentPos },
-      };
-    }
-
-    [segment, lastPos, currentPos] = extractNumber(sections, currentPos);
-    if (segment !== null) {
-      return {
-        category: 'number',
-        value: segment,
-        afterNewline,
-        range: { start: lastPos, end: currentPos },
-      };
-    }
-
-    let strSegmentInfo: { parsed: string } | null;
-    [strSegmentInfo, lastPos, currentPos] = extractString(sections, currentPos);
-    if (strSegmentInfo !== null) {
-      return {
-        category: 'string',
-        value: undefined,
-        parsedValue: strSegmentInfo.parsed,
-        afterNewline,
-        range: { start: lastPos, end: currentPos },
-      };
-    }
-
-    [segment, lastPos, currentPos] = extract(/[[\]{}()@<>:;,\-+|&?]|(\.\.\.)/y, sections, currentPos);
-    if (segment !== null) {
-      return {
-        category: 'specialChar',
-        value: segment,
-        afterNewline,
-        range: { start: lastPos, end: currentPos },
-      };
-    }
-
-    [segment, lastPos, currentPos] = extract(/\S+/y, sections, currentPos);
-    assert(segment);
-    const errorRange = { start: lastPos, end: currentPos };
-    throw createValidatorSyntaxError('Failed to interpret this syntax.', sections, errorRange);
-  };
-
-  let nextToken = getNextToken();
+  let nextToken = getNextToken(sections, TextPosition.atStartPos(sections));
   // lastTokenEndPos would be the same as peek().range.start if it weren't for the possibility
   // of whitespace between them.
-  let lastTokenEndPos: TextPosition = { sectionIndex: 0, textIndex: 0, lineNumb: 1, colNumb: 1 };
+  let lastTokenEndPos = TextPosition.atStartPos(sections);
   return Object.freeze({
     originalText: sections,
     next(): Token {
       const requestedToken = nextToken;
       lastTokenEndPos = requestedToken.range.end;
-      nextToken = getNextToken();
+      nextToken = getNextToken(sections, lastTokenEndPos);
       return requestedToken;
     },
     peek(): Token {
       return nextToken;
     },
-    lastTokenEndPos(): TextPosition {
+    lastTokenEndPos() {
       return lastTokenEndPos;
     },
   });
 }
 
-function ignoreWhitespaceAndComments(
-  sections: readonly string[],
-  startingPos: TextPosition,
-): { foundNewLine: boolean, newPos: TextPosition } {
+function getNextToken(sections: readonly string[], startingPos: TextPosition): Token {
+  const { newPos: posAfterWhitespace, foundNewLine } = ignoreWhitespaceAndComments(sections, startingPos);
+  const mixin = { afterNewline: foundNewLine };
+
+  if (posAfterWhitespace.atEndOfSegment()) {
+    const posAfterSection = posAfterWhitespace.advanceToNextSection();
+    if (posAfterSection === null) {
+      return {
+        category: 'eof',
+        ...mixin,
+        value: '',
+        range: { start: posAfterWhitespace, end: posAfterWhitespace },
+      };
+    } else {
+      return {
+        category: 'interpolation' as const,
+        ...mixin,
+        value: undefined,
+        interpolationIndex: posAfterSection.sectionIndex,
+        range: { start: posAfterWhitespace, end: posAfterSection },
+      };
+    }
+  }
+
+  let extracted: ExtractResult;
+
+  extracted = extract(getIdentifierPattern(), sections, posAfterWhitespace);
+  if (extracted !== null) {
+    return { category: 'identifier', ...extracted, ...mixin };
+  }
+
+  extracted = extract(/\d+n/y, sections, posAfterWhitespace);
+  if (extracted !== null) {
+    return { category: 'bigint', ...extracted, ...mixin };
+  }
+
+  extracted = extractNumber(sections, posAfterWhitespace);
+  if (extracted !== null) {
+    return { category: 'number', ...extracted, ...mixin };
+  }
+
+  extracted = extract(/[[\]{}()@<>:;,\-+|&?]|(\.\.\.)/y, sections, posAfterWhitespace);
+  if (extracted !== null) {
+    return { category: 'specialChar', ...extracted, ...mixin };
+  }
+
+  const extractedStringInfo = extractString(sections, posAfterWhitespace);
+  if (extractedStringInfo !== null) {
+    return {
+      category: 'string',
+      ...mixin,
+      value: undefined,
+      parsedValue: extractedStringInfo.parsedValue,
+      range: extractedStringInfo.range,
+    };
+  }
+
+  extracted = extract(/\S+/y, sections, posAfterWhitespace);
+  assert(extracted !== null);
+  throw createValidatorSyntaxError('Failed to interpret this syntax.', sections, extracted.range);
+}
+
+function ignoreWhitespaceAndComments(sections: readonly string[], startingPos: TextPosition): { foundNewLine: boolean, newPos: TextPosition } {
   let currentPos = startingPos;
 
   while (true) {
     const startingIndex = currentPos.textIndex;
-    let segment, lastPos;
+    let extracted: ExtractResult;
 
     // whitespace
-    [,, currentPos] = extract(/\s+/y, sections, currentPos);
+    currentPos = extract(/\s+/y, sections, currentPos)?.range.end ?? currentPos;
 
     // block comments
-    [segment, lastPos, currentPos] = extract(/\/\*/y, sections, currentPos);
-    if (segment !== null) {
+    extracted = extract(/\/\*/y, sections, currentPos);
+    if (extracted !== null) {
+      currentPos = extracted.range.end;
       const { newPos, matchFound } = eatUntil(sections, currentPos, /(.|\n)*?\*\//y);
       if (!matchFound) {
-        const errorRange = { start: lastPos, end: currentPos };
-        throw createValidatorSyntaxError('This block comment never got closed.', sections, errorRange);
+        throw createValidatorSyntaxError('This block comment never got closed.', sections, extracted.range);
       }
       currentPos = newPos;
     }
 
     // single-line comments
-    [segment,, currentPos] = extract(/\/\//y, sections, currentPos);
-    if (segment !== null) {
+    extracted = extract(/\/\//y, sections, currentPos);
+    if (extracted !== null) {
+      currentPos = extracted.range.end;
       // ignoring `matchFound`. If no match is found, then there was simply a single-line
       // comment at the end of the whole string, so it didn't have a newline afterwards.
       const { newPos, matchFound } = eatUntil(sections, currentPos, /(.|\n)*?\n/y);
@@ -280,23 +224,17 @@ function eatUntil(
 ): { newPos: TextPosition, matchFound: boolean } {
   let currentPos = startingPos;
   while (true) {
-    let segment;
-    [segment,, currentPos] = extract(pattern, sections, currentPos);
-    if (segment !== null) {
-      return { newPos: currentPos, matchFound: true };
+    const extracted = extract(pattern, sections, currentPos);
+    if (extracted !== null) {
+      return { newPos: extracted.range.end, matchFound: true };
     }
 
-    // If reached end of entire string
-    if (currentPos.sectionIndex === sections.length - 1) {
-      [,, currentPos] = extract(/.*/y, sections, currentPos); // move currentPos to the end
-      return { newPos: currentPos, matchFound: false };
+    let nextPos = currentPos.advanceToNextSection();
+    if (nextPos === null) {
+      nextPos = currentPos.advanceToSegmentEnd();
+      return { newPos: nextPos, matchFound: false };
     } else {
-      const lastPos = currentPos;
-      currentPos = {
-        ...lastPos,
-        sectionIndex: lastPos.sectionIndex + 1,
-        textIndex: 0,
-      };
+      currentPos = nextPos;
     }
   }
 }

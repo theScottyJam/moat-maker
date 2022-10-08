@@ -27,17 +27,58 @@ export class ValidatorSyntaxError extends Error {
       return message;
     }
 
-    assert(range.start.lineNumb === range.end.lineNumb); // TODO: Formatting multi-line errors is not supported yet.
-    const underlineLength = Math.max(range.end.colNumb - range.start.colNumb, 1);
     return [
       `${message} (line ${range.start.lineNumb}, col ${range.start.colNumb})`,
-      '  ' + rawText.join(''),
-      // `- 1` because colNum is 1-indexed, and `+ 2` for the indentation
-      ' '.repeat(range.start.colNumb - 1 + 2) + '~'.repeat(underlineLength),
+      indent(
+        underlineRange(rawText, range),
+        2,
+      ),
     ].join('\n');
   }
 }
 
 export function createValidatorSyntaxError(message: string, rawText?: readonly string[], range?: TextRange): ValidatorSyntaxError {
   return new ValidatorSyntaxError(validatorSyntaxErrorConstructorKey, message, rawText, range);
+}
+
+// ----- HELPERS ----- //
+
+function underlineRange(text: readonly string[], range: TextRange): string {
+  const joinedText = text.join('');
+
+  let index = range.start.textIndex - (range.start.colNumb - 1);
+  let textBeingUnderlined = '';
+  let underline = '';
+  while (true) {
+    const char = joinedText[index];
+
+    if (char === undefined || char === '\n') {
+      if (index === range.start.textIndex) {
+        underline += '~';
+      }
+      break;
+    }
+
+    if (textBeingUnderlined.length === 0 && /\s/.exec(char) !== null) {
+      // ignore initial indentation
+    } else {
+      textBeingUnderlined += char;
+      if (index < range.start.textIndex) {
+        underline += ' ';
+      } else if (index < range.end.textIndex) {
+        underline += '~';
+      }
+    }
+
+    index++;
+  }
+
+  return [
+    textBeingUnderlined.trimEnd(),
+    underline,
+  ].join('\n');
+}
+
+function indent(multilineString: string, amount: number): string {
+  return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
 }

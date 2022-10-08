@@ -78,7 +78,7 @@ describe('intersection rules', () => {
     assert.throws(act, {
       message: [
         'Unexpected EOF. (line 1, col 10)',
-        '  number & ',
+        '  number &',
         '           ~',
       ].join('\n'),
     });

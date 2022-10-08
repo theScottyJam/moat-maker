@@ -98,6 +98,30 @@ describe('primitive literal rules', () => {
       assert.throws(act, { message: 'Expected <receivedValue> to be "xyz" but got "xy".' });
     });
 
+    test('truncates strings in error messages that are too long', () => {
+      const v = validator`'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`;
+      const act = (): any => v.getAsserted('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789X');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue> to be "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX…" ' +
+          'but got "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX…".'
+        ),
+      });
+    });
+
+    test('does not truncate the string in the error message if truncating would only remove save a few characters', () => {
+      const v = validator`'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'`;
+      const act = (): any => v.getAsserted('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYz');
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue> to be "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" ' +
+          'but got "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYz".'
+        ),
+      });
+    });
+
     test('rejects numeric inputs', () => {
       const v = validator`'xyz'`;
       const act = (): any => v.getAsserted(2);

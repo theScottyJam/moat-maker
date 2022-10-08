@@ -20,7 +20,13 @@ export function reprUnknownValue(value: unknown): string {
     }
   }
 
-  if (typeof value === 'string') return JSON.stringify(value);
+  if (typeof value === 'string') {
+    if (value.length > 55) {
+      return JSON.stringify(value.slice(0, 50) + '…');
+    } else {
+      return JSON.stringify(value);
+    }
+  }
   if (typeof value === 'bigint') return String(value) + 'n';
   if (value === null) return 'null';
   return String(value);
