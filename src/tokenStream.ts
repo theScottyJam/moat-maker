@@ -116,8 +116,8 @@ function getNextToken(sections: readonly string[], startingPos: TextPosition): T
   const { newPos: posAfterWhitespace, foundNewLine } = ignoreWhitespaceAndComments(sections, startingPos);
   const mixin = { afterNewline: foundNewLine };
 
-  if (posAfterWhitespace.atEndOfSegment()) {
-    const posAfterSection = posAfterWhitespace.advanceToNextSection();
+  if (posAfterWhitespace.atEndOfSection()) {
+    const posAfterSection = posAfterWhitespace.advanceToNextSection(); // TODO: Should this be done in a while loop
     if (posAfterSection === null) {
       return {
         category: 'eof',
@@ -231,7 +231,7 @@ function eatUntil(
 
     let nextPos = currentPos.advanceToNextSection();
     if (nextPos === null) {
-      nextPos = currentPos.advanceToSegmentEnd();
+      nextPos = currentPos.advanceToSectionEnd();
       return { newPos: nextPos, matchFound: false };
     } else {
       currentPos = nextPos;

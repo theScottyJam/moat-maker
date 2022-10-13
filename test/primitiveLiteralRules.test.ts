@@ -192,7 +192,7 @@ describe('primitive literal rules', () => {
         assert.throws(act, {
           message: [
             'Expected to find a quote to end the string literal. (line 1, col 1)',
-            "  'xyzabc'", // TODO: It would be good to add `${…}` in the middle of that output.
+            "  'xyz${…}abc'", // eslint-disable-line no-template-curly-in-string
             '  ~~~~',
           ].join('\n'),
         });
