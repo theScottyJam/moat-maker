@@ -9,8 +9,10 @@ const getIdentifierPattern = (): RegExp => /[a-zA-Z$_][a-zA-Z0-9$_]*/y;
 
 type ExtractResult = { value: string, range: TextRange } | null;
 
-/// Returns the extracted result, the first position in the extracted range range
-/// (i.e. the passed in pos object), and the last position in the extracted range.
+/**
+ * Returns the extracted result, the first position in the extracted range range
+ * (i.e. the passed in pos object), and the last position in the extracted range.
+ */
 function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult {
   assert(regex.sticky, 'Internal error: The sticky flag must be set');
   assert(regex.lastIndex === 0);
@@ -213,9 +215,11 @@ function ignoreWhitespaceAndComments(sections: readonly string[], startingPos: T
   };
 }
 
-/// Keeps moving currentPos (including across interpolation points) until
-/// the provided pattern is matched. currentPos will be set to the position
-/// right after the matched text.
+/**
+ * Keeps moving currentPos (including across interpolation points) until
+ * the provided pattern is matched. currentPos will be set to the position
+ * right after the matched text.
+ */
 function eatUntil(
   sections: readonly string[],
   startingPos: TextPosition,

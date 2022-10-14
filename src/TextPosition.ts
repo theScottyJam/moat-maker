@@ -16,22 +16,26 @@ export interface TextRange {
   readonly end: TextPosition
 }
 
-/// A TextPosition generally points at a character, but it can point after the
-/// end of a section. This is intended to represent "pointing at an interpolation point",
-/// and anything fetching the character it points to might receive this if the textPosition
-/// is in this state.
+/**
+ * A TextPosition generally points at a character, but it can point after the
+ * end of a section. This is intended to represent "pointing at an interpolation point",
+ * and anything fetching the character it points to might receive this if the textPosition
+ * is in this state.
+ */
 export const INTERPOLATION_POINT = Symbol('interpolation point');
 
-/// A TextPosition generally points at a character, but it can point after the
-/// end of the last section. This is intended to represent "pointing at the end of the text",
-/// and anything fetching the character it points to might receive this if the textPosition
-/// is in this state.
+/**
+ * A TextPosition generally points at a character, but it can point after the
+ * end of the last section. This is intended to represent "pointing at the end of the text",
+ * and anything fetching the character it points to might receive this if the textPosition
+ * is in this state.
+ */
 export const END_OF_TEXT = Symbol('end of text');
 
-/// Represents something that a textPosition might be pointing at.
+/** Represents something that a textPosition might be pointing at. */
 export type PointedAt = string | typeof INTERPOLATION_POINT | typeof END_OF_TEXT;
 
-/// Same as `PointedAt`, except without the end-of-text symbol.
+/** Same as `PointedAt`, except without the end-of-text symbol. */
 export type ContentPointedAt = string | typeof INTERPOLATION_POINT;
 
 export class TextPosition {
@@ -88,9 +92,11 @@ export class TextPosition {
     return this.#sections[sectionIndex][textIndex];
   }
 
-  /// Move the textPosition to the end of the section, which puts it at the index right
-  /// after the last available character.
-  /// This is an O(n) operation (where `n` is the value of amount)
+  /**
+   * Move the textPosition to the end of the section, which puts it at the index right
+   * after the last available character.
+   * This is an O(n) operation (where `n` is the value of amount)
+   */
   advanceToSectionEnd(): TextPosition {
     let currentPos: TextPosition = this as TextPosition;
     while (currentPos.getChar() !== END_OF_TEXT && currentPos.getChar() !== INTERPOLATION_POINT) {
@@ -99,8 +105,10 @@ export class TextPosition {
     return currentPos;
   }
 
-  /// Move the textPosition instance forwards by the provided amount.
-  /// This is an O(n) operation (where `n` is the value of amount)
+  /**
+   * Move the textPosition instance forwards by the provided amount.
+   * This is an O(n) operation (where `n` is the value of amount)
+   */
   advance(amount: number): TextPosition {
     let currentPos: TextPosition = this as TextPosition;
     for (let i = 0; i < amount; ++i) {
@@ -141,7 +149,7 @@ export class TextPosition {
     }
   }
 
-  /// Moves forward through the text, yielding each position, one at a time.
+  /** Moves forward through the text, yielding each position, one at a time. */
   * iterForwards(): Generator<TextPosition> {
     let currentPos = this as TextPosition;
     while (true) {
@@ -153,8 +161,10 @@ export class TextPosition {
     }
   }
 
-  /// Move the textPosition instance backwards by the provided amount.
-  /// This is an O(n) operation (where `n` is the value of amount)
+  /**
+   * Move the textPosition instance backwards by the provided amount.
+   * This is an O(n) operation (where `n` is the value of amount)
+   */
   backtrackInLine(amount: number): TextPosition {
     let currentPos: TextPosition = this as TextPosition;
     for (let i = 0; i < amount; ++i) {

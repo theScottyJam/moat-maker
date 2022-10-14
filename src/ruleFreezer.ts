@@ -71,7 +71,7 @@ export function freezeRule(rule: Rule): Rule {
   }
 }
 
-/// shallow-copy-and-freeze function
+/** shallow-copy-and-freeze function */
 const f = <T>(objOrArray: T): T => {
   if (Object.isFrozen(objOrArray)) {
     return objOrArray;

@@ -109,8 +109,10 @@ validator.createValidatable = function(callback: (valueBeingMatched: unknown) =>
   return {
     [validatable]: protocolFn,
 
-    /// Provides easy access to the protocol value, for use-cases where you want
-    /// to copy it out and put it on a different object.
+    /**
+     * Provides easy access to the protocol value, for use-cases where you want
+     * to copy it out and put it on a different object.
+     */
     protocolFn,
   };
 };

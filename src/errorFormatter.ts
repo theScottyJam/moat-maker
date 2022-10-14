@@ -67,7 +67,9 @@ function removeLeadingWhitespace(text: readonly ContentPointedAt[]): readonly Co
   return text.slice(notWhitespaceIndex);
 }
 
-/// If the underlined portion crosses a threshold, its center will be replaced with a "…".
+/**
+ * If the underlined portion crosses a threshold, its center will be replaced with a "…".
+ */
 function truncateUnderlinedPortionIfTooLarge(parts: TextParts): TextParts {
   if (parts.underlined.contentLength <= MAX_UNDERLINED_WIDTH) {
     return parts;
@@ -92,9 +94,11 @@ function truncateUnderlinedPortionIfTooLarge(parts: TextParts): TextParts {
   };
 }
 
-/// Attempts to keep the text within a max size limit by only truncating on the right side, if needed.
-/// If The truncation would cause part of the underlined portion to be lost, then this will fail and return null.
-/// pre-condition: The underlined must already be truncated if it was too large.
+/**
+ * Attempts to keep the text within a max size limit by only truncating on the right side, if needed.
+ * If The truncation would cause part of the underlined portion to be lost, then this will fail and return null.
+ * pre-condition: The underlined must already be truncated if it was too large.
+ */
 function attemptToFitEverythingUsingOnlyARightTruncate(parts: TextParts): TextParts | null {
   const mustBeVisible = parts.displaysBeforeUnderline.contentLength + parts.underlined.contentLength;
   if (mustBeVisible >= MAX_LINE_WIDTH) {
@@ -117,8 +121,10 @@ function attemptToFitEverythingUsingOnlyARightTruncate(parts: TextParts): TextPa
   };
 }
 
-/// Centers the underlined portion and truncate the text on both ends.
-/// pre-condition: The underlined must already be truncated if it was too large.
+/**
+ * Centers the underlined portion and truncate the text on both ends.
+ * pre-condition: The underlined must already be truncated if it was too large.
+ */
 function truncateOnBothEnds(parts: TextParts): TextParts {
   const newBeforeUnderlineReversed = parts.displaysBeforeUnderline.reversed();
   const newAfterUnderline = new StringArray(parts.displaysAfterUnderline.array);
@@ -140,8 +146,10 @@ function truncateOnBothEnds(parts: TextParts): TextParts {
   };
 }
 
-/// Converts a given line of code and underline position information into a single string
-/// with the underline drawn in the correct location under the provided line.
+/**
+ * Converts a given line of code and underline position information into a single string
+ * with the underline drawn in the correct location under the provided line.
+ */
 function renderUnderlinedText(parts: TextParts): string {
   const leftOfUnderlined = parts.displaysBeforeUnderline.array.join('');
   const underlined = parts.underlined.array.join('');
@@ -177,8 +185,10 @@ function indent(multilineString: string, amount: number): string {
   return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
 }
 
-/// Pops from the smallest of the two string-arrays, preferring the second argument
-/// if they're the same size.
+/**
+ * Pops from the smallest of the two string-arrays, preferring the second argument
+ * if they're the same size.
+ */
 function popFromSmallest(stringArray1: StringArray, stringArray2: StringArray): void {
   let popped: string | undefined;
   if (stringArray1.contentLength >= stringArray2.contentLength) {
@@ -189,7 +199,9 @@ function popFromSmallest(stringArray1: StringArray, stringArray2: StringArray): 
   assert(popped !== undefined);
 }
 
-/// Helper class that helps keep the array and the length of its combined content in sync.
+/**
+ * Helper class that helps keep the array and the length of its combined content in sync.
+ */
 class StringArray {
   #array;
   #contentLength;
@@ -217,7 +229,7 @@ class StringArray {
     return value;
   }
 
-  /// Returns a reversed copy.
+  /** Returns a reversed copy. */
   reversed(): StringArray {
     return new StringArray([...this.#array].reverse());
   }

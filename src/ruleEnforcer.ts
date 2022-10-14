@@ -11,12 +11,14 @@ const isIterable = (value: unknown): value is { [Symbol.iterator]: () => Iterato
   typeof Object(value)[Symbol.iterator] === 'function'
 );
 
-// Compares two values using JavaScript's SameValueZero algorithm.
+/** Compares two values using JavaScript's SameValueZero algorithm. */
 const sameValueZero = (x: unknown, y: unknown): boolean => (
   x === y || (Number.isNaN(x) && Number.isNaN(y))
 );
 
-/// Returns all object entries, regardless of if they're enumerable or have symbol keys.
+/**
+ * Returns all object entries, regardless of if they're enumerable or have symbol keys.
+ */
 function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
   for (const key of Object.getOwnPropertyNames(obj)) {
     yield [key, obj[key]];
@@ -236,8 +238,10 @@ function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpol
     });
 }
 
-/// Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.
-/// This tries to mimic how TypeScript compares simple types.
+/**
+ * Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.
+ * This tries to mimic how TypeScript compares simple types.
+ */
 function getSimpleTypeOf(value: unknown): string {
   if (value === null) {
     return 'null';
