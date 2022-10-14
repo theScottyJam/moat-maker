@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
-import { TextPosition, TextRange } from './TextPosition';
+import { TextPosition, TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
 import { Token, TokenStream } from './types/tokenizer';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
@@ -23,7 +23,7 @@ function extract(regex: RegExp, sections: readonly string[], pos: TextPosition):
     return null;
   } else {
     const theExtract = match[0];
-    const newPos = pos.advanceInSection(theExtract.length);
+    const newPos = pos.advance(theExtract.length);
     return { value: theExtract, range: { start: pos, end: newPos } };
   }
 }
@@ -33,18 +33,17 @@ type ExtractStringResult = { parsedValue: string, range: TextRange } | null;
 function extractString(sections: readonly string[], startPos: TextPosition): ExtractStringResult {
   let currentPos = startPos;
 
-  const targetSection = sections[currentPos.sectionIndex];
-  const openingQuote = targetSection[currentPos.textIndex];
-  if (!['"', "'"].includes(openingQuote)) {
+  const openingQuote = currentPos.getChar();
+  if (openingQuote !== '"' && openingQuote !== "'") {
     return null;
   }
 
   let result = '';
   let escaping = false;
   while (true) {
-    currentPos = currentPos.advanceInSection(1);
-    const char = targetSection[currentPos.textIndex];
-    if (char === undefined) {
+    currentPos = currentPos.advance(1);
+    const char = currentPos.getChar();
+    if (char === INTERPOLATION_POINT || char === END_OF_TEXT) {
       const errorRange = { start: startPos, end: currentPos };
       throw createValidatorSyntaxError('Expected to find a quote to end the string literal.', sections, errorRange);
     }
@@ -71,7 +70,9 @@ function extractString(sections: readonly string[], startPos: TextPosition): Ext
     }
   }
 
-  currentPos = currentPos.advanceInSection(1);
+  // Advance past the closing quote
+  currentPos = currentPos.advance(1);
+
   return { parsedValue: result, range: { start: startPos, end: currentPos } };
 }
 
@@ -116,24 +117,22 @@ function getNextToken(sections: readonly string[], startingPos: TextPosition): T
   const { newPos: posAfterWhitespace, foundNewLine } = ignoreWhitespaceAndComments(sections, startingPos);
   const mixin = { afterNewline: foundNewLine };
 
-  if (posAfterWhitespace.atEndOfSection()) {
-    const posAfterSection = posAfterWhitespace.advanceToNextSection(); // TODO: Should this be done in a while loop
-    if (posAfterSection === null) {
-      return {
-        category: 'eof',
-        ...mixin,
-        value: '',
-        range: { start: posAfterWhitespace, end: posAfterWhitespace },
-      };
-    } else {
-      return {
-        category: 'interpolation' as const,
-        ...mixin,
-        value: undefined,
-        interpolationIndex: posAfterSection.sectionIndex,
-        range: { start: posAfterWhitespace, end: posAfterSection },
-      };
-    }
+  if (posAfterWhitespace.atEndOfText()) {
+    return {
+      category: 'eof',
+      ...mixin,
+      value: '',
+      range: { start: posAfterWhitespace, end: posAfterWhitespace },
+    };
+  } else if (posAfterWhitespace.atInterpolationPoint()) {
+    const posAfterSection = posAfterWhitespace.advance(1);
+    return {
+      category: 'interpolation' as const,
+      ...mixin,
+      value: undefined,
+      interpolationIndex: posAfterSection.sectionIndex,
+      range: { start: posAfterWhitespace, end: posAfterSection },
+    };
   }
 
   let extracted: ExtractResult;
@@ -229,12 +228,12 @@ function eatUntil(
       return { newPos: extracted.range.end, matchFound: true };
     }
 
-    let nextPos = currentPos.advanceToNextSection();
-    if (nextPos === null) {
-      nextPos = currentPos.advanceToSectionEnd();
-      return { newPos: nextPos, matchFound: false };
+    currentPos = currentPos.advanceToSectionEnd();
+    if (currentPos.atEndOfText()) {
+      return { newPos: currentPos, matchFound: false };
     } else {
-      currentPos = nextPos;
+      assert(currentPos.atInterpolationPoint());
+      currentPos = currentPos.advance(1);
     }
   }
 }

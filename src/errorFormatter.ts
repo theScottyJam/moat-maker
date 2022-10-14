@@ -9,25 +9,32 @@ const MAX_LINE_WIDTH = 70;
 const MAX_UNDERLINED_WIDTH = 40;
 
 interface TextParts {
-  readonly displaysBeforeUnderline: readonly string[]
-  readonly underlined: readonly string[]
-  readonly displaysAfterUnderline: readonly string[]
+  readonly displaysBeforeUnderline: StringArray
+  readonly underlined: StringArray
+  readonly displaysAfterUnderline: StringArray
 }
 
 export function generateMessageWithPosition(message: string, text: readonly string[], range: TextRange): string {
+  const startOfFirstErrorLine = findBeginningOfLine(text, range.start);
+  const endOfLastErrorLine = findEndOfLine(range.end);
+  const asStringArray = (text: string[]): StringArray => new StringArray(text);
+
   const textBeingDisplayedParts: TextParts = {
     displaysBeforeUnderline: pipe(
-      getDisplayTextBeforeUnderline(text, range),
+      TextPosition.getSlice(startOfFirstErrorLine, range.start),
       removeLeadingWhitespace,
       replaceSpecialChars,
+      asStringArray,
     ),
     underlined: pipe(
-      getUnderlinedText(range),
+      TextPosition.getSlice(range.start, range.end),
       replaceSpecialChars,
+      asStringArray,
     ),
     displaysAfterUnderline: pipe(
-      getDisplayTextAfterUnderline(range),
+      TextPosition.getSlice(range.end, endOfLastErrorLine),
       replaceSpecialChars,
+      asStringArray,
     ),
   };
 
@@ -60,63 +67,28 @@ function removeLeadingWhitespace(text: readonly ContentPointedAt[]): readonly Co
   return text.slice(notWhitespaceIndex);
 }
 
-function getUnderlinedText(rangeBeingUnderlined: TextRange): readonly ContentPointedAt[] {
-  const underlined: ContentPointedAt[] = [];
-  for (const pos of rangeBeingUnderlined.start.iterForwards()) {
-    const char = pos.getChar();
-    if (pos.equals(rangeBeingUnderlined.end) || char === END_OF_TEXT) break;
-    underlined.push(char);
-  }
-  return underlined;
-}
-
-function getDisplayTextBeforeUnderline(text: readonly string[], rangeBeingUnderlined: TextRange): readonly ContentPointedAt[] {
-  const displaysBeforeUnderline: ContentPointedAt[] = [];
-  for (const pos of findBeginningOfLine(text, rangeBeingUnderlined.start).iterForwards()) {
-    const char = pos.getChar();
-    if (pos.equals(rangeBeingUnderlined.start) || char === END_OF_TEXT) break;
-    displaysBeforeUnderline.push(char);
-  }
-  return displaysBeforeUnderline;
-}
-
-function getDisplayTextAfterUnderline(rangeBeingUnderlined: TextRange): readonly ContentPointedAt[] {
-  const displaysAfterUnderline: ContentPointedAt[] = [];
-  for (const pos of rangeBeingUnderlined.end.iterForwards()) {
-    const char = pos.getChar();
-    if (pos.getChar() === '\n' || char === END_OF_TEXT) break;
-    displaysAfterUnderline.push(char);
-  }
-  return displaysAfterUnderline;
-}
-
 /// If the underlined portion crosses a threshold, its center will be replaced with a "…".
 function truncateUnderlinedPortionIfTooLarge(parts: TextParts): TextParts {
-  if (parts.underlined.join('').length <= MAX_UNDERLINED_WIDTH) {
+  if (parts.underlined.contentLength <= MAX_UNDERLINED_WIDTH) {
     return parts;
   }
 
-  const midPoint = Math.floor(parts.underlined.length / 2);
-  const left = parts.underlined.slice(0, midPoint);
   const center = '…';
-  const right = parts.underlined.slice(midPoint);
-  let leftLen = left.join('').length;
-  let rightLen = right.join('').length;
-  while (leftLen + center.length + rightLen > MAX_UNDERLINED_WIDTH) {
-    if (leftLen < rightLen) {
-      const shiftedChar = right.shift();
-      assert(shiftedChar !== undefined);
-      rightLen -= shiftedChar.length;
-    } else {
-      const poppedChar = left.pop();
-      assert(poppedChar !== undefined);
-      leftLen -= poppedChar.length;
-    }
+  const left = new StringArray(parts.underlined.array);
+  const rightReversed = new StringArray();
+
+  // Moves content so there's an even amount of content in both arrays.
+  while (left.contentLength > rightReversed.contentLength) {
+    rightReversed.push(left.pop() as string);
+  }
+
+  while (left.contentLength + center.length + rightReversed.contentLength > MAX_UNDERLINED_WIDTH) {
+    popFromSmallest(left, rightReversed);
   }
 
   return {
     ...parts,
-    underlined: [...left, center, ...right],
+    underlined: new StringArray([...left.array, center, ...rightReversed.reversed().array]),
   };
 }
 
@@ -124,21 +96,19 @@ function truncateUnderlinedPortionIfTooLarge(parts: TextParts): TextParts {
 /// If The truncation would cause part of the underlined portion to be lost, then this will fail and return null.
 /// pre-condition: The underlined must already be truncated if it was too large.
 function attemptToFitEverythingUsingOnlyARightTruncate(parts: TextParts): TextParts | null {
-  const mustBeVisible = parts.displaysBeforeUnderline.join('').length + parts.underlined.join('').length;
+  const mustBeVisible = parts.displaysBeforeUnderline.contentLength + parts.underlined.contentLength;
   if (mustBeVisible >= MAX_LINE_WIDTH) {
     return null;
   }
 
-  const newAfterUnderline: string[] = [];
-  let newAfterUnderlineLength = 0;
-  for (const char of parts.displaysAfterUnderline) {
-    if (mustBeVisible + newAfterUnderlineLength + char.length > MAX_LINE_WIDTH) {
-      newAfterUnderline.pop();
-      newAfterUnderline.push('…');
+  const newAfterUnderline: StringArray = new StringArray();
+  const etcChar = '…';
+  for (const char of parts.displaysAfterUnderline.array) {
+    if (mustBeVisible + newAfterUnderline.contentLength + etcChar.length + char.length > MAX_LINE_WIDTH) {
+      newAfterUnderline.push(etcChar);
       break;
     }
     newAfterUnderline.push(char);
-    newAfterUnderlineLength += char.length;
   }
 
   return {
@@ -150,37 +120,32 @@ function attemptToFitEverythingUsingOnlyARightTruncate(parts: TextParts): TextPa
 /// Centers the underlined portion and truncate the text on both ends.
 /// pre-condition: The underlined must already be truncated if it was too large.
 function truncateOnBothEnds(parts: TextParts): TextParts {
-  const underlineLen = parts.underlined.join('').length;
-  const newBeforeUnderline = [...parts.displaysBeforeUnderline];
-  const newAfterUnderline = [...parts.displaysAfterUnderline];
-  let leftLen = newBeforeUnderline.join('').length;
-  let rightLen = newAfterUnderline.join('').length;
-  while (leftLen + underlineLen + rightLen > MAX_LINE_WIDTH) {
-    if (leftLen > rightLen) {
-      const shiftedChar = newBeforeUnderline.shift();
-      assert(shiftedChar !== undefined);
-      leftLen -= shiftedChar.length;
-    } else {
-      const poppedChar = newAfterUnderline.pop();
-      assert(poppedChar !== undefined);
-      rightLen -= poppedChar.length;
-    }
+  const newBeforeUnderlineReversed = parts.displaysBeforeUnderline.reversed();
+  const newAfterUnderline = new StringArray(parts.displaysAfterUnderline.array);
+  while (newBeforeUnderlineReversed.contentLength + parts.underlined.contentLength + newAfterUnderline.contentLength > MAX_LINE_WIDTH) {
+    popFromSmallest(newBeforeUnderlineReversed, newAfterUnderline);
   }
+
+  newBeforeUnderlineReversed.pop();
+  newBeforeUnderlineReversed.push('…');
+  if (newAfterUnderline.contentLength !== parts.displaysAfterUnderline.contentLength) {
+    newAfterUnderline.pop();
+    newAfterUnderline.push('…');
+  }
+
   return {
-    displaysBeforeUnderline: ['…', ...newBeforeUnderline.slice(1)],
+    displaysBeforeUnderline: newBeforeUnderlineReversed.reversed(),
     underlined: parts.underlined,
-    displaysAfterUnderline: newAfterUnderline.length === parts.displaysAfterUnderline.length
-      ? newAfterUnderline
-      : [...newAfterUnderline.slice(0, -1), '…'],
+    displaysAfterUnderline: newAfterUnderline,
   };
 }
 
 /// Converts a given line of code and underline position information into a single string
 /// with the underline drawn in the correct location under the provided line.
 function renderUnderlinedText(parts: TextParts): string {
-  const leftOfUnderlined = parts.displaysBeforeUnderline.join('');
-  const underlined = parts.underlined.join('');
-  const rightOfUnderlined = parts.displaysAfterUnderline.join('');
+  const leftOfUnderlined = parts.displaysBeforeUnderline.array.join('');
+  const underlined = parts.underlined.array.join('');
+  const rightOfUnderlined = parts.displaysAfterUnderline.array.join('');
   return [
     (leftOfUnderlined + underlined + rightOfUnderlined).trimEnd(),
     ' '.repeat(leftOfUnderlined.length) + '~'.repeat(Math.max(underlined.length, 1)),
@@ -188,22 +153,72 @@ function renderUnderlinedText(parts: TextParts): string {
 }
 
 function findBeginningOfLine(text: readonly string[], startPos: TextPosition): TextPosition {
-  let currentPos = startPos;
+  let pos = startPos;
   while (true) {
-    if (currentPos.atStartOfSection()) { // TODO: Should this be a while loop instead?
-      const newPos = currentPos.backtrackToPreviousSection();
-      if (newPos === null) break;
-      currentPos = newPos;
+    if (pos.atStartOfText() || pos.getPreviousChar() === '\n') {
+      return pos;
     }
-    if (text[currentPos.sectionIndex][currentPos.textIndex - 1] === '\n') {
-      break;
-    }
-    currentPos = currentPos.backtrackInSectionAndInLine(1);
+    pos = pos.backtrackInLine(1);
   }
+}
 
-  return currentPos;
+// eslint-disable-next-line consistent-return
+function findEndOfLine(startPos: TextPosition): TextPosition {
+  for (const pos of startPos.iterForwards()) {
+    const char = pos.getChar();
+    if (char === '\n' || char === END_OF_TEXT) {
+      return pos;
+    }
+  }
+  assert.fail();
 }
 
 function indent(multilineString: string, amount: number): string {
   return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
+}
+
+/// Pops from the smallest of the two string-arrays, preferring the second argument
+/// if they're the same size.
+function popFromSmallest(stringArray1: StringArray, stringArray2: StringArray): void {
+  let popped: string | undefined;
+  if (stringArray1.contentLength >= stringArray2.contentLength) {
+    popped = stringArray1.pop();
+  } else {
+    popped = stringArray2.pop();
+  }
+  assert(popped !== undefined);
+}
+
+/// Helper class that helps keep the array and the length of its combined content in sync.
+class StringArray {
+  #array;
+  #contentLength;
+  constructor(content: readonly string[] = []) {
+    this.#array = [...content];
+    this.#contentLength = content.join('').length;
+  }
+
+  get array(): readonly string[] {
+    return this.#array;
+  }
+
+  get contentLength(): number {
+    return this.#contentLength;
+  }
+
+  push(value: string): void {
+    this.#array.push(value);
+    this.#contentLength += value.length;
+  }
+
+  pop(): string | undefined {
+    const value = this.#array.pop();
+    this.#contentLength -= value?.length ?? 0;
+    return value;
+  }
+
+  /// Returns a reversed copy.
+  reversed(): StringArray {
+    return new StringArray([...this.#array].reverse());
+  }
 }

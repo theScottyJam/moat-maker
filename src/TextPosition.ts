@@ -60,48 +60,43 @@ export class TextPosition {
     });
   }
 
-  getChar(): string | typeof INTERPOLATION_POINT | typeof END_OF_TEXT {
-    if (this.atEndOfText()) return END_OF_TEXT;
-    if (this.atEndOfSection()) return INTERPOLATION_POINT;
-    return this.#sections[this.sectionIndex][this.textIndex];
+  getChar(): PointedAt {
+    return this.#getCharAt(this);
   }
 
-  /// Move the textPosition instance forwards by the provided amount.
-  /// Does not support jumping the textPosition from one section to another.
-  /// This is an O(n) operation
-  advanceInSection(amount: number): TextPosition {
-    return this.#advanceInSection(amount);
+  getPreviousChar(): PointedAt {
+    if (this.textIndex === 0) {
+      assert(this.sectionIndex !== 0, 'Internal error: Reached beginning of text');
+      return this.#getCharAt({
+        sectionIndex: this.sectionIndex - 1,
+        textIndex: this.#sections[this.sectionIndex - 1].length,
+      });
+    } else {
+      return this.#getCharAt({
+        textIndex: this.textIndex - 1,
+        sectionIndex: this.sectionIndex,
+      });
+    }
+  }
+
+  #getCharAt({ textIndex, sectionIndex }: { textIndex: number, sectionIndex: number }): PointedAt {
+    const isLastSection = sectionIndex === this.#sections.length - 1;
+    const endOfSection = textIndex === this.#sections[this.sectionIndex].length;
+
+    if (isLastSection && endOfSection) return END_OF_TEXT;
+    if (endOfSection) return INTERPOLATION_POINT;
+    return this.#sections[sectionIndex][textIndex];
   }
 
   /// Move the textPosition to the end of the section, which puts it at the index right
   /// after the last available character.
   /// This is an O(n) operation (where `n` is the value of amount)
   advanceToSectionEnd(): TextPosition {
-    return this.#advanceInSection(this.#sections[this.sectionIndex].length - this.textIndex);
-  }
-
-  #advanceInSection(amount: number): TextPosition {
-    let lineNumb = this.lineNumb;
-    let colNumb = this.colNumb;
-    for (let i = 0; i < amount; ++i) {
-      const c = this.#sections[this.sectionIndex][this.textIndex + i];
-      // It is not an error to have a textPosition pointing one past the current section.
-      // It is, however, an error to try and advance when the textPosition is in this state.
-      assert(c !== undefined, 'Attempted to advance a text-position past the length of a section.');
-
-      if (c === '\n') {
-        lineNumb++;
-        colNumb = 1;
-      } else {
-        colNumb++;
-      }
+    let currentPos: TextPosition = this as TextPosition;
+    while (currentPos.getChar() !== END_OF_TEXT && currentPos.getChar() !== INTERPOLATION_POINT) {
+      currentPos = currentPos.#advanceOneUnit();
     }
-    return new TextPosition(this.#sections, {
-      sectionIndex: this.sectionIndex,
-      textIndex: this.textIndex + amount,
-      lineNumb,
-      colNumb,
-    });
+    return currentPos;
   }
 
   /// Move the textPosition instance forwards by the provided amount.
@@ -109,15 +104,41 @@ export class TextPosition {
   advance(amount: number): TextPosition {
     let currentPos: TextPosition = this as TextPosition;
     for (let i = 0; i < amount; ++i) {
-      if (this.atEndOfSection()) {
-        const nextPos = this.advanceToNextSection(); // TODO: Should this be done in a while loop
-        assert(nextPos !== null);
-        currentPos = nextPos;
-      } else {
-        currentPos = this.#advanceInSection(1);
-      }
+      currentPos = currentPos.#advanceOneUnit();
     }
     return currentPos;
+  }
+
+  #advanceOneUnit(): TextPosition {
+    if (this.textIndex === this.#sections[this.sectionIndex].length) {
+      // advance to next section
+      assert(this.sectionIndex + 1 !== this.#sections.length, 'Internal error: Reached end of text');
+      return new TextPosition(this.#sections, {
+        sectionIndex: this.sectionIndex + 1,
+        textIndex: 0,
+        lineNumb: this.lineNumb,
+        colNumb: this.colNumb,
+      });
+    } else {
+      // advance within the current section
+      let lineNumb = this.lineNumb;
+      let colNumb = this.colNumb;
+
+      const c = this.#sections[this.sectionIndex][this.textIndex];
+      if (c === '\n') {
+        lineNumb++;
+        colNumb = 1;
+      } else {
+        colNumb++;
+      }
+
+      return new TextPosition(this.#sections, {
+        sectionIndex: this.sectionIndex,
+        textIndex: this.textIndex + 1,
+        lineNumb,
+        colNumb,
+      });
+    }
   }
 
   /// Moves forward through the text, yielding each position, one at a time.
@@ -125,83 +146,75 @@ export class TextPosition {
     let currentPos = this as TextPosition;
     while (true) {
       yield currentPos;
-      if (currentPos.atEndOfText()) {
+      if (currentPos.getChar() === END_OF_TEXT) {
         break;
       }
       currentPos = currentPos.advance(1);
     }
   }
 
-  /// Moves the text-position backwards.
-  /// Does not support moving across sections or new lines.
+  /// Move the textPosition instance backwards by the provided amount.
   /// This is an O(n) operation (where `n` is the value of amount)
-  backtrackInSectionAndInLine(amount: number): TextPosition {
-    let colNumb = this.colNumb;
+  backtrackInLine(amount: number): TextPosition {
+    let currentPos: TextPosition = this as TextPosition;
     for (let i = 0; i < amount; ++i) {
-      const c = this.#sections[this.sectionIndex][this.textIndex - i - 1];
-      assert(c !== undefined, 'Attempted to backtrack a text-position before the beginning of a section.');
-      assert(c !== '\n', 'Attempted to backtrack a text-position across a new line.');
-
-      colNumb--;
+      currentPos = currentPos.#backtrackOneUnitInLine();
     }
-    return new TextPosition(this.#sections, {
-      sectionIndex: this.sectionIndex,
-      textIndex: this.textIndex - amount,
-      lineNumb: this.lineNumb,
-      colNumb,
-    });
+    return currentPos;
   }
 
-  /// Moves the textPosition to the start of the next section
-  advanceToNextSection(): TextPosition | null {
-    if (this.sectionIndex + 1 === this.#sections.length) {
-      return null;
-    } else {
-      return new TextPosition(this.#sections, {
-        sectionIndex: this.sectionIndex + 1,
-        textIndex: 0,
-        lineNumb: this.lineNumb,
-        colNumb: this.colNumb,
-      });
-    }
-  }
-
-  /// Moves the textPosition to the end of the previous section
-  backtrackToPreviousSection(): TextPosition | null {
-    if (this.sectionIndex === 0) {
-      return null;
-    } else {
+  #backtrackOneUnitInLine(): TextPosition {
+    if (this.textIndex === 0) {
+      // backtrack to previous section
+      assert(this.sectionIndex > 0, 'Internal error: Reached beginning of text');
       return new TextPosition(this.#sections, {
         sectionIndex: this.sectionIndex - 1,
         textIndex: this.#sections[this.sectionIndex - 1].length,
         lineNumb: this.lineNumb,
         colNumb: this.colNumb,
       });
+    } else {
+      // backtrack within current section
+      const c = this.#sections[this.sectionIndex][this.textIndex - 1];
+      assert(c !== '\n', 'Attempted to backtrack a text-position across a new line.');
+
+      return new TextPosition(this.#sections, {
+        sectionIndex: this.sectionIndex,
+        textIndex: this.textIndex - 1,
+        lineNumb: this.lineNumb,
+        colNumb: this.colNumb - 1,
+      });
     }
   }
 
-  atStartOfSection(): boolean {
-    return this.textIndex === 0;
+  // eslint-disable-next-line consistent-return
+  static getSlice(start: TextPosition, end: TextPosition): readonly ContentPointedAt[] {
+    const result: ContentPointedAt[] = [];
+    for (const pos of start.iterForwards()) {
+      if (pos.#equals(end)) {
+        break;
+      }
+
+      const char = pos.getChar();
+      assert(char !== END_OF_TEXT, 'Internal error: Reached end-of-text without hitting the end pos.');
+      result.push(char);
+    }
+    return result;
   }
 
-  atEndOfSection(): boolean {
-    return this.textIndex === this.#sections[this.sectionIndex].length;
+  atStartOfText(): boolean {
+    return this.sectionIndex === 0 && this.textIndex === 0;
+  }
+
+  atInterpolationPoint(): boolean {
+    return this.getChar() === INTERPOLATION_POINT;
   }
 
   atEndOfText(): boolean {
-    return (
-      this.sectionIndex === this.#sections.length - 1 &&
-      this.textIndex === this.#sections[this.sectionIndex].length
-    );
+    return this.getChar() === END_OF_TEXT;
   }
 
-  lessThan(other: TextPosition): boolean {
-    if (this.sectionIndex < other.sectionIndex) return true;
-    if (this.sectionIndex === other.sectionIndex) return this.textIndex < other.textIndex;
-    return false;
-  }
-
-  equals(other: TextPosition): boolean {
+  #equals(other: TextPosition): boolean {
     return this.sectionIndex === other.sectionIndex && this.textIndex === other.textIndex;
   }
 }
