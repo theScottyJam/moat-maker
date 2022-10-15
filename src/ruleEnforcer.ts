@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
-import { InterpolationRule, ObjectRule, Rule, TupleRule, UnionRule } from './types/parseRules';
+import { InterpolationRule, ObjectRule, ObjectRuleContentValue, Rule, TupleRule, UnionRule } from './types/parseRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
-import { ValidatorAssertionError } from './exceptions';
+import { createValidatorSyntaxError, ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
 
@@ -133,15 +133,43 @@ function assertMatchesObject<T>(
     }
   };
 
-  const missingKeys = [...rule.content.entries()]
-    .filter(([key, value]) => !value.optional)
+  const content = new Map<string | symbol, ObjectRuleContentValue[]>(
+    [...rule.content.entries()]
+      .map(([key, value]) => [key, [value]]),
+  );
+
+  // Add dynamic key entries to the content map.
+  for (const [interpolationIndex, value] of rule.dynamicContent) {
+    let key = interpolated[interpolationIndex];
+    if (typeof key === 'number') {
+      key = String(key);
+    }
+
+    if (typeof key !== 'string' && typeof key !== 'symbol') {
+      throw createValidatorSyntaxError(
+        'Attempted to match against a mal-formed validator instance. ' +
+        `Its interpolation #${interpolationIndex + 1} must be either of type string, symbol, or number. ` +
+        `Got type ${getSimpleTypeOf(key)}.`,
+      );
+    }
+
+    let existingContentEntry = content.get(key);
+    if (existingContentEntry === undefined) {
+      existingContentEntry = [];
+      content.set(key, existingContentEntry);
+    }
+    existingContentEntry.push(value);
+  }
+
+  const missingKeys = [...content.entries()]
+    .filter(([key, value]) => !value.every(({ optional }) => optional))
     .filter(([key, value]) => !(key in target))
     .map(([key]) => key);
 
   if (missingKeys.length > 0) {
     throw new ValidatorAssertionError(
       `${lookupPath} is missing the required properties: ` +
-      missingKeys.map(key => JSON.stringify(key)).join(', '),
+      missingKeys.map(key => reprUnknownValue(key)).join(', '),
     );
   }
 
@@ -153,9 +181,11 @@ function assertMatchesObject<T>(
     }
   }
 
-  for (const [key, iterRuleInfo] of rule.content) {
-    if (iterRuleInfo.optional && !(key in target)) continue;
-    assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
+  for (const [key, iterRuleInfoList] of content) {
+    for (const iterRuleInfo of iterRuleInfoList) {
+      if (iterRuleInfo.optional && !(key in target)) continue;
+      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
+    }
   }
 }
 

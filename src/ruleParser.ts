@@ -4,7 +4,7 @@ import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
 import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parseRules';
 import { TokenStream } from './types/tokenizer';
-import { UnreachableCaseError, FrozenMap } from './util';
+import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
 const allSimpleTypes: simpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
@@ -136,10 +136,11 @@ function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
   } else if (token.category === 'identifier') {
     return parseLiteralOrNoop(tokenStream);
   } else if (token.category === 'interpolation') {
-    tokenStream.next();
+    const interpolationToken = tokenStream.next();
+    assert(interpolationToken.category === 'interpolation');
     return {
       category: 'interpolation',
-      interpolationIndex: token.range.start.sectionIndex,
+      interpolationIndex: interpolationToken.interpolationIndex,
     };
   } else if (token.value === '(') {
     tokenStream.next();
@@ -182,8 +183,10 @@ function parseObject(tokenStream: TokenStream): Rule {
   const ruleTemplate = {
     category: 'object' as const,
     contentEntries: [] as Array<[string, ObjectRuleContentValue]>,
+    dynamicContentEntries: [] as Array<[number, ObjectRuleContentValue]>,
     index: null as ObjectRuleIndexValue | null,
   };
+  const foundKeys = new Set<string>();
 
   while (true) {
     if (tokenStream.peek().value === '}') {
@@ -191,7 +194,9 @@ function parseObject(tokenStream: TokenStream): Rule {
       break;
     }
 
+    const beforeKeyPos = tokenStream.peek().range.start;
     const keyInfo = parseObjectKey(tokenStream);
+    const keyRange = { start: beforeKeyPos, end: tokenStream.lastTokenEndPos() };
 
     const colonToken = tokenStream.next();
     if (colonToken.value !== ':') {
@@ -206,8 +211,18 @@ function parseObject(tokenStream: TokenStream): Rule {
         key: keyInfo.indexType,
         value: valueRule,
       };
+    } else if ('keyInterpolationIndex' in keyInfo) {
+      const { keyInterpolationIndex, optional } = keyInfo;
+      ruleTemplate.dynamicContentEntries.push([keyInterpolationIndex, {
+        optional,
+        rule: valueRule,
+      }]);
     } else {
       const { key, optional } = keyInfo;
+      if (foundKeys.has(key)) {
+        throw createValidatorSyntaxError(`Duplicate key ${reprUnknownValue(key)} found.`, tokenStream.originalText, keyRange);
+      }
+      foundKeys.add(key);
       ruleTemplate.contentEntries.push([key, {
         optional,
         rule: valueRule,
@@ -225,6 +240,7 @@ function parseObject(tokenStream: TokenStream): Rule {
   return {
     category: 'object' as const,
     content: new FrozenMap(ruleTemplate.contentEntries),
+    dynamicContent: new FrozenMap(ruleTemplate.dynamicContentEntries),
     index: ruleTemplate.index,
   };
 }
@@ -233,34 +249,67 @@ type ParseObjectKeyReturn = {
   readonly key: string
   readonly optional: boolean
 } | {
+  readonly keyInterpolationIndex: number
+  readonly optional: boolean
+} | {
   readonly indexType: Rule
 };
 
 function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
   if (tokenStream.peek().value === '[') {
     tokenStream.next();
-    const nameToken = tokenStream.next();
-    if (nameToken.category !== 'identifier') {
-      throw createValidatorSyntaxError('Expected an identifier, followed by ":" and a type.', tokenStream.originalText, nameToken.range);
-    }
+    if (tokenStream.peek().category === 'interpolation') {
+      // parse dynamic key
 
-    const colonToken = tokenStream.next();
-    if (colonToken.value !== ':') {
+      const interpolationKey = tokenStream.next();
+      assert(interpolationKey.category === 'interpolation');
+
+      const endBracketToken = tokenStream.next();
+      if (endBracketToken.value !== ']') {
+        throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
+      }
+
+      let optional = false;
+      if (tokenStream.peek().value === '?') {
+        tokenStream.next();
+        optional = true;
+      }
+
+      return {
+        keyInterpolationIndex: interpolationKey.interpolationIndex,
+        optional,
+      };
+    } else if (tokenStream.peek().category === 'identifier') {
+      // parse mapped type
+
+      // do nothing with the nameToken, as its value has no effect.
+      const nameToken = tokenStream.next();
+
+      const colonToken = tokenStream.next();
+      if (colonToken.value !== ':') {
+        throw createValidatorSyntaxError(
+          "Expected a colon here to separate the index key's name on the left, from a type on the right.",
+          tokenStream.originalText,
+          colonToken.range,
+        );
+      }
+
+      const indexType = parseRuleAtPrecedence1(tokenStream);
+
+      const endBracketToken = tokenStream.next();
+      if (endBracketToken.value !== ']') {
+        throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
+      }
+
+      return { indexType };
+    } else {
       throw createValidatorSyntaxError(
-        "Expected a colon here to separate the index key's name on the left, from a type on the right.",
+        'Expected an identifier, followed by ":" and a type, if this is meant to be a mapped type,\n' +
+        'or expected an interpolated value if this is meant to be a dynamic key.',
         tokenStream.originalText,
-        colonToken.range,
+        tokenStream.peek().range,
       );
     }
-
-    const indexType = parseRuleAtPrecedence1(tokenStream);
-
-    const endBracketToken = tokenStream.next();
-    if (endBracketToken.value !== ']') {
-      throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
-    }
-
-    return { indexType };
   } else {
     const containsOnlyNumbers = (text: string): boolean => /^\d+$/.exec(text) !== null;
     const keyToken = tokenStream.next();
@@ -372,6 +421,7 @@ function parseTupleEntry(tokenStream: TokenStream, { requiredPropertiesAllowed }
     throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
   }
 }
+
 function parseNumber(tokenStream: TokenStream): number {
   let sign = '+';
   if ((['-', '+'] as unknown[]).includes(tokenStream.peek().value)) {

@@ -132,7 +132,7 @@ function getNextToken(sections: readonly string[], startingPos: TextPosition): T
       category: 'interpolation' as const,
       ...mixin,
       value: undefined,
-      interpolationIndex: posAfterSection.sectionIndex,
+      interpolationIndex: posAfterWhitespace.sectionIndex,
       range: { start: posAfterWhitespace, end: posAfterSection },
     };
   }

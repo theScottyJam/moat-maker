@@ -31,6 +31,10 @@ export function freezeRule(rule: Rule): Rule {
         [...rule.content.entries()]
           .map(([k, v]) => f([k, freezeContentValue(v)])),
       ),
+      dynamicContent: new FrozenMap(
+        [...rule.dynamicContent.entries()]
+          .map(([k, v]) => f([k, freezeContentValue(v)])),
+      ),
       index: rule.index === null ? null : freezeIndexValue(rule.index),
     });
   } else if (rule.category === 'array') {

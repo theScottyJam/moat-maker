@@ -35,6 +35,7 @@ export interface ObjectRule {
   // We only ever return rules with frozen maps, but we accept rules of type map,
   // which is the reason for this union type.
   readonly content: FrozenMap<string, ObjectRuleContentValue> | Map<string, ObjectRuleContentValue>
+  readonly dynamicContent: FrozenMap<number, ObjectRuleContentValue> | Map<number, ObjectRuleContentValue>
   readonly index: ObjectRuleIndexValue | null
 }
 

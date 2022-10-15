@@ -62,6 +62,25 @@ describe('object rules', () => {
     });
   });
 
+  describe('object type checks', () => {
+    test('accepts an array', () => {
+      validator`{}`.getAsserted([2]);
+    });
+
+    test('accepts a function', () => {
+      validator`{}`.getAsserted(() => {});
+    });
+
+    test('accepts a boxed primitive', () => {
+      validator`{}`.getAsserted(new Number(2)); // eslint-disable-line no-new-wrappers
+    });
+
+    test('rejects a symbol', () => {
+      const act = (): any => validator`{}`.getAsserted(Symbol('mySymb'));
+      assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
+    });
+  });
+
   describe('index type', () => {
     test('accepts a value who\'s entries all match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
@@ -162,29 +181,112 @@ describe('object rules', () => {
     });
   });
 
-  describe('object type checks', () => {
-    test('accepts an array', () => {
-      validator`{}`.getAsserted([2]);
+  describe('dynamic keys', () => {
+    test('accepts an object that matches the required dynamically-keyed entry', () => {
+      const v = validator`{ [${'hello'}]: 'world'}`;
+      v.getAsserted({ hello: 'world' });
     });
 
-    test('accepts a function', () => {
-      validator`{}`.getAsserted(() => {});
+    test("rejects an object who's value does not match the required dynamically-keyed entry", () => {
+      const v = validator`{ [${'hello'}]: 'world'}`;
+      const act = (): any => v.getAsserted({ hello: 'not world' });
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: 'Expected <receivedValue>.hello to be "world" but got "not world".' });
     });
 
-    test('accepts a boxed primitive', () => {
-      validator`{}`.getAsserted(new Number(2)); // eslint-disable-line no-new-wrappers
+    test("rejects an object that's missing the required dynamically-keyed entry", () => {
+      const v = validator`{ [${'hello'}]: 'world'}`;
+      const act = (): any => v.getAsserted({ hello2: 'world' });
+      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, { message: '<receivedValue> is missing the required properties: "hello"' });
     });
 
-    test('rejects a symbol', () => {
-      const act = (): any => validator`{}`.getAsserted(Symbol('mySymb'));
-      assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
+    test('dynamic keys can be optional', () => {
+      const v = validator`{ [${42}]?: 24 }`;
+      expect(v.matches({ 42: 24 })).toBe(true);
+      expect(v.matches({ 42: 25 })).toBe(false);
+      expect(v.matches({})).toBe(true);
+    });
+
+    test('works with numeric keys', () => {
+      const v = validator`{ [${42}]: 24 }`;
+      expect(v.matches({ 42: 24 })).toBe(true);
+      expect(v.matches({ 42: 25 })).toBe(false);
+      expect(v.matches({})).toBe(false);
+    });
+
+    test('works with symbol keys', () => {
+      const symb = Symbol('testSymb');
+      const v = validator`{ [${symb}]: 24 }`;
+      expect(v.matches({ [symb]: 24 })).toBe(true);
+
+      const act1 = (): any => v.assertMatches({ [symb]: 25 });
+      assert.throws(act1, { message: 'Expected <receivedValue>[Symbol(testSymb)] to be 24 but got 25.' });
+
+      const act2 = (): any => v.assertMatches({});
+      assert.throws(act2, { message: '<receivedValue> is missing the required properties: Symbol(testSymb)' });
+    });
+
+    test('rejects boolean dynamic keys', () => {
+      const v = validator`{ [${true}]: 42 }`;
+      const act = (): any => v.assertMatches({});
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: (
+          'Attempted to match against a mal-formed validator instance. ' +
+          'Its interpolation #1 must be either of type string, symbol, or number. ' +
+          'Got type boolean.'
+        ),
+      });
+    });
+
+    test('rejects boxed string dynamic keys', () => {
+      // eslint-disable-next-line no-new-wrappers
+      const v = validator`{ x: ${41}, [${new String('value')}]: 42 }`;
+      const act = (): any => v.assertMatches({});
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: (
+          'Attempted to match against a mal-formed validator instance. ' +
+          'Its interpolation #2 must be either of type string, symbol, or number. ' +
+          'Got type object.'
+        ),
+      });
+    });
+
+    test('works with duplicate dynamic keys', () => {
+      const v = validator`{ [${'x'}]: { a: 1 }, x: { b: 2 }, [${'x'}]?: { c: 3 } }`;
+      expect(v.matches({ x: { a: 1, b: 2, c: 3 } })).toBe(true);
+
+      expect(v.matches({ x: { b: 2, c: 3 } })).toBe(false);
+      expect(v.matches({ x: { a: 1, c: 3 } })).toBe(false);
+      expect(v.matches({ x: { a: 1, b: 2 } })).toBe(false);
+      expect(v.matches({ x: { a: 1, b: 2, c: 'x' } })).toBe(false);
+
+      const act = (): any => v.getAsserted({ x: { a: 1, b: 2 } });
+      assert.throws(act, { message: '<receivedValue>.x is missing the required properties: "c"' });
+    });
+
+    test('an entry is optional if all duplicate keys are optional', () => {
+      // all are optional
+      const v1 = validator`{ [${'x'}]?: undefined, x?: undefined, [${'x'}]?: undefined }`;
+      expect(v1.matches({ x: undefined })).toBe(true);
+      expect(v1.matches({ x: 2 })).toBe(false);
+      expect(v1.matches({})).toBe(true);
+
+      // not all are optional
+      const v2 = validator`{ [${'x'}]?: undefined, x?: undefined, [${'x'}]: undefined }`;
+      expect(v2.matches({ x: undefined })).toBe(true);
+      expect(v2.matches({ x: 2 })).toBe(false);
+      expect(v2.matches({})).toBe(false);
     });
   });
 
   test('produces the correct rule', () => {
-    const v = validator`{ "numKey\n": number, strKey?: string }`;
+    const v = validator`{ "numKey\n": number, strKey?: string, [${42}]: boolean, [${43}]?: undefined }`;
     assert(v.rule.category === 'object');
-    expect(v.rule.index).toBe(null);
+
+    // v.rule.content
     expect(v.rule.content).toBeInstanceOf(FrozenMap);
     expect(v.rule.content.size).toBe(2);
     expect(v.rule.content.get('numKey\n')).toMatchObject({
@@ -201,14 +303,41 @@ describe('object rules', () => {
         type: 'string',
       },
     });
+
+    // v.rule.dynamicContent
+    expect(v.rule.dynamicContent).toBeInstanceOf(FrozenMap);
+    expect(v.rule.dynamicContent.size).toBe(2);
+    expect(v.rule.dynamicContent.get(0)).toMatchObject({
+      optional: false,
+      rule: {
+        category: 'simple',
+        type: 'boolean',
+      },
+    });
+    expect(v.rule.dynamicContent.get(1)).toMatchObject({
+      optional: true,
+      rule: {
+        category: 'simple',
+        type: 'undefined',
+      },
+    });
+
+    // v.rule.index
+    expect(v.rule.index).toBe(null);
+
+    // Is everything frozen?
     expect(Object.isFrozen(v.rule)).toBe(true);
     expect(Object.isFrozen(v.rule.content.get('numKey\n'))).toBe(true);
     expect(Object.isFrozen(v.rule.content.get('strKey'))).toBe(true);
+    expect(Object.isFrozen(v.rule.dynamicContent.get(0))).toBe(true);
+    expect(Object.isFrozen(v.rule.dynamicContent.get(1))).toBe(true);
   });
 
   test('produces the correct rule with an indexed type', () => {
     const v = validator`{ alwaysPresentKey: string, [index: "someOtherKey"]: string }`;
     assert(v.rule.category === 'object');
+
+    // v.rule.content
     expect(v.rule.content).toBeInstanceOf(FrozenMap);
     expect(v.rule.content.size).toBe(1);
     expect(v.rule.content.get('alwaysPresentKey')).toMatchObject({
@@ -218,8 +347,12 @@ describe('object rules', () => {
         type: 'string',
       },
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.content.get('alwaysPresentKey'))).toBe(true);
+
+    // v.rule.dynamicContent
+    expect(v.rule.dynamicContent).toBeInstanceOf(FrozenMap);
+    expect(v.rule.dynamicContent.size).toBe(0);
+
+    // v.rule.index
     expect(v.rule.index).toMatchObject({
       key: {
         category: 'primitiveLiteral',
@@ -230,13 +363,16 @@ describe('object rules', () => {
         type: 'string',
       },
     });
+
+    // Is everything frozen?
+    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.rule.content.get('alwaysPresentKey'))).toBe(true);
     expect(Object.isFrozen(v.rule.index)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
-    const v = validator`{x :string ,y ? :number, [ index :"someOtherKey" ] :string}`;
+    const v = validator`{x :string ,y ? :number, [ index :"someOtherKey" ] :string ,[ ${'z'} ] ? : 2}`;
     assert(v.rule.category === 'object');
-    expect(v.rule.content).toBeInstanceOf(FrozenMap);
     expect(v.rule.content.size).toBe(2);
     expect(v.rule.content.get('x')).toMatchObject({
       optional: false,
@@ -250,6 +386,14 @@ describe('object rules', () => {
       rule: {
         category: 'simple',
         type: 'number',
+      },
+    });
+    expect(v.rule.dynamicContent.size).toBe(1);
+    expect(v.rule.dynamicContent.get(0)).toMatchObject({
+      optional: true,
+      rule: {
+        category: 'primitiveLiteral',
+        value: 2,
       },
     });
     expect(v.rule.index).toMatchObject({
@@ -367,6 +511,58 @@ describe('object rules', () => {
         ].join('\n'),
       });
     });
+
+    test('forbids duplicate keys', () => {
+      const act = (): any => validator`{ x: 2, "x"?: 2 }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Duplicate key "x" found. (line 1, col 9)',
+          // It's not ideal that the "?" is underlined, but its good enough.
+          '  { x: 2, "x"?: 2 }',
+          '          ~~~~',
+        ].join('\n'),
+      });
+    });
+  });
+
+  describe('dynamic key syntax errors', () => {
+    test("token after dynamic key syntax's `[` must be an interpolation point", () => {
+      const act = (): any => validator`{ ["hi"]: number }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected an identifier, followed by ":" and a type, if this is meant to be a mapped type,',
+          'or expected an interpolated value if this is meant to be a dynamic key. (line 1, col 4)',
+          '  { ["hi"]: number }',
+          '     ~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('a right bracket must close the index key definition', () => {
+      const act = (): any => validator`{ [${2} string }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Expected a closing right bracket (`]`). (line 1, col 5)',
+          '  { [${…} string }', // eslint-disable-line no-template-curly-in-string
+          '          ~~~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('Can not give a dynamic key a type', () => {
+      // Just testing that you can't somehow mix the index syntax and the dynamic key syntax together.
+      const act = (): any => validator`{ [${2}: number]: string }`;
+      assert.throws(act, {
+        message: [
+          'Expected a closing right bracket (`]`). (line 1, col 4)',
+          '  { [${…}: number]: string }', // eslint-disable-line no-template-curly-in-string
+          '         ~',
+        ].join('\n'),
+      });
+    });
   });
 
   describe('index type syntax errors', () => {
@@ -375,7 +571,8 @@ describe('object rules', () => {
       assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
-          'Expected an identifier, followed by ":" and a type. (line 1, col 4)',
+          'Expected an identifier, followed by ":" and a type, if this is meant to be a mapped type,',
+          'or expected an interpolated value if this is meant to be a dynamic key. (line 1, col 4)',
           '  { [2: string]: number }',
           '     ~',
         ].join('\n'),
@@ -395,18 +592,6 @@ describe('object rules', () => {
     });
 
     test("a valid type must appear after the index key's colon", () => {
-      const act = (): any => validator`{ [index: @]: number }`;
-      assert.throws(act, ValidatorSyntaxError);
-      assert.throws(act, {
-        message: [
-          'Expected to find a type here. (line 1, col 11)',
-          '  { [index: @]: number }',
-          '            ~',
-        ].join('\n'),
-      });
-    });
-
-    test('a right bracket must close the index key definition', () => {
       const act = (): any => validator`{ [index: @]: number }`;
       assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
