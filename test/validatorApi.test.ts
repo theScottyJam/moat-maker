@@ -61,12 +61,6 @@ describe('validator behavior', () => {
     });
   });
 
-  it('forbid outside users from instantiating ValidatorSyntaxError', () => {
-    const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
-    assert.throws(act, (err: Error) => err.constructor === Error);
-    assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
-  });
-
   describe('validator.fromRule()', () => {
     test('allows string inputs when given a simple string rule', () => {
       const v = validator.fromRule({
@@ -203,5 +197,18 @@ describe('validator behavior', () => {
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
     });
+  });
+
+  test('forbids outside users from instantiating ValidatorSyntaxError', () => {
+    const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
+    assert.throws(act, (err: Error) => err.constructor === Error);
+    assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
+  });
+
+  test('ValidatorAssertionError.isAssertionError() does an instanceof check', () => {
+    class MyValidatorAssertionError extends ValidatorAssertionError {}
+    expect(ValidatorAssertionError.isAssertionError(new ValidatorAssertionError('my message'))).toBe(true);
+    expect(ValidatorAssertionError.isAssertionError(new MyValidatorAssertionError('my message'))).toBe(true);
+    expect(ValidatorAssertionError.isAssertionError(new Error('my message'))).toBe(false);
   });
 });
