@@ -1,4 +1,4 @@
-import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from './types/parseRules';
+import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from './types/parsingRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
 export function freezeRule(rule: Rule): Rule {

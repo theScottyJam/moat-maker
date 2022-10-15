@@ -1,7 +1,7 @@
 import { parse } from './ruleParser';
 import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
-import { Rule } from './types/parseRules';
+import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
@@ -9,7 +9,7 @@ import { reprUnknownValue, FrozenMap as FrozenMapClass } from './util';
 import { ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
 
 export { ValidatorAssertionError, ValidatorSyntaxError };
-export * from './types/parseRules';
+export * from './types/parsingRules';
 export * from './types/validatableProtocol';
 export type { Validator };
 export type FrozenMap<K, V> = InstanceType<typeof FrozenMapClass>;
