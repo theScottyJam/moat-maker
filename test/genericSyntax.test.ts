@@ -2,10 +2,8 @@ import { strict as assert } from 'node:assert';
 import { validator, ValidatorSyntaxError } from '../src';
 
 describe('generic syntax', () => {
-  // eslint-disable-next-line no-template-curly-in-string
   test('Allows ${...} to be tested against', () => {
     const v = validator`"\${42}"`;
-    // eslint-disable-next-line no-template-curly-in-string
     expect(v.matches('${42}')).toBe(true);
   });
 

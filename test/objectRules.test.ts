@@ -546,7 +546,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           'Expected a closing right bracket (`]`). (line 1, col 5)',
-          '  { [${…} string }', // eslint-disable-line no-template-curly-in-string
+          '  { [${…} string }',
           '          ~~~~~~',
         ].join('\n'),
       });
@@ -558,7 +558,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           'Expected a closing right bracket (`]`). (line 1, col 4)',
-          '  { [${…}: number]: string }', // eslint-disable-line no-template-curly-in-string
+          '  { [${…}: number]: string }',
           '         ~',
         ].join('\n'),
       });

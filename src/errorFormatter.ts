@@ -57,7 +57,7 @@ export function generateMessageWithPosition(message: string, text: readonly stri
 const replaceSpecialChars = (text: readonly ContentPointedAt[]): readonly string[] => {
   return text.map(char => {
     if (char === '\n') return '\\n';
-    if (char === INTERPOLATION_POINT) return '${…}'; // eslint-disable-line no-template-curly-in-string
+    if (char === INTERPOLATION_POINT) return '${…}';
     return char;
   });
 };

@@ -139,7 +139,7 @@ describe('parentheses', () => {
       assert.throws(act, {
         message: [
           'Expected to find a closing parentheses (`)`) here. (line 1, col 9)',
-          '  (string ${…} number)', // eslint-disable-line no-template-curly-in-string
+          '  (string ${…} number)',
           '          ~~~~',
         ].join('\n'),
       });

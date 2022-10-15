@@ -1,5 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
-
 import { strict as assert } from 'node:assert';
 import { Validator, validator } from '../src';
 
