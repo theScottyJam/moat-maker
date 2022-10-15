@@ -1,19 +1,23 @@
 import { strict as assert } from 'node:assert';
-import { createValidatorSyntaxError } from './exceptions';
+import { createValidatorSyntaxError, ValidatorSyntaxError } from './exceptions';
 import { TextPosition, TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
 import { Token, TokenStream } from './types/tokenizer';
+import { UnreachableCaseError } from './util';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
 // we need one.
 const getIdentifierPattern = (): RegExp => /[a-zA-Z$_][a-zA-Z0-9$_]*/y;
 
-type ExtractResult = { value: string, range: TextRange } | null;
+interface ExtractResult {
+  readonly value: string
+  readonly range: TextRange
+}
 
 /**
  * Returns the extracted result, the first position in the extracted range range
  * (i.e. the passed in pos object), and the last position in the extracted range.
  */
-function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult {
+function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult | null {
   assert(regex.sticky, 'Internal error: The sticky flag must be set');
   assert(regex.lastIndex === 0);
 
@@ -39,36 +43,35 @@ function extractString(sections: readonly string[], startPos: TextPosition): Ext
   if (openingQuote !== '"' && openingQuote !== "'") {
     return null;
   }
+  currentPos = currentPos.advance(1); // go past the opening quote
+
+  const unexpectedEndOfStringError = (errorRange: TextRange): ValidatorSyntaxError => {
+    return createValidatorSyntaxError('Expected to find a quote to end the string literal.', sections, errorRange);
+  };
 
   let result = '';
-  let escaping = false;
   while (true) {
-    currentPos = currentPos.advance(1);
     const char = currentPos.getChar();
     if (char === INTERPOLATION_POINT || char === END_OF_TEXT) {
-      const errorRange = { start: startPos, end: currentPos };
-      throw createValidatorSyntaxError('Expected to find a quote to end the string literal.', sections, errorRange);
+      throw unexpectedEndOfStringError({ start: startPos, end: currentPos });
     }
 
-    if (!escaping && char === openingQuote) {
+    if (char === openingQuote) {
       break;
-    } else if (!escaping && char === '\\') {
-      escaping = true;
-    } else if (escaping) {
-      const mapSpecialChars: { [index: string]: string | undefined } = {
-        0: '\0',
-        '\\': '\\',
-        n: '\n',
-        r: '\r',
-        v: '\v',
-        t: '\t',
-        b: '\b',
-        f: '\f',
-      };
-      result += mapSpecialChars[char] ?? char;
-      escaping = false;
+    } else if (char === '\\') {
+      const extracted = extractStringEscapeSequence(sections, currentPos);
+      if ('error' in extracted) {
+        if (extracted.error === 'UNTERMINATED_STRING') {
+          throw unexpectedEndOfStringError({ start: startPos, end: extracted.endPos });
+        } else {
+          throw new UnreachableCaseError(extracted.error);
+        }
+      }
+      result += extracted.value;
+      currentPos = extracted.range.end;
     } else {
       result += char;
+      currentPos = currentPos.advance(1);
     }
   }
 
@@ -78,7 +81,91 @@ function extractString(sections: readonly string[], startPos: TextPosition): Ext
   return { parsedValue: result, range: { start: startPos, end: currentPos } };
 }
 
-function extractNumber(sections: readonly string[], startPos: TextPosition): ExtractResult {
+interface ExtractStringEscapeSequenceErrorResult {
+  readonly error: 'UNTERMINATED_STRING'
+  readonly endPos: TextPosition
+}
+
+function extractStringEscapeSequence(sections: readonly string[], slashPos: TextPosition): ExtractResult | ExtractStringEscapeSequenceErrorResult {
+  assert(slashPos.getChar() === '\\');
+  const escapeCharPos = slashPos.advance(1);
+  const escapedChar = escapeCharPos.getChar();
+  if (escapedChar === INTERPOLATION_POINT || escapedChar === END_OF_TEXT) {
+    return { error: 'UNTERMINATED_STRING', endPos: escapeCharPos };
+  }
+
+  if (escapedChar === 'x') {
+    const extracted = extract(/[0-9a-fA-F]{2}/y, sections, escapeCharPos.advance(1));
+    if (extracted === null) {
+      throw createValidatorSyntaxError(
+        'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x".',
+        sections,
+        { start: slashPos, end: escapeCharPos.advance(1) },
+      );
+    }
+    return {
+      value: String.fromCharCode(parseInt(extracted.value, 16)),
+      range: { start: slashPos, end: extracted.range.end },
+    };
+  } else if (escapedChar === 'u' && escapeCharPos.advance(1).getChar() === '{') {
+    const extracted = extract(/\{[0-9a-fA-F]{1,6}\}/y, sections, escapeCharPos.advance(1));
+    if (extracted === null) {
+      throw createValidatorSyntaxError(
+        'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}".',
+        sections,
+        { start: slashPos, end: escapeCharPos.advance(1) },
+      );
+    }
+
+    const codePoint = parseInt(extracted.value.slice(1, -1), 16);
+    let codePointAsChar: string;
+    try {
+      codePointAsChar = String.fromCodePoint(codePoint);
+    } catch (error) {
+      if (error instanceof RangeError) {
+        const errorRange = { start: slashPos, end: extracted.range.end };
+        throw createValidatorSyntaxError(`Invalid code point "0x${codePoint.toString(16)}".`, sections, errorRange);
+      }
+      throw error;
+    }
+
+    return {
+      value: codePointAsChar,
+      range: { start: slashPos, end: extracted.range.end },
+    };
+  } else if (escapedChar === 'u') {
+    const extracted = extract(/[0-9a-fA-F]{4}/y, sections, escapeCharPos.advance(1));
+    if (extracted === null) {
+      throw createValidatorSyntaxError(
+        'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u".',
+        sections,
+        { start: slashPos, end: escapeCharPos.advance(1) },
+      );
+    }
+    return {
+      value: String.fromCharCode(parseInt(extracted.value, 16)),
+      range: { start: slashPos, end: extracted.range.end },
+    };
+  } else {
+    const mapSpecialChars: { [index: string]: string | undefined } = {
+      0: '\0',
+      '\\': '\\',
+      n: '\n',
+      r: '\r',
+      v: '\v',
+      t: '\t',
+      b: '\b',
+      f: '\f',
+    };
+
+    return {
+      value: mapSpecialChars[escapedChar] ?? escapedChar,
+      range: { start: slashPos, end: escapeCharPos.advance(1) },
+    };
+  }
+}
+
+function extractNumber(sections: readonly string[], startPos: TextPosition): ExtractResult | null {
   return (
     // hexadecimal literal
     extract(/0[xX]([0-9a-fA-F]+_)*[0-9a-fA-F]+/y, sections, startPos) ??
@@ -137,7 +224,7 @@ function getNextToken(sections: readonly string[], startingPos: TextPosition): T
     };
   }
 
-  let extracted: ExtractResult;
+  let extracted: ExtractResult | null;
 
   extracted = extract(getIdentifierPattern(), sections, posAfterWhitespace);
   if (extracted !== null) {
@@ -180,7 +267,7 @@ function ignoreWhitespaceAndComments(sections: readonly string[], startingPos: T
 
   while (true) {
     const startingIndex = currentPos.textIndex;
-    let extracted: ExtractResult;
+    let extracted: ExtractResult | null;
 
     // whitespace
     currentPos = extract(/\s+/y, sections, currentPos)?.range.end ?? currentPos;

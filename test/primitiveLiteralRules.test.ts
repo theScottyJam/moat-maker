@@ -174,6 +174,139 @@ describe('primitive literal rules', () => {
         expect(v.matches('a"b\'c\'d`e')).toBe(true);
       });
 
+      describe('unicode escaping', () => {
+        test('handles unicode character escapes (test 1)', () => {
+          const v = validator`'\u003d \u{3d} \x3d'`;
+          expect(v.matches('= = =')).toBe(true);
+          expect(v.matches('= = @')).toBe(false);
+        });
+
+        test('handles unicode character escapes (test 2)', () => {
+          const v = validator`'\u{1F303} \uD83C\uDF03'`;
+          expect(v.matches('🌃 🌃')).toBe(true);
+          expect(v.matches('🌃 x')).toBe(false);
+        });
+
+        test('handles unicode character escapes with uppercase characters', () => {
+          const v = validator`'\u003D \u{3D} \x3D'`;
+          expect(v.matches('= = =')).toBe(true);
+          expect(v.matches('= = @')).toBe(false);
+        });
+
+        test('\\x must have exactly two characters afterwards (test 1)', () => {
+          const act = (): any => validator({ raw: ['"\\x9"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
+              '  "' + '\\' + 'x9"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\x must have exactly two characters afterwards (test 2)', () => {
+          const act = (): any => validator({ raw: ['"\\x"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
+              '  "' + '\\' + 'x"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u must have exactly four characters afterwards (test 1)', () => {
+          const act = (): any => validator({ raw: ['"\\u9"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
+              '  "' + '\\' + 'u9"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u must have exactly four characters afterwards (test 2)', () => {
+          const act = (): any => validator({ raw: ['"\\u"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
+              '  "' + '\\' + 'u"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u{...} must contain no more than 6 characters', () => {
+          const act = (): any => validator({ raw: ['"\\u{1234567}"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
+              '  "' + '\\' + 'u{1234567}"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u{...} must be formatted properly (test 1)', () => {
+          const act = (): any => validator({ raw: ['"\\u{123456"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
+              '  "' + '\\' + 'u{123456"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u{...} must be formatted properly (test 2)', () => {
+          const act = (): any => validator({ raw: ['"\\u{g}"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
+              '  "' + '\\' + 'u{g}"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u{...} must be formatted properly (test 3)', () => {
+          const act = (): any => validator({ raw: ['"\\u{"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
+              '  "' + '\\' + 'u{"',
+              '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('\\u{...} can not contain invalid code points', () => {
+          const act = (): any => validator({ raw: ['"\\u{123456}"'] });
+          assert.throws(act, ValidatorSyntaxError);
+          assert.throws(act, {
+            message: [
+              'Invalid code point "0x123456". (line 1, col 2)',
+              '  "' + '\\' + 'u{123456}"',
+              '   ' + '~'  + '~~~~~~~~~', // eslint-disable-line no-multi-spaces
+            ].join('\n'),
+          });
+        });
+
+        test('An uppercase \\U and \\X does not trigger a unicode escape sequence', () => {
+          const v = validator`'\U\X'`;
+          expect(v.matches('UX')).toBe(true);
+        });
+      });
+
       test('encounter EOF before closing quote', () => {
         const act = (): any => validator`'xyz`;
         assert.throws(act, ValidatorSyntaxError);
@@ -182,6 +315,18 @@ describe('primitive literal rules', () => {
             'Expected to find a quote to end the string literal. (line 1, col 1)',
             "  'xyz",
             '  ~~~~',
+          ].join('\n'),
+        });
+      });
+
+      test('encounter EOF after backslash before closing quote', () => {
+        const act = (): any => validator({ raw: ['"xyz\\'] });
+        assert.throws(act, ValidatorSyntaxError);
+        assert.throws(act, {
+          message: [
+            'Expected to find a quote to end the string literal. (line 1, col 1)',
+            '  "xyz\\',
+            '  ~~~~~',
           ].join('\n'),
         });
       });
