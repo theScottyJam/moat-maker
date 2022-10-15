@@ -67,7 +67,7 @@ describe('validator behavior', () => {
     assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
   });
 
-  describe('validator.fromRules()', () => {
+  describe('validator.fromRule()', () => {
     test('allows string inputs when given a simple string rule', () => {
       const v = validator.fromRule({
         category: 'simple',
@@ -84,6 +84,15 @@ describe('validator behavior', () => {
       const act = (): any => v.getAsserted('xyz');
       assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
+    });
+
+    test('allow providing interpolated values', () => {
+      const v = validator.fromRule({
+        category: 'interpolation',
+        interpolationIndex: 0,
+      }, [2]);
+      expect(v.matches(2)).toBe(true);
+      expect(v.matches(3)).toBe(false);
     });
 
     test('validator behavior does not change, even if input rule is mutated', () => {

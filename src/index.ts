@@ -22,7 +22,7 @@ export function validator<T=unknown>(
 }
 
 validator.fromRule = function<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
-  return fromRule<T>(freezeRule(rule));
+  return fromRule<T>(freezeRule(rule), interpolated);
 };
 
 function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
