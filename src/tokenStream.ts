@@ -13,6 +13,43 @@ interface ExtractResult {
   readonly range: TextRange
 }
 
+export function createTokenStream(sections: readonly string[]): TokenStream {
+  let tokenStack: [Token, Token, Token, Token];
+  {
+    const beforeTextToken: Token = {
+      category: 'beforeTextStart',
+      value: '',
+      afterNewline: false,
+      range: { start: TextPosition.atStartPos(sections), end: TextPosition.atStartPos(sections) },
+    };
+
+    const firstToken = getNextToken(sections, TextPosition.atStartPos(sections));
+    const secondToken = getNextToken(sections, firstToken.range.end);
+    const thirdToken = getNextToken(sections, secondToken.range.end);
+
+    tokenStack = [beforeTextToken, firstToken, secondToken, thirdToken];
+  }
+
+  return Object.freeze({
+    originalText: sections,
+    last() {
+      return tokenStack[0];
+    },
+    next(): Token {
+      tokenStack = [
+        tokenStack[1],
+        tokenStack[2],
+        tokenStack[3],
+        getNextToken(sections, tokenStack[3].range.end),
+      ];
+      return tokenStack[0];
+    },
+    peek(amount: 1 | 2 | 3 = 1): Token {
+      return tokenStack[amount];
+    },
+  });
+}
+
 /**
  * Returns the extracted result, the first position in the extracted range range
  * (i.e. the passed in pos object), and the last position in the extracted range.
@@ -178,28 +215,6 @@ function extractNumber(sections: readonly string[], startPos: TextPosition): Ext
     // nothing matched
     null
   );
-}
-
-export function createTokenStream(sections: readonly string[]): TokenStream {
-  let nextToken = getNextToken(sections, TextPosition.atStartPos(sections));
-  // lastTokenEndPos would be the same as peek().range.start if it weren't for the possibility
-  // of whitespace between them.
-  let lastTokenEndPos = TextPosition.atStartPos(sections);
-  return Object.freeze({
-    originalText: sections,
-    next(): Token {
-      const requestedToken = nextToken;
-      lastTokenEndPos = requestedToken.range.end;
-      nextToken = getNextToken(sections, lastTokenEndPos);
-      return requestedToken;
-    },
-    peek(): Token {
-      return nextToken;
-    },
-    lastTokenEndPos() {
-      return lastTokenEndPos;
-    },
-  });
 }
 
 function getNextToken(sections: readonly string[], startingPos: TextPosition): Token {

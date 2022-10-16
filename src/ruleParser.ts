@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { createValidatorSyntaxError } from './exceptions';
+import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
 import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
-import { TokenStream } from './types/tokenizer';
+import { Token, TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
 const allSimpleTypes: simpleTypeVariant[] = [
@@ -196,7 +196,7 @@ function parseObject(tokenStream: TokenStream): Rule {
 
     const beforeKeyPos = tokenStream.peek().range.start;
     const keyInfo = parseObjectKey(tokenStream);
-    const keyRange = { start: beforeKeyPos, end: tokenStream.lastTokenEndPos() };
+    const keyRange = { start: beforeKeyPos, end: tokenStream.last().range.end };
 
     const colonToken = tokenStream.next();
     if (colonToken.value !== ':') {
@@ -352,8 +352,9 @@ function parseTuple(tokenStream: TokenStream): Rule {
   }
 
   let requiredPropertiesAllowed = true;
+  let entryNameRequired: 'ALWAYS' | 'NEVER' | 'UNDECIDED' = 'UNDECIDED';
   while (true) {
-    const { behaviorCategory, rule: entryRule } = parseTupleEntry(tokenStream, { requiredPropertiesAllowed });
+    const { behaviorCategory, rule: entryRule, entryWasNamed } = parseTupleEntry(tokenStream, { entryNameRequired, requiredPropertiesAllowed });
     if (behaviorCategory === 'REQUIRED') {
       rule.content.push(entryRule);
     } else if (behaviorCategory === 'OPTIONAL') {
@@ -362,6 +363,10 @@ function parseTuple(tokenStream: TokenStream): Rule {
       rule.rest = entryRule;
     } else {
       throw new UnreachableCaseError(behaviorCategory);
+    }
+
+    if (entryNameRequired === 'UNDECIDED') {
+      entryNameRequired = entryWasNamed ? 'ALWAYS' : 'NEVER';
     }
 
     {
@@ -393,33 +398,91 @@ function parseTuple(tokenStream: TokenStream): Rule {
 }
 
 interface ParseTupleEntryOpts {
+  readonly entryNameRequired: 'ALWAYS' | 'NEVER' | 'UNDECIDED'
   readonly requiredPropertiesAllowed: boolean
 }
 
 interface ParseTupleEntryReturn {
   readonly behaviorCategory: 'REQUIRED' | 'OPTIONAL' | 'REST'
+  readonly entryWasNamed: boolean
   readonly rule: Rule
 }
 
-function parseTupleEntry(tokenStream: TokenStream, { requiredPropertiesAllowed }: ParseTupleEntryOpts): ParseTupleEntryReturn {
-  if (tokenStream.peek().value === '...') {
+function parseTupleEntry(tokenStream: TokenStream, { entryNameRequired, requiredPropertiesAllowed }: ParseTupleEntryOpts): ParseTupleEntryReturn {
+  const startPos = tokenStream.peek().range.start;
+
+  const isRest = tokenStream.peek().value === '...';
+  if (isRest) {
     tokenStream.next();
-    return { behaviorCategory: 'REST', rule: parseRuleAtPrecedence1(tokenStream) };
   }
 
-  const valueRuleStartPos = tokenStream.peek().range.start;
+  // Not null if a name was found.
+  const parsedNameRegionResult = tryParseTupleEntryNameRegion(tokenStream);
+
   const rule = parseRuleAtPrecedence1(tokenStream);
-  if (tokenStream.peek().value === '?') {
+
+  // `false` means its not optional, or its not an unnamed field.
+  const isUnnamedFieldOptional = tokenStream.peek().value === '?';
+  if (isUnnamedFieldOptional) {
     tokenStream.next();
-    return { behaviorCategory: 'OPTIONAL', rule };
+  }
+
+  const errorRange = { start: startPos, end: tokenStream.last().range.end };
+
+  if (
+    (entryNameRequired === 'ALWAYS' && parsedNameRegionResult === null) ||
+    (entryNameRequired === 'NEVER' && parsedNameRegionResult !== null)
+  ) {
+    throw createValidatorSyntaxError(
+      'A tuple must either have all of its entries be named, or none of its entries be named.',
+      tokenStream.originalText,
+      errorRange,
+    );
+  }
+
+  if (isUnnamedFieldOptional && parsedNameRegionResult !== null) {
+    throw createValidatorSyntaxError(
+      'To mark a named tuple entry as optional, place the question mark (`?`) before the colon (`:`).',
+      tokenStream.originalText,
+      tokenStream.last().range,
+    );
+  }
+
+  if (isRest && (parsedNameRegionResult?.optional === true || isUnnamedFieldOptional)) {
+    throw createValidatorSyntaxError('A tuple entry can not both be rest (...) and optional (?).', tokenStream.originalText, errorRange);
+  }
+
+  if (isRest) {
+    return { behaviorCategory: 'REST', entryWasNamed: parsedNameRegionResult !== null, rule };
+  }
+  if (parsedNameRegionResult?.optional === true || isUnnamedFieldOptional) {
+    return { behaviorCategory: 'OPTIONAL', entryWasNamed: parsedNameRegionResult !== null, rule };
   }
 
   if (requiredPropertiesAllowed) {
-    return { behaviorCategory: 'REQUIRED', rule };
+    return { behaviorCategory: 'REQUIRED', entryWasNamed: parsedNameRegionResult !== null, rule };
   } else {
-    const range = { start: valueRuleStartPos, end: tokenStream.lastTokenEndPos() };
-    throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, range);
+    throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, errorRange);
   }
+}
+
+function tryParseTupleEntryNameRegion(tokenStream: TokenStream): { optional: boolean } | null {
+  const entryNameToken = tokenStream.peek(1);
+  if (entryNameToken.category !== 'identifier') {
+    return null;
+  }
+
+  const optional = tokenStream.peek(2).value === '?';
+  const colonPeekIndex = optional ? 3 : 2;
+  if (tokenStream.peek(colonPeekIndex).value !== ':') {
+    return null;
+  }
+
+  for (let i = 0; i < (optional ? 3 : 2); ++i) {
+    tokenStream.next();
+  }
+
+  return { optional };
 }
 
 function parseNumber(tokenStream: TokenStream): number {
