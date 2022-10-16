@@ -12,7 +12,6 @@ describe('union rules', () => {
   test("rejects value that does not match any of the union's variants", () => {
     const v = validator`number | string | undefined`;
     const act = (): any => v.getAsserted(null);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
         'Failed to match against every variant of a union.',
@@ -21,6 +20,7 @@ describe('union rules', () => {
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('produces the correct rule', () => {
@@ -101,7 +101,6 @@ describe('union rules', () => {
     });
 
     const act = (): any => v.getAsserted(null);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: [
         'Failed to match against every variant of a union.',
@@ -110,11 +109,11 @@ describe('union rules', () => {
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('Throws a syntax error when there\'s nothing to the right of the "|"', () => {
     const act = (): any => validator`number | `;
-    assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, {
       message: [
         'Unexpected EOF. (line 1, col 10)',
@@ -122,5 +121,6 @@ describe('union rules', () => {
         '           ~',
       ].join('\n'),
     });
+    assert.throws(act, ValidatorSyntaxError);
   });
 });

@@ -10,8 +10,8 @@ describe('intersection rules', () => {
   test("rejects value that does not match one of the intersection's variants", () => {
     const v = validator`{ x: number } & { y: number } & { z: number }`;
     const act = (): any => v.getAsserted({ x: 2, y: 3 });
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "z"' });
+    assert.throws(act, ValidatorAssertionError);
     assert.throws((): any => v.getAsserted({ x: 2, z: 3 }), ValidatorAssertionError);
     assert.throws((): any => v.getAsserted({ y: 2, z: 3 }), ValidatorAssertionError);
     assert.throws((): any => v.getAsserted({}), ValidatorAssertionError);
@@ -74,7 +74,6 @@ describe('intersection rules', () => {
 
   test('Throws a syntax error when there\'s nothing to the right of the "&"', () => {
     const act = (): any => validator`number & `;
-    assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, {
       message: [
         'Unexpected EOF. (line 1, col 10)',
@@ -82,5 +81,6 @@ describe('intersection rules', () => {
         '           ~',
       ].join('\n'),
     });
+    assert.throws(act, ValidatorSyntaxError);
   });
 });

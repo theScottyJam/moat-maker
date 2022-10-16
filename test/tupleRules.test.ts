@@ -15,29 +15,29 @@ describe('tuple rules', () => {
   test('rejects a non-array', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted({});
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Object].' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects a typed-array', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(new Uint8Array());
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Uint8Array].' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects an array of the wrong length', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(['xyz']);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected the <receivedValue> array to have 2 entries, but found 1.' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects an array with the wrong properties', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(['abc', 'def']);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('accepts an inherited array', () => {
@@ -50,8 +50,8 @@ describe('tuple rules', () => {
     class MyArray extends Array {}
     const v = validator`[string, number]`;
     const act = (): any => v.getAsserted(new (MyArray as any)('abc', 'def'));
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   describe('optional entries', () => {
@@ -63,22 +63,22 @@ describe('tuple rules', () => {
     test('optional properties must be of the correct type', () => {
       const v = validator`[string, number?, boolean?]`;
       const act = (): any => v.getAsserted(['xyz', 2, 4]);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>[2] to be of type "boolean" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects arrays that are larger than the max tuple size', () => {
       const v = validator`[string, number?, boolean?]`;
       const act = (): any => v.getAsserted(['xyz', 2, true, undefined]);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 1 and 3 entries, but found 4.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects arrays that are smaller than the max tuple size', () => {
       const v = validator`[string, number, boolean?]`;
       const act = (): any => v.getAsserted(['xyz']);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 2 and 3 entries, but found 1.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('optional entries and no required entries', () => {
@@ -113,15 +113,15 @@ describe('tuple rules', () => {
     test('rejects when not enough entries are supplied', () => {
       const v = validator`[string, number, ...string[]]`;
       const act = (): any => v.getAsserted(['xyz']);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have at least 2 entries, but found 1.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects when the rest entry is of the wrong type', () => {
       const v = validator`[string, number, ...boolean[]]`;
       const act = (): any => v.getAsserted(['xyz', 2, true, 'xyz']);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(2)[1] to be of type "boolean" but got type "string".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('works with empty tuples', () => {
@@ -134,8 +134,8 @@ describe('tuple rules', () => {
     test('rejects when rest type does not accept an array', () => {
       const v = validator`[string, ...boolean]`;
       const act = (): any => v.getAsserted(['xyz', true]);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(1) to be of type "boolean" but got an array.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test("the rest entry's validatable protocol gets used, even when it receives an empty array", () => {
@@ -238,7 +238,6 @@ describe('tuple rules', () => {
   describe('syntax errors', () => {
     test('forbids an omitted separator', () => {
       const act = (): any => validator`[number string]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected a comma (`,`) or closing bracket (`]`). (line 1, col 9)',
@@ -246,6 +245,7 @@ describe('tuple rules', () => {
           '          ~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('allows a trailing comma', () => {
@@ -254,7 +254,6 @@ describe('tuple rules', () => {
 
     test('forbids an empty tuple with a lone comma', () => {
       const act = (): any => validator`[,]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected a tuple entry or a closing bracket (`]`). (line 1, col 2)',
@@ -262,12 +261,12 @@ describe('tuple rules', () => {
           '   ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids an optional entry before a required one', () => {
       // Intentionally left padding after `}` to see if the error ends the `~` at the correct place.
       const act = (): any => validator`[string, number?, { x: number } ]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Required entries can not appear after optional entries. (line 1, col 19)',
@@ -275,11 +274,11 @@ describe('tuple rules', () => {
           '                    ~~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids a number as a tuple entry name', () => {
       const act = (): any => validator`[42: boolean]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected a comma (`,`) or closing bracket (`]`). (line 1, col 4)',
@@ -287,11 +286,11 @@ describe('tuple rules', () => {
           '     ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids an unnamed tuple entry that is both "rest" and "optional"', () => {
       const act = (): any => validator`[boolean, ...string[]?]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple entry can not both be rest (...) and optional (?). (line 1, col 11)',
@@ -299,11 +298,11 @@ describe('tuple rules', () => {
           '            ~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids a named tuple entry that is both "rest" and "optional"', () => {
       const act = (): any => validator`[x: boolean, ...y?: string[]]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple entry can not both be rest (...) and optional (?). (line 1, col 14)',
@@ -311,11 +310,11 @@ describe('tuple rules', () => {
           '               ~~~~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids anything else after a rest entry', () => {
       const act = (): any => validator`[boolean, ...string[], { x: number }]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Found unexpected content after a rest entry. A rest entry must be the last item in the tuple. (line 1, col 24)',
@@ -323,11 +322,11 @@ describe('tuple rules', () => {
           '                         ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids the use of a "?" after an entry type when naming tuple entries (test 1)', () => {
       const act = (): any => validator`[x: number, y: number?]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'To mark a named tuple entry as optional, place the question mark (`?`) before the colon (`:`). (line 1, col 22)',
@@ -335,11 +334,11 @@ describe('tuple rules', () => {
           '                       ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids the use of a "?" after an entry type when naming tuple entries (test 2)', () => {
       const act = (): any => validator`[x: number, y?: number?]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'To mark a named tuple entry as optional, place the question mark (`?`) before the colon (`:`). (line 1, col 23)',
@@ -347,11 +346,11 @@ describe('tuple rules', () => {
           '                        ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple (test 1)', () => {
       const act = (): any => validator`[string: number, boolean]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 18)',
@@ -359,11 +358,11 @@ describe('tuple rules', () => {
           '                   ~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple (test 2)', () => {
       const act = (): any => validator`[number, string: boolean]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 10)',
@@ -371,11 +370,11 @@ describe('tuple rules', () => {
           '           ~~~~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple - with rest (test 1)', () => {
       const act = (): any => validator`[name: { x: number } | string, boolean]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 32)',
@@ -383,11 +382,11 @@ describe('tuple rules', () => {
           '                                 ~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple - with rest (test 2)', () => {
       const act = (): any => validator`[{ x: number } | string, name: boolean]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 26)',
@@ -395,11 +394,11 @@ describe('tuple rules', () => {
           '                           ~~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple - with complex types (test 1)', () => {
       const act = (): any => validator`[number, boolean, ...args: string[]]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 19)',
@@ -407,11 +406,11 @@ describe('tuple rules', () => {
           '                    ~~~~~~~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('can not mix named and unnamed entries in the same tuple - with complex types (test 2)', () => {
       const act = (): any => validator`[name1: number, name2: boolean, ...string[]]`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'A tuple must either have all of its entries be named, or none of its entries be named. (line 1, col 33)',
@@ -419,6 +418,7 @@ describe('tuple rules', () => {
           '                                  ~~~~~~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('able to name a tuple containing only a rest entry', () => {

@@ -15,24 +15,24 @@ describe('iterator rules', () => {
   test('rejects when input iterable is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
     const act = (): any => v.getAsserted(2);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, {
       message: 'Expected <receivedValue>, which is 2, to be an instance of `Array` (and not an instance of a subclass).',
     });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects when iterable entry is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
     const act = (): any => v.getAsserted([2, 'xyz']);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected [...<receivedValue>][1] to be of type "number" but got type "string".' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects non-iterable inputs', () => {
     const v = validator`unknown@<string>`;
     const act = (): any => v.getAsserted(42);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('Using a non-iterator as the iterator type causes all inputs to be rejected', () => {
@@ -40,8 +40,8 @@ describe('iterator rules', () => {
     const v = validator`number@<number>`;
     // Now you shouldn't be able to pass any valid inputs into it.
     const act = (): any => v.getAsserted(42);
-    assert.throws(act, ValidatorAssertionError);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
+    assert.throws(act, ValidatorAssertionError);
   });
 
   test('produces the correct rule', () => {
@@ -76,7 +76,6 @@ describe('iterator rules', () => {
   describe('syntax errors', () => {
     test('forbids a `@` without a `<`', () => {
       const act = (): any => validator`unknown@string`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected an opening angled bracket (`<`). (line 1, col 9)',
@@ -84,11 +83,11 @@ describe('iterator rules', () => {
           '          ~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids content where a `>` is expected', () => {
       const act = (): any => validator`unknown@<string number>`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected a closing angled bracket (`>`). (line 1, col 17)',
@@ -96,11 +95,11 @@ describe('iterator rules', () => {
           '                  ~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('forbids EOF where a `>` is expected', () => {
       const act = (): any => validator`unknown@<string`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected a closing angled bracket (`>`). (line 1, col 16)',
@@ -108,6 +107,7 @@ describe('iterator rules', () => {
           '                 ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
   });
 

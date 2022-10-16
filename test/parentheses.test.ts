@@ -99,7 +99,6 @@ describe('parentheses', () => {
   describe('syntax', () => {
     test('throws a syntax error if the parentheses are empty', () => {
       const act = (): any => validator`()`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected to find a type here. (line 1, col 2)',
@@ -107,11 +106,11 @@ describe('parentheses', () => {
           '   ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('throws a syntax error if a closing parentheses is not where it should be', () => {
       const act = (): any => validator`(string number)`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected to find a closing parentheses (`)`) here. (line 1, col 9)',
@@ -119,11 +118,11 @@ describe('parentheses', () => {
           '          ~~~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('throws a syntax error if eof is reaches without a closing parentheses', () => {
       const act = (): any => validator`(string`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected to find a closing parentheses (`)`) here. (line 1, col 8)',
@@ -131,11 +130,11 @@ describe('parentheses', () => {
           '         ~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
 
     test('throws a syntax error if an interpolation point is reaches without a closing parentheses', () => {
       const act = (): any => validator`(string ${42} number)`;
-      assert.throws(act, ValidatorSyntaxError);
       assert.throws(act, {
         message: [
           'Expected to find a closing parentheses (`)`) here. (line 1, col 9)',
@@ -143,6 +142,7 @@ describe('parentheses', () => {
           '          ~~~~',
         ].join('\n'),
       });
+      assert.throws(act, ValidatorSyntaxError);
     });
   });
 });

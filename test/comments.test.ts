@@ -64,7 +64,6 @@ describe('comments', () => {
 
   test('gives a nice error if a block comment is missing its closing token', () => {
     const act = (): any => validator`{ x: /* #@$ number }`;
-    assert.throws(act, ValidatorSyntaxError);
     assert.throws(act, {
       message: [
         'This block comment never got closed. (line 1, col 6)',
@@ -72,5 +71,6 @@ describe('comments', () => {
         '       ~~',
       ].join('\n'),
     });
+    assert.throws(act, ValidatorSyntaxError);
   });
 });

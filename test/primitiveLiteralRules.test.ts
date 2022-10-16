@@ -13,22 +13,22 @@ describe('primitive literal rules', () => {
     test('rejects incorrect boolean', () => {
       const v = validator`false`;
       const act = (): any => v.getAsserted(true);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be false but got true.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects strings', () => {
       const v = validator`true`;
       const act = (): any => v.getAsserted('true');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be true but got "true".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects boolean objects', () => {
       const v = validator`true`;
       const act = (): any => v.getAsserted(new Boolean(false));
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be true but got [object Boolean].' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('produces the correct rule', () => {
@@ -50,15 +50,15 @@ describe('primitive literal rules', () => {
     test('rejects incorrect bigints', () => {
       const v = validator`2n`;
       const act = (): any => v.getAsserted(3n);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 3n.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects non-bigint numbers', () => {
       const v = validator`2n`;
       const act = (): any => v.getAsserted(2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 2.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('produces the correct rule', () => {
@@ -73,7 +73,6 @@ describe('primitive literal rules', () => {
     describe('syntax', () => {
       test('Only allows a lowercase n as a bigint suffix', () => {
         const act = (): any => validator`2N`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected EOF. (line 1, col 2)',
@@ -81,6 +80,7 @@ describe('primitive literal rules', () => {
             '   ~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
       });
     });
   });
@@ -94,20 +94,20 @@ describe('primitive literal rules', () => {
     test('rejects incorrect strings', () => {
       const v = validator`'xyz'`;
       const act = (): any => v.getAsserted('xy');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be "xyz" but got "xy".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('truncates strings in error messages that are too long', () => {
       const v = validator`'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`;
       const act = (): any => v.getAsserted('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789X');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
           'Expected <receivedValue> to be "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX…" ' +
           'but got "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX…".'
         ),
       });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('does not truncate the string in the error message if truncating would only remove save a few characters', () => {
@@ -195,7 +195,6 @@ describe('primitive literal rules', () => {
 
         test('\\x must have exactly two characters afterwards (test 1)', () => {
           const act = (): any => validator({ raw: ['"\\x9"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
@@ -203,11 +202,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\x must have exactly two characters afterwards (test 2)', () => {
           const act = (): any => validator({ raw: ['"\\x"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
@@ -215,11 +214,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u must have exactly four characters afterwards (test 1)', () => {
           const act = (): any => validator({ raw: ['"\\u9"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
@@ -227,11 +226,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u must have exactly four characters afterwards (test 2)', () => {
           const act = (): any => validator({ raw: ['"\\u"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
@@ -239,11 +238,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u{...} must contain no more than 6 characters', () => {
           const act = (): any => validator({ raw: ['"\\u{1234567}"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -251,11 +250,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u{...} must be formatted properly (test 1)', () => {
           const act = (): any => validator({ raw: ['"\\u{123456"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -263,11 +262,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u{...} must be formatted properly (test 2)', () => {
           const act = (): any => validator({ raw: ['"\\u{g}"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -275,11 +274,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u{...} must be formatted properly (test 3)', () => {
           const act = (): any => validator({ raw: ['"\\u{"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -287,11 +286,11 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('\\u{...} can not contain invalid code points', () => {
           const act = (): any => validator({ raw: ['"\\u{123456}"'] });
-          assert.throws(act, ValidatorSyntaxError);
           assert.throws(act, {
             message: [
               'Invalid code point "0x123456". (line 1, col 2)',
@@ -299,6 +298,7 @@ describe('primitive literal rules', () => {
               '   ' + '~'  + '~~~~~~~~~', // eslint-disable-line no-multi-spaces
             ].join('\n'),
           });
+          assert.throws(act, ValidatorSyntaxError);
         });
 
         test('An uppercase \\U and \\X does not trigger a unicode escape sequence', () => {
@@ -309,7 +309,6 @@ describe('primitive literal rules', () => {
 
       test('encounter EOF before closing quote', () => {
         const act = (): any => validator`'xyz`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected to find a quote to end the string literal. (line 1, col 1)',
@@ -317,11 +316,11 @@ describe('primitive literal rules', () => {
             '  ~~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
       });
 
       test('encounter EOF after backslash before closing quote', () => {
         const act = (): any => validator({ raw: ['"xyz\\'] });
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected to find a quote to end the string literal. (line 1, col 1)',
@@ -329,11 +328,11 @@ describe('primitive literal rules', () => {
             '  ~~~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
       });
 
       test('encounter interpolation point before closing quote', () => {
         const act = (): any => validator`'xyz${42}abc'`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected to find a quote to end the string literal. (line 1, col 1)',
@@ -341,6 +340,7 @@ describe('primitive literal rules', () => {
             '  ~~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
       });
     });
   });
@@ -354,22 +354,22 @@ describe('primitive literal rules', () => {
     test('rejects incorrect numbers', () => {
       const v = validator`2`;
       const act = (): any => v.getAsserted(3);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got 3.' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects string inputs', () => {
       const v = validator`2`;
       const act = (): any => v.getAsserted('xyz');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got "xyz".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('rejects number objects', () => {
       const v = validator`2`;
       const act = (): any => v.getAsserted(new Number(2));
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got [object Number].' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('produces the correct rule', () => {
@@ -532,7 +532,6 @@ describe('primitive literal rules', () => {
 
       test('numbers with leading zeros that only contain base-8 digits create an error', () => {
         const act = (): any => validator`+ 01234567`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Not allowed to use legacy octal syntax. Use 0o123 syntax instead. (line 1, col 3)',
@@ -540,6 +539,7 @@ describe('primitive literal rules', () => {
             '    ~~~~~~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
 
         assert.throws((): any => validator`001234567`, ValidatorSyntaxError);
         assert.throws((): any => validator`00123_4567`, ValidatorSyntaxError);
@@ -553,7 +553,6 @@ describe('primitive literal rules', () => {
 
       test('numbers with multiple zeros create an error', () => {
         const act = (): any => validator`+ 000`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Not allowed to use legacy octal syntax. Use 0o123 syntax instead. (line 1, col 3)',
@@ -561,6 +560,7 @@ describe('primitive literal rules', () => {
             '    ~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
         assert.throws((): any => validator`0_0`, ValidatorSyntaxError);
         assert.throws((): any => validator`00e1`, ValidatorSyntaxError);
         assert.throws((): any => validator`00.0`, ValidatorSyntaxError);
@@ -568,7 +568,6 @@ describe('primitive literal rules', () => {
 
       test('throws when a non-number appears after a sign', () => {
         const act = (): any => validator`- xyz`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected a number after the sign. (line 1, col 3)',
@@ -576,12 +575,12 @@ describe('primitive literal rules', () => {
             '    ~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
         assert.throws(() => validator`+ xyz`, ValidatorSyntaxError);
       });
 
       test('Not allowed to use a decimal that is not followed by anything', () => {
         const act = (): any => validator`23.`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Failed to interpret this syntax. (line 1, col 3)',
@@ -589,12 +588,12 @@ describe('primitive literal rules', () => {
             '    ~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
         assert.throws(() => validator`+ xyz`, ValidatorSyntaxError);
       });
 
       test("NaN isn't a valid numeric literal to match against", () => {
         const act = (): any => validator`NaN`;
-        assert.throws(act, ValidatorSyntaxError);
         assert.throws(act, {
           message: [
             'Expected to find a type here. (line 1, col 1)',
@@ -602,6 +601,7 @@ describe('primitive literal rules', () => {
             '  ~~~',
           ].join('\n'),
         });
+        assert.throws(act, ValidatorSyntaxError);
       });
     });
   });

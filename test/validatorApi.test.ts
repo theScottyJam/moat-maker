@@ -16,8 +16,8 @@ describe('validator behavior', () => {
     test('throws on bad input', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
     });
   });
 
@@ -30,8 +30,8 @@ describe('validator behavior', () => {
     test('throws on bad input', () => {
       const v = validator`string`;
       const act = (): any => v.getAsserted(2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
     });
   });
 
@@ -76,8 +76,8 @@ describe('validator behavior', () => {
         type: 'number',
       });
       const act = (): any => v.getAsserted('xyz');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('allow providing interpolated values', () => {
@@ -102,8 +102,8 @@ describe('validator behavior', () => {
       expect(rule.type).toBe('string');
 
       const act = (): any => v.getAsserted('xyz');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
+      assert.throws(act, ValidatorAssertionError);
     });
   });
 
@@ -170,19 +170,19 @@ describe('validator behavior', () => {
     test('rejects a value that does not conform to the custom validatable function', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
       const act = (): any => v.getAsserted(-2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
           'Expected <receivedValue>, which is -2, to match a custom validatable.'
         ),
       });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('you can give your validatable object a custom description for error messages to use', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
       const act = (): any => v.getAsserted('xyz');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
     test('you can move the custom validatable protocol to your own class', () => {
@@ -194,8 +194,8 @@ describe('validator behavior', () => {
       const v = validator`${MyValidatable}`;
       v.getAsserted('xyz');
       const act = (): any => v.getAsserted(2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
+      assert.throws(act, ValidatorAssertionError);
     });
   });
 
