@@ -206,7 +206,13 @@ function parseObject(tokenStream: TokenStream): Rule {
     const valueRule = parseRuleAtPrecedence1(tokenStream);
 
     if ('indexType' in keyInfo) {
-      if (ruleTemplate.index !== null) throw new Error('index type already exists'); // TODO: Test
+      if (ruleTemplate.index !== null) {
+        throw createValidatorSyntaxError(
+          'Can not have multiple index types in the same object.',
+          tokenStream.originalText,
+          keyRange,
+        );
+      }
       ruleTemplate.index = {
         key: keyInfo.indexType,
         value: valueRule,
@@ -385,7 +391,6 @@ function parseTuple(tokenStream: TokenStream): Rule {
     if (behaviorCategory === 'OPTIONAL') {
       requiredPropertiesAllowed = false;
     } else if (behaviorCategory === 'REST') {
-      // TODO: This error is probably being thrown, even if there's simply an EOF after the rest entry.
       throw createValidatorSyntaxError(
         'Found unexpected content after a rest entry. A rest entry must be the last item in the tuple.',
         tokenStream.originalText,

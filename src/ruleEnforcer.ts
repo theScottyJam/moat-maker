@@ -252,8 +252,7 @@ function assertMatchesInterpolation<T>(
   }
 
   if (typeof valueToMatch === 'function') {
-    // TODO: Maybe also do an instanceof check to prevent { constructor: ... } from working
-    if (Object(target).constructor !== valueToMatch) {
+    if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
       throw new ValidatorAssertionError(
         `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
         '(and not an instance of a subclass).',

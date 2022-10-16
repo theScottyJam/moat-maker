@@ -420,5 +420,10 @@ describe('tuple rules', () => {
         ].join('\n'),
       });
     });
+
+    test('able to name a tuple containing only a rest entry', () => {
+      const v = validator`[...name: unknown[]]`;
+      expect(v.matches([2, 'x'])).toBe(true);
+    });
   });
 });

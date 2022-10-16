@@ -638,5 +638,17 @@ describe('object rules', () => {
         ].join('\n'),
       });
     });
+
+    test('can not have multiple index types in the same object', () => {
+      const act = (): any => validator`{ [index: string]: number, [index2: string]: boolean }`;
+      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, {
+        message: [
+          'Can not have multiple index types in the same object. (line 1, col 28)',
+          '  { [index: string]: number, [index2: string]: boolean }',
+          '                             ~~~~~~~~~~~~~~~~',
+        ].join('\n'),
+      });
+    });
   });
 });

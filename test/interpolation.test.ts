@@ -212,6 +212,11 @@ describe('interpolation', () => {
           message: 'Expected <receivedValue>, which is [object MyMap], to be an instance of `Map` (and not an instance of a subclass).',
         });
       });
+
+      test('Can not pretend to be an instance of a class by providing an object with a fake constructor field', () => {
+        const v = validator`${Map}`;
+        expect(v.matches({ constructor: Map })).toBe(false);
+      });
     });
   });
 
