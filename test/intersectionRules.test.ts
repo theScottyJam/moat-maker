@@ -4,18 +4,18 @@ import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src
 describe('intersection rules', () => {
   test('accepts a value that matches all variants of the intersection', () => {
     const v = validator`{ x: number } & { y: number } & { z: number }`;
-    v.getAsserted({ x: 2, y: 3, z: 4 });
+    v.assertMatches({ x: 2, y: 3, z: 4 });
   });
 
   test("rejects value that does not match one of the intersection's variants", () => {
     const v = validator`{ x: number } & { y: number } & { z: number }`;
-    const act = (): any => v.getAsserted({ x: 2, y: 3 });
+    const act = (): any => v.assertMatches({ x: 2, y: 3 });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "z"' });
     assert.throws(act, ValidatorAssertionError);
-    assert.throws((): any => v.getAsserted({ x: 2, z: 3 }), ValidatorAssertionError);
-    assert.throws((): any => v.getAsserted({ y: 2, z: 3 }), ValidatorAssertionError);
-    assert.throws((): any => v.getAsserted({}), ValidatorAssertionError);
-    assert.throws((): any => v.getAsserted(42), ValidatorAssertionError);
+    assert.throws((): any => v.assertMatches({ x: 2, z: 3 }), ValidatorAssertionError);
+    assert.throws((): any => v.assertMatches({ y: 2, z: 3 }), ValidatorAssertionError);
+    assert.throws((): any => v.assertMatches({}), ValidatorAssertionError);
+    assert.throws((): any => v.assertMatches(42), ValidatorAssertionError);
   });
 
   test('produces the correct rule', () => {
@@ -68,7 +68,7 @@ describe('intersection rules', () => {
       }],
     });
 
-    v.getAsserted('xyz');
+    v.assertMatches('xyz');
     expect(v.matches(2)).toBe(false);
   });
 

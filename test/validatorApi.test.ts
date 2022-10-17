@@ -7,6 +7,20 @@ describe('validator behavior', () => {
     expect(Object.isFrozen(v)).toBe(true);
   });
 
+  describe('validator.assertionTypeGuard()', () => {
+    test('returns undefined', () => {
+      const v = validator`string`;
+      expect(v.assertionTypeGuard('xyz')).toBe(undefined);
+    });
+
+    test('throws on bad input', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertionTypeGuard(2);
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
+    });
+  });
+
   describe('validator.assertMatches()', () => {
     test('returns the argument', () => {
       const v = validator`string`;
@@ -16,20 +30,6 @@ describe('validator behavior', () => {
     test('throws on bad input', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2);
-      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
-    });
-  });
-
-  describe('validator.getAsserted()', () => {
-    test('returns the argument', () => {
-      const v = validator`string`;
-      expect(v.getAsserted('xyz')).toBe('xyz');
-    });
-
-    test('throws on bad input', () => {
-      const v = validator`string`;
-      const act = (): any => v.getAsserted(2);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -67,7 +67,7 @@ describe('validator behavior', () => {
         category: 'simple',
         type: 'string',
       });
-      v.getAsserted('xyz');
+      v.assertMatches('xyz');
     });
 
     test('forbids string inputs when given a simple number rule', () => {
@@ -75,7 +75,7 @@ describe('validator behavior', () => {
         category: 'simple',
         type: 'number',
       });
-      const act = (): any => v.getAsserted('xyz');
+      const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -101,7 +101,7 @@ describe('validator behavior', () => {
       // Just making sure it actually mutates, and that fromRule didn't freeze the input object.
       expect(rule.type).toBe('string');
 
-      const act = (): any => v.getAsserted('xyz');
+      const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -164,12 +164,12 @@ describe('validator behavior', () => {
   describe('validator.createValidatable()', () => {
     test('accepts a value that conforms to the custom validatable function', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
-      v.getAsserted(2);
+      v.assertMatches(2);
     });
 
     test('rejects a value that does not conform to the custom validatable function', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
-      const act = (): any => v.getAsserted(-2);
+      const act = (): any => v.assertMatches(-2);
       assert.throws(act, {
         message: (
           'Expected <receivedValue>, which is -2, to match a custom validatable.'
@@ -180,7 +180,7 @@ describe('validator behavior', () => {
 
     test('you can give your validatable object a custom description for error messages to use', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
-      const act = (): any => v.getAsserted('xyz');
+      const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -192,8 +192,8 @@ describe('validator behavior', () => {
       }
 
       const v = validator`${MyValidatable}`;
-      v.getAsserted('xyz');
-      const act = (): any => v.getAsserted(2);
+      v.assertMatches('xyz');
+      const act = (): any => v.assertMatches(2);
       assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
       assert.throws(act, ValidatorAssertionError);
     });

@@ -4,7 +4,7 @@ import { validator, ValidatorSyntaxError } from '../src';
 describe('parentheses', () => {
   test('can be used to group types', () => {
     const v = validator`(string | boolean)[]`;
-    v.getAsserted(['x', true]);
+    v.assertMatches(['x', true]);
   });
 
   test('can be used to modify order of operations', () => {
@@ -18,7 +18,7 @@ describe('parentheses', () => {
 
   test('can be used with a single simple rule in it', () => {
     const v = validator`(string)[]`;
-    v.getAsserted(['x']);
+    v.assertMatches(['x']);
   });
 
   test('produces the correct rule', () => {

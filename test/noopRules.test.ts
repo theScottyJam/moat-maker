@@ -4,12 +4,12 @@ describe('noop rules', () => {
   describe('unknown', () => {
     test('accepts string inputs', () => {
       const v = validator`unknown`;
-      v.getAsserted('xyz');
+      v.assertMatches('xyz');
     });
 
     test('accepts object inputs', () => {
       const v = validator`unknown`;
-      v.getAsserted({ x: 2 });
+      v.assertMatches({ x: 2 });
     });
 
     test('produces the correct rule', () => {

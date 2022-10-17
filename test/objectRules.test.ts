@@ -5,48 +5,48 @@ import { FrozenMap } from '../src/util';
 describe('object rules', () => {
   test('accepts an object with matching properties', () => {
     const v = validator`{ "str!": string, numb?: number }`;
-    v.getAsserted({ numb: 2, 'str!': '' });
+    v.assertMatches({ numb: 2, 'str!': '' });
   });
 
   test('accepts an object with extra properties', () => {
     const v = validator`{ str: string }`;
-    v.getAsserted({ str: '', numb: 2 });
+    v.assertMatches({ str: '', numb: 2 });
   });
 
   test('accepts inherited properties', () => {
     const v = validator`{ toString: ${Function} }`;
-    v.getAsserted({});
+    v.assertMatches({});
   });
 
   test('rejects a primitive', () => {
     const v = validator`{ str: string }`;
-    const act = (): any => v.getAsserted('xyz');
+    const act = (): any => v.assertMatches('xyz');
     assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
     assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects an object missing a required property', () => {
     const v = validator`{ str: string, "numb\"": number, bool: boolean }`;
-    const act = (): any => v.getAsserted({ str: '' });
+    const act = (): any => v.assertMatches({ str: '' });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\"", "bool"' });
     assert.throws(act, ValidatorAssertionError);
   });
 
   test('rejects an object missing both required and optional properties', () => {
     const v = validator`{ str: string, "numb\"": number, bool?: boolean }`;
-    const act = (): any => v.getAsserted({ str: '' });
+    const act = (): any => v.assertMatches({ str: '' });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\""' });
     assert.throws(act, ValidatorAssertionError);
   });
 
   test('accepts a missing optional property', () => {
     const v = validator`{ numb: number, str?: string }`;
-    v.getAsserted({ numb: 2 });
+    v.assertMatches({ numb: 2 });
   });
 
   test('rejects when an object property does not match the expected type', () => {
     const v = validator`{ str: string, "numb.\t": number, bool: boolean }`;
-    const act = (): any => v.getAsserted({ str: '', 'numb.\t': true, bool: 2 });
+    const act = (): any => v.assertMatches({ str: '', 'numb.\t': true, bool: 2 });
     assert.throws(act, {
       message: 'Expected <receivedValue>["numb.\\t"] to be of type "number" but got type "boolean".',
     });
@@ -55,7 +55,7 @@ describe('object rules', () => {
 
   test('rejects when a nested object property does not match the expected type', () => {
     const v = validator`{ sub: { "sub 2": { value: {} } } }`;
-    const act = (): any => v.getAsserted({ sub: { 'sub 2': { value: 2 } } });
+    const act = (): any => v.assertMatches({ sub: { 'sub 2': { value: 2 } } });
     assert.throws(act, {
       message: 'Expected <receivedValue>.sub["sub 2"].value to be an object but got 2.',
     });
@@ -64,19 +64,19 @@ describe('object rules', () => {
 
   describe('object type checks', () => {
     test('accepts an array', () => {
-      validator`{}`.getAsserted([2]);
+      validator`{}`.assertMatches([2]);
     });
 
     test('accepts a function', () => {
-      validator`{}`.getAsserted(() => {});
+      validator`{}`.assertMatches(() => {});
     });
 
     test('accepts a boxed primitive', () => {
-      validator`{}`.getAsserted(new Number(2)); // eslint-disable-line no-new-wrappers
+      validator`{}`.assertMatches(new Number(2)); // eslint-disable-line no-new-wrappers
     });
 
     test('rejects a symbol', () => {
-      const act = (): any => validator`{}`.getAsserted(Symbol('mySymb'));
+      const act = (): any => validator`{}`.assertMatches(Symbol('mySymb'));
       assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
     });
   });
@@ -84,12 +84,12 @@ describe('object rules', () => {
   describe('index type', () => {
     test('accepts a value who\'s entries all match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
-      v.getAsserted({ num: 2, str: 'x', another: 1, andAnother: '2' });
+      v.assertMatches({ num: 2, str: 'x', another: 1, andAnother: '2' });
     });
 
     test('rejects when an extra property in the input value does not match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
-      const act = (): any => v.getAsserted({ num: 2, str: 'x', another: true });
+      const act = (): any => v.assertMatches({ num: 2, str: 'x', another: true });
       assert.throws(act, {
         message: [
           'Failed to match against every variant of a union.',
@@ -102,7 +102,7 @@ describe('object rules', () => {
 
     test('rejects when a required property in the input value does not match the index type', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
-      const act = (): any => v.getAsserted({ num: true, str: 'x' });
+      const act = (): any => v.assertMatches({ num: true, str: 'x' });
       assert.throws(act, {
         message: [
           'Failed to match against every variant of a union.',
@@ -115,7 +115,7 @@ describe('object rules', () => {
 
     test('rejects when an optional property in the input value does not match the index type', () => {
       const v = validator`{ num: number, str?: string | boolean, [index: string]: string | number }`;
-      const act = (): any => v.getAsserted({ num: 2, str: true });
+      const act = (): any => v.assertMatches({ num: 2, str: true });
       assert.throws(act, {
         message: [
           'Failed to match against every variant of a union.',
@@ -129,15 +129,15 @@ describe('object rules', () => {
     test('explicit properties are still enforced, even when an index type is also present', () => {
       const v = validator`{ [index: string]: string | number, num: number }`;
       // Object the index type, but not the `num` type.
-      const act = (): any => v.getAsserted({ num: 'xyz' });
+      const act = (): any => v.assertMatches({ num: 'xyz' });
       assert.throws(act, { message: 'Expected <receivedValue>.num to be of type "number" but got type "string".' });
       assert.throws(act, ValidatorAssertionError);
     });
 
     test('index type restrictions only apply to its index key type', () => {
       const v = validator`{ [index: 'another']: number, num: string }`;
-      v.getAsserted({ num: 'xyz' });
-      v.getAsserted({ num: 'xyz', someOtherProp: 'xyz' });
+      v.assertMatches({ num: 'xyz' });
+      v.assertMatches({ num: 'xyz', someOtherProp: 'xyz' });
       expect(v.matches({ another: 'xyz' })).toBe(false);
     });
 
@@ -148,7 +148,7 @@ describe('object rules', () => {
         value: true,
         enumerable: false,
       });
-      const act = (): any => v.getAsserted(inputObj);
+      const act = (): any => v.assertMatches(inputObj);
       assert.throws(act, { message: 'Expected <receivedValue>.x to be of type "number" but got type "boolean".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -167,7 +167,7 @@ describe('object rules', () => {
 
     test('able to show named symbols in error messages', () => {
       const v = validator`{ [symb: symbol]: number }`;
-      const act = (): any => v.getAsserted({ [Symbol('symName')]: 'oops' });
+      const act = (): any => v.assertMatches({ [Symbol('symName')]: 'oops' });
       assert.throws(act, { message: 'Expected <receivedValue>[Symbol(symName)] to be of type "number" but got type "string".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -175,7 +175,7 @@ describe('object rules', () => {
     test('able to show unnamed symbols in error messages', () => {
       const v = validator`{ [symb: symbol]: number }`;
       // eslint-disable-next-line symbol-description
-      const act = (): any => v.getAsserted({ [Symbol()]: 'oops' });
+      const act = (): any => v.assertMatches({ [Symbol()]: 'oops' });
       assert.throws(act, { message: 'Expected <receivedValue>[Symbol()] to be of type "number" but got type "string".' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -184,19 +184,19 @@ describe('object rules', () => {
   describe('dynamic keys', () => {
     test('accepts an object that matches the required dynamically-keyed entry', () => {
       const v = validator`{ [${'hello'}]: 'world'}`;
-      v.getAsserted({ hello: 'world' });
+      v.assertMatches({ hello: 'world' });
     });
 
     test("rejects an object who's value does not match the required dynamically-keyed entry", () => {
       const v = validator`{ [${'hello'}]: 'world'}`;
-      const act = (): any => v.getAsserted({ hello: 'not world' });
+      const act = (): any => v.assertMatches({ hello: 'not world' });
       assert.throws(act, { message: 'Expected <receivedValue>.hello to be "world" but got "not world".' });
       assert.throws(act, ValidatorAssertionError);
     });
 
     test("rejects an object that's missing the required dynamically-keyed entry", () => {
       const v = validator`{ [${'hello'}]: 'world'}`;
-      const act = (): any => v.getAsserted({ hello2: 'world' });
+      const act = (): any => v.assertMatches({ hello2: 'world' });
       assert.throws(act, { message: '<receivedValue> is missing the required properties: "hello"' });
       assert.throws(act, ValidatorAssertionError);
     });
@@ -263,7 +263,7 @@ describe('object rules', () => {
       expect(v.matches({ x: { a: 1, b: 2 } })).toBe(false);
       expect(v.matches({ x: { a: 1, b: 2, c: 'x' } })).toBe(false);
 
-      const act = (): any => v.getAsserted({ x: { a: 1, b: 2 } });
+      const act = (): any => v.assertMatches({ x: { a: 1, b: 2 } });
       assert.throws(act, { message: '<receivedValue>.x is missing the required properties: "c"' });
     });
 
@@ -423,12 +423,12 @@ describe('object rules', () => {
 
     test('allows "$" and "_" in keys', () => {
       const v = validator`{ $_: string }`;
-      v.getAsserted({ $_: 'xyz' });
+      v.assertMatches({ $_: 'xyz' });
     });
 
     test('allows numeric keys', () => {
       const v = validator`{ 42: string }`;
-      v.getAsserted({ 42: 'xyz' });
+      v.assertMatches({ 42: 'xyz' });
     });
 
     test('throws on number keys with special characters', () => {
