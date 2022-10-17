@@ -59,7 +59,7 @@ describe('intersection rules', () => {
     });
   });
 
-  test('behaves properly when there is only one intersection in the union type', () => {
+  test('behaves properly when there is only one intersection in the intersection type', () => {
     const v = validator.fromRule({
       category: 'intersection',
       variants: [{
