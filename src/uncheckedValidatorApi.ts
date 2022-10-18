@@ -9,7 +9,7 @@ import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
-import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
+import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
 import { ValidatorAssertionError } from './exceptions';
 
@@ -47,8 +47,17 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     },
     rule,
     interpolated: Object.freeze(interpolated),
-    [validatable](value: unknown, lookupPath: string) {
-      assertMatches(rule, value, interpolated, lookupPath);
+    [validatable](value: unknown, { failure, at }: ValidatableProtocolFnOpts) {
+      // TODO: It would be better to pass in the failure function, instead of catching and rethrowing
+      try {
+        assertMatches(rule, value, interpolated, at);
+      } catch (err) {
+        if (err instanceof ValidatorAssertionError) {
+          throw failure(err.message);
+        } else {
+          throw err;
+        }
+      }
     },
   });
 }

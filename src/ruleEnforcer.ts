@@ -247,7 +247,12 @@ function assertMatchesInterpolation<T>(
 
   if (conformsToValidatableProtocol(valueToMatch)) {
     assert(typeof valueToMatch[validatable] === 'function'); // <-- TODO: Test
-    valueToMatch[validatable](target, lookupPath);
+
+    valueToMatch[validatable](target, {
+      failure: (...args) => new ValidatorAssertionError(...args),
+      at: lookupPath,
+    });
+
     return;
   }
 

@@ -1,9 +1,8 @@
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
-import type { ValidatableProtocol, ValidatableProtocolFn } from './types/validatableProtocol';
+import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
-import { ValidatorAssertionError } from './exceptions';
 import { uncheckedValidator } from './uncheckedValidatorApi';
 
 export function validator<T=unknown>(
@@ -33,8 +32,8 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
     },
     rule: unwrappedValidator.rule,
     interpolated: unwrappedValidator.interpolated,
-    [validatable](value: unknown, lookupPath: string) {
-      return unwrappedValidator[validatable](value, lookupPath);
+    [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
+      return unwrappedValidator[validatable](value, opts);
     },
   });
 }
@@ -78,15 +77,13 @@ interface CustomValidatable extends ValidatableProtocol {
 }
 
 validator.createValidatable = function(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomValidatable {
-  const protocolFn = (value: unknown, lookupPath: string): void => {
+  const protocolFn = (value: unknown, { failure, at: lookupPath }: ValidatableProtocolFnOpts): void => {
     if (!callback(value)) {
       const endOfError = opts.to === undefined
         ? 'to match a custom validatable.'
         : `to ${opts.to}`;
 
-      throw new ValidatorAssertionError(
-        `Expected ${lookupPath}, which is ${reprUnknownValue(value)}, ${endOfError}`,
-      );
+      throw failure(`Expected ${lookupPath}, which is ${reprUnknownValue(value)}, ${endOfError}`);
     }
   };
 

@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { ValidatableProtocolFnOpts, validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 
 describe('interpolation', () => {
   describe('misc', () => {
@@ -268,14 +268,14 @@ describe('interpolation', () => {
 
   describe('userland protocol implementations', () => {
     test('accepts if validatable does not throw', () => {
-      const v = validator`${{ [validator.validatable]: () => ({ matched: true }) }}`;
+      const v = validator`${{ [validator.validatable]: () => {} }}`;
       v.assertMatches(2);
     });
 
     test('rejects if validatable throws', () => {
       const v = validator`${{
-        [validator.validatable]: () => {
-          throw new ValidatorAssertionError('Whoops');
+        [validator.validatable]: (value: unknown, { failure }: ValidatableProtocolFnOpts) => {
+          throw failure('Whoops');
         },
       }}`;
       const act = (): any => v.assertMatches(2);
@@ -297,8 +297,8 @@ describe('interpolation', () => {
     test('protocol function receives a lookupPath for the value being matched', () => {
       let lookupPath;
       const validatable = {
-        [validator.validatable]: (_: unknown, lookupPath_: string) => {
-          lookupPath = lookupPath_;
+        [validator.validatable]: (_: unknown, { at }: ValidatableProtocolFnOpts) => {
+          lookupPath = at;
         },
       };
       const v = validator`{ x: { y: ${validatable} } }`;
