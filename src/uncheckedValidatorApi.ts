@@ -29,16 +29,13 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown): T {
       assertMatches(rule, value, interpolated);
-      // There is currently no way to tell TypeScript that assertMatches() both asserts the input
-      // and returns a value. Because of this, TypeScript wants this function to return void, but we're returning
-      // the value anyways as a convenience for any JavaScript users who aren't constrained by TypeScript's rules.
       return value as any;
     },
-    // Same as assertMatches(), except with a different type signature.
+    // Same as assertMatches(), except with a different type signature, and
+    // returns void. Functions with assertion signatures have stricter rules
+    // about when and how they can be used, and they can't be programmed to
+    // return a value, which is why this is placed in a separate function.
     // If you're not using TypeScript, its recommended to simply ignore this.
-    // If TypeScript ever gets around to allowing these two type signatures to be combined,
-    // this version will be marked as deprecated in favor of assertMatches() (but it won't be removed).
-    // See https://github.com/microsoft/TypeScript/issues/34636
     assertionTypeGuard(value: unknown): asserts value is T {
       assertMatches(rule, value, interpolated);
     },
