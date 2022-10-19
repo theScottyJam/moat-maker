@@ -8,7 +8,7 @@ import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
-import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
+import { AssertMatchesOpts, isValidatorInstance, Validator, ValidatorRef } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
 import { ValidatorAssertionError } from './exceptions';
@@ -27,8 +27,8 @@ uncheckedValidator.fromRule = function<T=unknown>(rule: Rule, interpolated: read
 function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
   return Object.freeze({
     [isValidatorInstance]: true as const,
-    assertMatches(value: unknown): T {
-      assertMatches(rule, value, interpolated);
+    assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
+      assertMatches(rule, value, interpolated, opts);
       return value as any;
     },
     // Same as assertMatches(), except with a different type signature, and
@@ -36,8 +36,8 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     // about when and how they can be used, and they can't be programmed to
     // return a value, which is why this is placed in a separate function.
     // If you're not using TypeScript, its recommended to simply ignore this.
-    assertionTypeGuard(value: unknown): asserts value is T {
-      assertMatches(rule, value, interpolated);
+    assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
+      assertMatches(rule, value, interpolated, opts);
     },
     matches(value: unknown): value is T {
       return doesMatch(rule, value, interpolated);
@@ -45,16 +45,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     rule,
     interpolated: Object.freeze(interpolated),
     [validatable](value: unknown, { failure, at }: ValidatableProtocolFnOpts) {
-      // TODO: It would be better to pass in the failure function, instead of catching and rethrowing
-      try {
-        assertMatches(rule, value, interpolated, at);
-      } catch (err) {
-        if (err instanceof ValidatorAssertionError) {
-          throw failure(err.message);
-        } else {
-          throw err;
-        }
-      }
+      assertMatches(rule, value, interpolated, { at, errorFactory: failure });
     },
   });
 }

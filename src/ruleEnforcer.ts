@@ -4,6 +4,7 @@ import { reprUnknownValue, UnreachableCaseError } from './util';
 import { createValidatorSyntaxError, ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
+import { AssertMatchesOpts } from './types/validator';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
@@ -44,7 +45,10 @@ export function assertMatches<T>(
   rule: Rule,
   target: T,
   interpolated: readonly unknown[],
-  lookupPath = '<receivedValue>',
+  {
+    at: lookupPath = '<receivedValue>',
+    errorFactory = (...args) => new ValidatorAssertionError(...args),
+  }: AssertMatchesOpts = {},
 ): asserts target is T {
   if (rule.category === 'noop') {
     // noop
@@ -56,58 +60,58 @@ export function assertMatches<T>(
       } else if (target instanceof Function) {
         whatWasGot = 'a function';
       }
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected ${lookupPath} to be of type "${rule.type}" but got ${whatWasGot}.`,
       );
     }
   } else if (rule.category === 'primitiveLiteral') {
     if (target !== rule.value) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected ${lookupPath} to be ${reprUnknownValue(rule.value)} but got ${reprUnknownValue(target)}.`,
       );
     }
   } else if (rule.category === 'union') {
     const unionVariants = flattenUnionVariants(rule);
     if (!unionVariants.some(v => doesMatch(v, target, interpolated))) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         'Failed to match against every variant of a union.\n' +
-        collectAssertionErrors(unionVariants, target, interpolated, lookupPath)
+        collectAssertionErrors(unionVariants, target, interpolated, { at: lookupPath, errorFactory })
           .map((message, i) => `  Variant ${i + 1}: ${message}`)
           .join('\n'),
       );
     }
   } else if (rule.category === 'intersection') {
     for (const variant of rule.variants) {
-      assertMatches(variant, target, interpolated, lookupPath);
+      assertMatches(variant, target, interpolated, { at: lookupPath, errorFactory });
     }
   } else if (rule.category === 'object') {
-    assertMatchesObject(rule, target, interpolated, lookupPath);
+    assertMatchesObject(rule, target, interpolated, { at: lookupPath, errorFactory });
   } else if (rule.category === 'array') {
     if (!Array.isArray(target)) {
-      throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
+      throw errorFactory(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
     }
 
     for (const [i, element] of target.entries()) {
-      assertMatches(rule.content, element, interpolated, `${lookupPath}[${i}]`);
+      assertMatches(rule.content, element, interpolated, { at: `${lookupPath}[${i}]`, errorFactory });
     }
   } else if (rule.category === 'tuple') {
-    assertMatchesTuple(rule, target, interpolated, lookupPath);
+    assertMatchesTuple(rule, target, interpolated, { at: lookupPath, errorFactory });
   } else if (rule.category === 'iterator') {
-    assertMatches(rule.iterableType, target, interpolated, lookupPath);
+    assertMatches(rule.iterableType, target, interpolated, { at: lookupPath, errorFactory });
 
     if (!isIterable(target)) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
       );
     }
 
     let i = 0;
     for (const entry of target) {
-      assertMatches(rule.entryType, entry, interpolated, `[...${lookupPath}][${i}]`);
+      assertMatches(rule.entryType, entry, interpolated, { at: `[...${lookupPath}][${i}]`, errorFactory });
       ++i;
     }
   } else if (rule.category === 'interpolation') {
-    assertMatchesInterpolation(rule, target, interpolated, lookupPath);
+    assertMatchesInterpolation(rule, target, interpolated, { at: lookupPath, errorFactory });
   } else {
     throw new UnreachableCaseError(rule);
   }
@@ -117,10 +121,10 @@ function assertMatchesObject<T>(
   rule: ObjectRule,
   target: T,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
 ): asserts target is T {
   if (!isObject(target)) {
-    throw new ValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
+    throw errorFactory(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
   }
 
   const calcSubLookupPath = (lookupPath: string, key: string | symbol): string => {
@@ -167,7 +171,7 @@ function assertMatchesObject<T>(
     .map(([key]) => key);
 
   if (missingKeys.length > 0) {
-    throw new ValidatorAssertionError(
+    throw errorFactory(
       `${lookupPath} is missing the required properties: ` +
       missingKeys.map(key => reprUnknownValue(key)).join(', '),
     );
@@ -176,7 +180,7 @@ function assertMatchesObject<T>(
   if (rule.index !== null) {
     for (const [key, value] of allObjectEntries(target)) {
       if (doesMatch(rule.index.key, key, interpolated)) {
-        assertMatches(rule.index.value, value, interpolated, calcSubLookupPath(lookupPath, key));
+        assertMatches(rule.index.value, value, interpolated, { at: calcSubLookupPath(lookupPath, key), errorFactory });
       }
     }
   }
@@ -184,7 +188,7 @@ function assertMatchesObject<T>(
   for (const [key, iterRuleInfoList] of content) {
     for (const iterRuleInfo of iterRuleInfoList) {
       if (iterRuleInfo.optional && !(key in target)) continue;
-      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
+      assertMatches(iterRuleInfo.rule, (target as any)[key], interpolated, { at: calcSubLookupPath(lookupPath, key), errorFactory });
     }
   }
 }
@@ -193,10 +197,10 @@ function assertMatchesTuple<T>(
   rule: TupleRule,
   target: T,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
 ): asserts target is T {
   if (!Array.isArray(target)) {
-    throw new ValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
+    throw errorFactory(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
   }
 
   const minSize = rule.content.length;
@@ -206,16 +210,16 @@ function assertMatchesTuple<T>(
 
   if (target.length < minSize || target.length > maxSize) {
     if (minSize === maxSize) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected the ${lookupPath} array to have ${minSize} entries, but found ${target.length}.`,
       );
     } else if (maxSize !== Infinity) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
         `but found ${target.length}.`,
       );
     } else {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected the ${lookupPath} array to have at least ${minSize} entries, but found ${target.length}.`,
       );
     }
@@ -225,7 +229,7 @@ function assertMatchesTuple<T>(
   for (const [i, element] of target.entries()) {
     const subRule: Rule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
     if (subRule !== undefined) {
-      assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
+      assertMatches(subRule, element, interpolated, { at: `${lookupPath}[${i}]`, errorFactory });
     } else {
       restItems.push(element);
     }
@@ -233,7 +237,7 @@ function assertMatchesTuple<T>(
 
   if (rule.rest !== null) {
     const restStartIndex = rule.content.length + rule.optionalContent.length;
-    assertMatches(rule.rest, restItems, interpolated, `${lookupPath}.slice(${restStartIndex})`);
+    assertMatches(rule.rest, restItems, interpolated, { at: `${lookupPath}.slice(${restStartIndex})`, errorFactory });
   }
 }
 
@@ -241,7 +245,7 @@ function assertMatchesInterpolation<T>(
   rule: InterpolationRule,
   target: T,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
 ): asserts target is T {
   const valueToMatch = interpolated[rule.interpolationIndex];
 
@@ -249,7 +253,7 @@ function assertMatchesInterpolation<T>(
     assert(typeof valueToMatch[validatable] === 'function'); // <-- TODO: Test
 
     valueToMatch[validatable](target, {
-      failure: (...args) => new ValidatorAssertionError(...args),
+      failure: (...args) => errorFactory(...args),
       at: lookupPath,
     });
 
@@ -258,24 +262,24 @@ function assertMatchesInterpolation<T>(
 
   if (typeof valueToMatch === 'function') {
     if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
         '(and not an instance of a subclass).',
       );
     }
   } else if (valueToMatch instanceof RegExp) {
     if (typeof target !== 'string') {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to be a string that matches the regular expression ${valueToMatch.toString()}`,
       );
     }
     if (target.match(valueToMatch) === null) {
-      throw new ValidatorAssertionError(
+      throw errorFactory(
         `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
       );
     }
   } else if (!sameValueZero(target, valueToMatch)) {
-    throw new ValidatorAssertionError(
+    throw errorFactory(
       `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(target)}.`,
     );
   }
@@ -289,11 +293,16 @@ function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
   });
 }
 
-function collectAssertionErrors(rules: readonly Rule[], value: unknown, interpolated: readonly unknown[], lookupPath: string): readonly string[] {
+function collectAssertionErrors(
+  rules: readonly Rule[],
+  value: unknown,
+  interpolated: readonly unknown[],
+  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
+): readonly string[] {
   return rules
     .map(rule => {
       try {
-        assertMatches(rule, value, interpolated, lookupPath);
+        assertMatches(rule, value, interpolated, { at: lookupPath, errorFactory });
         throw new Error('Internal error: Expected assertMatches() to throw');
       } catch (err) {
         if (err instanceof ValidatorAssertionError) {

@@ -1,6 +1,6 @@
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
-import { isValidatorInstance, Validator, ValidatorRef } from './types/validator';
+import { AssertMatchesOpts, isValidatorInstance, Validator, ValidatorRef } from './types/validator';
 import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
 import { uncheckedValidator } from './uncheckedValidatorApi';
@@ -21,11 +21,11 @@ validator.fromRule = function<T=unknown>(rule: Rule, interpolated: readonly unkn
 function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): Validator<T> {
   return Object.freeze({
     [isValidatorInstance]: true as const,
-    assertMatches(value: unknown): T {
-      return unwrappedValidator.assertMatches(value);
+    assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
+      return unwrappedValidator.assertMatches(value, opts);
     },
-    assertionTypeGuard(value: unknown): asserts value is T {
-      return unwrappedValidator.assertionTypeGuard(value);
+    assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
+      return unwrappedValidator.assertionTypeGuard(value, opts);
     },
     matches(value: unknown): value is T {
       return unwrappedValidator.matches(value);

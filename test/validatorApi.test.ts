@@ -7,6 +7,43 @@ describe('validator behavior', () => {
     expect(Object.isFrozen(v)).toBe(true);
   });
 
+  describe('validator.assertMatches()', () => {
+    test('returns the argument', () => {
+      const v = validator`string`;
+      expect(v.assertMatches('xyz')).toBe('xyz');
+    });
+
+    test('throws on bad input', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(2);
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
+    });
+
+    test('able to control the start lookupPath with the "at" parameter', () => {
+      const v = validator`{ y: string }`;
+      const act = (): any => v.assertMatches({ y: 2 }, { at: '<someValue>.x' });
+      assert.throws(act, { message: 'Expected <someValue>.x.y to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
+    });
+
+    test('able to control the error type used with the errorFactory parameter', () => {
+      class MyError extends Error {}
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(2, { errorFactory: (...args: any) => new MyError(...args) });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, MyError);
+    });
+
+    test('able to explicitly supply undefined to "at" and "errorFactory" parameters', () => {
+      class MyError extends Error {}
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(2, { at: undefined, errorFactory: undefined });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, Error);
+    });
+  });
+
   describe('validator.assertionTypeGuard()', () => {
     test('returns undefined', () => {
       const v = validator`string`;
@@ -19,19 +56,28 @@ describe('validator behavior', () => {
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, ValidatorAssertionError);
     });
-  });
 
-  describe('validator.assertMatches()', () => {
-    test('returns the argument', () => {
-      const v = validator`string`;
-      expect(v.assertMatches('xyz')).toBe('xyz');
+    test('able to control the start lookupPath with the "at" parameter', () => {
+      const v = validator`{ y: string }`;
+      const act = (): any => v.assertionTypeGuard({ y: 2 }, { at: '<someValue>.x' });
+      assert.throws(act, { message: 'Expected <someValue>.x.y to be of type "string" but got type "number".' });
+      assert.throws(act, ValidatorAssertionError);
     });
 
-    test('throws on bad input', () => {
+    test('able to control the error type used with the errorFactory parameter', () => {
+      class MyError extends Error {}
       const v = validator`string`;
-      const act = (): any => v.assertMatches(2);
+      const act = (): any => v.assertionTypeGuard(2, { errorFactory: (...args: any) => new MyError(...args) });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, MyError);
+    });
+
+    test('able to explicitly supply undefined to "at" and "errorFactory" parameters', () => {
+      class MyError extends Error {}
+      const v = validator`string`;
+      const act = (): any => v.assertionTypeGuard(2, { at: undefined, errorFactory: undefined });
+      assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, Error);
     });
   });
 
