@@ -362,6 +362,7 @@ describe('object rules', () => {
         category: 'simple',
         type: 'string',
       },
+      label: 'index',
     });
 
     // Is everything frozen?
@@ -405,6 +406,7 @@ describe('object rules', () => {
         category: 'simple',
         type: 'string',
       },
+      label: 'index',
     });
   });
 

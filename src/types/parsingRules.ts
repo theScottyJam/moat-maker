@@ -28,6 +28,7 @@ export interface ObjectRuleContentValue {
 export interface ObjectRuleIndexValue {
   readonly key: Rule
   readonly value: Rule
+  readonly label: string
 }
 
 export interface ObjectRule {

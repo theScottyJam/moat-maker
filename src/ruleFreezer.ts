@@ -24,6 +24,7 @@ export function freezeRule(rule: Rule): Rule {
     const freezeIndexValue = (indexValue: ObjectRuleIndexValue): ObjectRuleIndexValue => f({
       key: freezeRule(indexValue.key),
       value: freezeRule(indexValue.value),
+      label: indexValue.label,
     });
     return f({
       category: rule.category,

@@ -216,6 +216,7 @@ function parseObject(tokenStream: TokenStream): Rule {
       ruleTemplate.index = {
         key: keyInfo.indexType,
         value: valueRule,
+        label: keyInfo.name,
       };
     } else if ('keyInterpolationIndex' in keyInfo) {
       const { keyInterpolationIndex, optional } = keyInfo;
@@ -259,6 +260,7 @@ type ParseObjectKeyReturn = {
   readonly optional: boolean
 } | {
   readonly indexType: Rule
+  readonly name: string
 };
 
 function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
@@ -288,8 +290,8 @@ function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
     } else if (tokenStream.peek().category === 'identifier') {
       // parse mapped type
 
-      // do nothing with the nameToken, as its value has no effect.
       const nameToken = tokenStream.next();
+      assert(nameToken.category === 'identifier');
 
       const colonToken = tokenStream.next();
       if (colonToken.value !== ':') {
@@ -307,7 +309,7 @@ function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
         throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
       }
 
-      return { indexType };
+      return { indexType, name: nameToken.value };
     } else {
       throw createValidatorSyntaxError(
         'Expected an identifier, followed by ":" and a type, if this is meant to be a mapped type,\n' +
