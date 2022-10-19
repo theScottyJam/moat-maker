@@ -49,6 +49,7 @@ export interface TupleRule {
   readonly content: readonly Rule[]
   readonly optionalContent: readonly Rule[]
   readonly rest: Rule | null
+  readonly entryLabels: readonly string[] | null
 }
 
 export interface IteratorRule {

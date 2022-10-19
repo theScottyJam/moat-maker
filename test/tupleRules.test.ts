@@ -188,6 +188,7 @@ describe('tuple rules', () => {
         },
       ],
       rest: null,
+      entryLabels: null,
     });
     expect(Object.isFrozen(v.rule)).toBe(true);
   });
@@ -210,8 +211,15 @@ describe('tuple rules', () => {
           type: 'boolean',
         },
       },
+      entryLabels: null,
     });
     expect(Object.isFrozen(v.rule)).toBe(true);
+  });
+
+  test('produces the correct entry names in the rule', () => {
+    const v = validator`[x: string, y?: number, ...z: unknown[]]`;
+    assert(v.rule.category === 'tuple');
+    expect(v.rule.entryLabels).toMatchObject(['x', 'y', 'z']);
   });
 
   test('works with funky whitespace', () => {
@@ -232,6 +240,7 @@ describe('tuple rules', () => {
           type: 'boolean',
         },
       },
+      entryLabels: null,
     });
   });
 

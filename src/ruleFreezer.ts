@@ -48,6 +48,7 @@ export function freezeRule(rule: Rule): Rule {
       content: f(rule.content.map(entry => freezeRule(entry))),
       optionalContent: f(rule.optionalContent.map(entry => freezeRule(entry))),
       rest: rule.rest === null ? null : freezeRule(rule.rest),
+      entryLabels: rule.entryLabels === null ? null : f(rule.entryLabels),
     });
   } else if (rule.category === 'iterator') {
     return f({

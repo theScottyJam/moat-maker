@@ -3,7 +3,7 @@ import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
 import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
-import { Token, TokenStream } from './types/tokenizer';
+import { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
 const allSimpleTypes: simpleTypeVariant[] = [
@@ -346,6 +346,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
     content: [] as Rule[],
     optionalContent: [] as Rule[],
     rest: null as Rule | null,
+    entryLabels: null as string[] | null,
   };
 
   if (tokenStream.peek().value === ']') {
@@ -360,7 +361,7 @@ function parseTuple(tokenStream: TokenStream): Rule {
   let requiredPropertiesAllowed = true;
   let entryNameRequired: 'ALWAYS' | 'NEVER' | 'UNDECIDED' = 'UNDECIDED';
   while (true) {
-    const { behaviorCategory, rule: entryRule, entryWasNamed } = parseTupleEntry(tokenStream, { entryNameRequired, requiredPropertiesAllowed });
+    const { behaviorCategory, rule: entryRule, entryName } = parseTupleEntry(tokenStream, { entryNameRequired, requiredPropertiesAllowed });
     if (behaviorCategory === 'REQUIRED') {
       rule.content.push(entryRule);
     } else if (behaviorCategory === 'OPTIONAL') {
@@ -372,7 +373,14 @@ function parseTuple(tokenStream: TokenStream): Rule {
     }
 
     if (entryNameRequired === 'UNDECIDED') {
-      entryNameRequired = entryWasNamed ? 'ALWAYS' : 'NEVER';
+      entryNameRequired = entryName !== null ? 'ALWAYS' : 'NEVER';
+    }
+
+    if (entryName !== null) {
+      if (rule.entryLabels === null) {
+        rule.entryLabels = [];
+      }
+      rule.entryLabels.push(entryName);
     }
 
     {
@@ -409,7 +417,7 @@ interface ParseTupleEntryOpts {
 
 interface ParseTupleEntryReturn {
   readonly behaviorCategory: 'REQUIRED' | 'OPTIONAL' | 'REST'
-  readonly entryWasNamed: boolean
+  readonly entryName: string | null
   readonly rule: Rule
 }
 
@@ -458,20 +466,20 @@ function parseTupleEntry(tokenStream: TokenStream, { entryNameRequired, required
   }
 
   if (isRest) {
-    return { behaviorCategory: 'REST', entryWasNamed: parsedNameRegionResult !== null, rule };
+    return { behaviorCategory: 'REST', entryName: parsedNameRegionResult?.name ?? null, rule };
   }
   if (parsedNameRegionResult?.optional === true || isUnnamedFieldOptional) {
-    return { behaviorCategory: 'OPTIONAL', entryWasNamed: parsedNameRegionResult !== null, rule };
+    return { behaviorCategory: 'OPTIONAL', entryName: parsedNameRegionResult?.name ?? null, rule };
   }
 
   if (requiredPropertiesAllowed) {
-    return { behaviorCategory: 'REQUIRED', entryWasNamed: parsedNameRegionResult !== null, rule };
+    return { behaviorCategory: 'REQUIRED', entryName: parsedNameRegionResult?.name ?? null, rule };
   } else {
     throw createValidatorSyntaxError('Required entries can not appear after optional entries.', tokenStream.originalText, errorRange);
   }
 }
 
-function tryParseTupleEntryNameRegion(tokenStream: TokenStream): { optional: boolean } | null {
+function tryParseTupleEntryNameRegion(tokenStream: TokenStream): { name: string, optional: boolean } | null {
   const entryNameToken = tokenStream.peek(1);
   if (entryNameToken.category !== 'identifier') {
     return null;
@@ -487,7 +495,7 @@ function tryParseTupleEntryNameRegion(tokenStream: TokenStream): { optional: boo
     tokenStream.next();
   }
 
-  return { optional };
+  return { name: entryNameToken.value, optional };
 }
 
 function parseNumber(tokenStream: TokenStream): number {
