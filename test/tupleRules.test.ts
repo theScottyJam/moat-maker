@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('tuple rules', () => {
   test('accepts an array with matching entries', () => {
@@ -16,28 +16,28 @@ describe('tuple rules', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches({});
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Object].' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects a typed-array', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches(new Uint8Array());
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Uint8Array].' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects an array of the wrong length', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches(['xyz']);
     assert.throws(act, { message: 'Expected the <receivedValue> array to have 2 entries, but found 1.' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects an array with the wrong properties', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches(['abc', 'def']);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('accepts an inherited array', () => {
@@ -51,7 +51,7 @@ describe('tuple rules', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches(new (MyArray as any)('abc', 'def'));
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "string".' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   describe('optional entries', () => {
@@ -64,21 +64,21 @@ describe('tuple rules', () => {
       const v = validator`[string, number?, boolean?]`;
       const act = (): any => v.assertMatches(['xyz', 2, 4]);
       assert.throws(act, { message: 'Expected <receivedValue>[2] to be of type "boolean" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects arrays that are larger than the max tuple size', () => {
       const v = validator`[string, number?, boolean?]`;
       const act = (): any => v.assertMatches(['xyz', 2, true, undefined]);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 1 and 3 entries, but found 4.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects arrays that are smaller than the max tuple size', () => {
       const v = validator`[string, number, boolean?]`;
       const act = (): any => v.assertMatches(['xyz']);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have between 2 and 3 entries, but found 1.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('optional entries and no required entries', () => {
@@ -114,14 +114,14 @@ describe('tuple rules', () => {
       const v = validator`[string, number, ...string[]]`;
       const act = (): any => v.assertMatches(['xyz']);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have at least 2 entries, but found 1.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects when the rest entry is of the wrong type', () => {
       const v = validator`[string, number, ...boolean[]]`;
       const act = (): any => v.assertMatches(['xyz', 2, true, 'xyz']);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(2)[1] to be of type "boolean" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('works with empty tuples', () => {
@@ -135,7 +135,7 @@ describe('tuple rules', () => {
       const v = validator`[string, ...boolean]`;
       const act = (): any => v.assertMatches(['xyz', true]);
       assert.throws(act, { message: 'Expected <receivedValue>.slice(1) to be of type "boolean" but got an array.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test("the rest entry's validatable protocol gets used, even when it receives an empty array", () => {

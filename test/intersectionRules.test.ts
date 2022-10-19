@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('intersection rules', () => {
   test('accepts a value that matches all variants of the intersection', () => {
@@ -11,11 +11,11 @@ describe('intersection rules', () => {
     const v = validator`{ x: number } & { y: number } & { z: number }`;
     const act = (): any => v.assertMatches({ x: 2, y: 3 });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "z"' });
-    assert.throws(act, ValidatorAssertionError);
-    assert.throws((): any => v.assertMatches({ x: 2, z: 3 }), ValidatorAssertionError);
-    assert.throws((): any => v.assertMatches({ y: 2, z: 3 }), ValidatorAssertionError);
-    assert.throws((): any => v.assertMatches({}), ValidatorAssertionError);
-    assert.throws((): any => v.assertMatches(42), ValidatorAssertionError);
+    assert.throws(act, TypeError);
+    expect(v.matches({ x: 2, z: 3 })).toBe(false);
+    expect(v.matches({ y: 2, z: 3 })).toBe(false);
+    expect(v.matches({})).toBe(false);
+    expect(v.matches(42)).toBe(false);
   });
 
   test('produces the correct rule', () => {

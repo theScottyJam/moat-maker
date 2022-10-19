@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
+import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
 import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';

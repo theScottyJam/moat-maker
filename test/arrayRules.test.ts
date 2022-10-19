@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('array rules', () => {
   test('accepts an array with matching entries', () => {
@@ -16,20 +16,20 @@ describe('array rules', () => {
     const v = validator`string[]`;
     const act = (): any => v.assertMatches({});
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Object].' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects a typed-array', () => {
     const v = validator`string[]`;
     const act = (): any => v.assertMatches(new Uint8Array());
     assert.throws(act, { message: 'Expected <receivedValue> to be an array but got [object Uint8Array].' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects an array with the wrong properties', () => {
     const v = validator`string[]`;
     const act = (): any => v.assertMatches(['abc', 2, 'xyz']);
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "string" but got type "number".' });
   });
 
@@ -45,7 +45,7 @@ describe('array rules', () => {
     const v = validator`string[]`;
     const act = (): any => v.assertMatches(new (MyArray as any)('xyz', 3));
     assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "string" but got type "number".' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   describe('multi-dimensional array patterns', () => {
@@ -59,14 +59,14 @@ describe('array rules', () => {
       const v = validator`string[][]`;
       const act = (): any => v.assertMatches(['xyz']);
       assert.throws(act, { message: 'Expected <receivedValue>[0] to be an array but got "xyz".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects entries of the wrong type', () => {
       const v = validator`string[][]`;
       const act = (): any => v.assertMatches([[], ['x', 'y', 2]]);
       assert.throws(act, { message: 'Expected <receivedValue>[1][2] to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 

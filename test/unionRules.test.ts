@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
@@ -20,7 +20,7 @@ describe('union rules', () => {
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('produces the correct rule', () => {
@@ -109,7 +109,7 @@ describe('union rules', () => {
         '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('Throws a syntax error when there\'s nothing to the right of the "|"', () => {

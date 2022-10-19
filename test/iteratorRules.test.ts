@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('iterator rules', () => {
   test('accepts iterables with correct entry types an input', () => {
@@ -18,21 +18,21 @@ describe('iterator rules', () => {
     assert.throws(act, {
       message: 'Expected <receivedValue>, which is 2, to be an instance of `Array` (and not an instance of a subclass).',
     });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects when iterable entry is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
     const act = (): any => v.assertMatches([2, 'xyz']);
     assert.throws(act, { message: 'Expected [...<receivedValue>][1] to be of type "number" but got type "string".' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects non-iterable inputs', () => {
     const v = validator`unknown@<string>`;
     const act = (): any => v.assertMatches(42);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('Using a non-iterator as the iterator type causes all inputs to be rejected', () => {
@@ -41,7 +41,7 @@ describe('iterator rules', () => {
     // Now you shouldn't be able to pass any valid inputs into it.
     const act = (): any => v.assertMatches(42);
     assert.throws(act, { message: 'Expected <receivedValue> to be an iterable, i.e. you should be able to use this value in a for-of loop.' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('produces the correct rule', () => {

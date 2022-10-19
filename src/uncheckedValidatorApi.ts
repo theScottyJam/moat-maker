@@ -28,7 +28,21 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
-      assertMatches(rule, value, interpolated, opts);
+      try {
+        assertMatches(rule, value, interpolated, opts);
+      } catch (error) {
+        // Rethrow as TypeError relatively low down the call stack, so we don't have too
+        // many unnecessary stack frames in the call stack.
+        if (error instanceof ValidatorAssertionError) {
+          // This version of TypeScript does not yet support error causes.
+          const errorOpts = (error as any).cause !== undefined
+            ? { cause: (error as any).cause }
+            : [];
+          throw new (TypeError as any)(error.message, errorOpts);
+        }
+        throw error;
+      }
+
       return value as any;
     },
     // Same as assertMatches(), except with a different type signature, and
@@ -37,7 +51,20 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     // return a value, which is why this is placed in a separate function.
     // If you're not using TypeScript, its recommended to simply ignore this.
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
-      assertMatches(rule, value, interpolated, opts);
+      try {
+        assertMatches(rule, value, interpolated, opts);
+      } catch (error) {
+        // Rethrow as TypeError relatively low down the call stack, so we don't have too
+        // many unnecessary stack frames in the call stack.
+        if (error instanceof ValidatorAssertionError) {
+          // This version of TypeScript does not yet support error causes.
+          const errorOpts = (error as any).cause !== undefined
+            ? { cause: (error as any).cause }
+            : [];
+          throw new (TypeError as any)(error.message, errorOpts);
+        }
+        throw error;
+      }
     },
     matches(value: unknown): value is T {
       return doesMatch(rule, value, interpolated);

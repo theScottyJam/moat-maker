@@ -1,7 +1,7 @@
 /* eslint-disable no-new-wrappers */
 
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('primitive literal rules', () => {
   describe('boolean', () => {
@@ -14,21 +14,21 @@ describe('primitive literal rules', () => {
       const v = validator`false`;
       const act = (): any => v.assertMatches(true);
       assert.throws(act, { message: 'Expected <receivedValue> to be false but got true.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects strings', () => {
       const v = validator`true`;
       const act = (): any => v.assertMatches('true');
       assert.throws(act, { message: 'Expected <receivedValue> to be true but got "true".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects boolean objects', () => {
       const v = validator`true`;
       const act = (): any => v.assertMatches(new Boolean(false));
       assert.throws(act, { message: 'Expected <receivedValue> to be true but got [object Boolean].' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('produces the correct rule', () => {
@@ -51,14 +51,14 @@ describe('primitive literal rules', () => {
       const v = validator`2n`;
       const act = (): any => v.assertMatches(3n);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 3n.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects non-bigint numbers', () => {
       const v = validator`2n`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2n but got 2.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('produces the correct rule', () => {
@@ -95,7 +95,7 @@ describe('primitive literal rules', () => {
       const v = validator`'xyz'`;
       const act = (): any => v.assertMatches('xy');
       assert.throws(act, { message: 'Expected <receivedValue> to be "xyz" but got "xy".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('truncates strings in error messages that are too long', () => {
@@ -107,33 +107,33 @@ describe('primitive literal rules', () => {
           'but got "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX…".'
         ),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('does not truncate the string in the error message if truncating would only remove save a few characters', () => {
       const v = validator`'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'`;
       const act = (): any => v.assertMatches('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYz');
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, {
         message: (
           'Expected <receivedValue> to be "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" ' +
           'but got "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYz".'
         ),
       });
+      assert.throws(act, TypeError);
     });
 
     test('rejects numeric inputs', () => {
       const v = validator`'xyz'`;
       const act = (): any => v.assertMatches(2);
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be "xyz" but got 2.' });
+      assert.throws(act, TypeError);
     });
 
     test('rejects string objects', () => {
       const v = validator`'xyz'`;
       const act = (): any => v.assertMatches(new String('xyz'));
-      assert.throws(act, ValidatorAssertionError);
       assert.throws(act, { message: 'Expected <receivedValue> to be "xyz" but got [object String].' });
+      assert.throws(act, TypeError);
     });
 
     test('produces the correct rule', () => {
@@ -355,21 +355,21 @@ describe('primitive literal rules', () => {
       const v = validator`2`;
       const act = (): any => v.assertMatches(3);
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got 3.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects string inputs', () => {
       const v = validator`2`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got "xyz".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects number objects', () => {
       const v = validator`2`;
       const act = (): any => v.assertMatches(new Number(2));
       assert.throws(act, { message: 'Expected <receivedValue> to be 2 but got [object Number].' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('produces the correct rule', () => {

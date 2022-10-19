@@ -4,10 +4,6 @@ import { generateMessageWithPosition } from './errorFormatter';
 
 export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
-
-  static isAssertionError(value: unknown): boolean {
-    return value instanceof ValidatorAssertionError;
-  }
 }
 
 const validatorSyntaxErrorConstructorKey = Symbol('validatorSyntaxError constructor key');

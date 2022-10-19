@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ValidatableProtocolFnOpts, validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { ValidatableProtocolFnOpts, validator } from '../src';
 
 describe('interpolation', () => {
   describe('misc', () => {
@@ -50,14 +50,14 @@ describe('interpolation', () => {
       const v = validator`${23}`;
       const act = (): any => v.assertMatches(24);
       assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got 24.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('Rejects a different value type', () => {
       const v = validator`${23}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be the value 23 but got "xyz".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('No interpolation points produces an empty interpolated array', () => {
@@ -165,7 +165,7 @@ describe('interpolation', () => {
       assert.throws(act, {
         message: 'Expected <receivedValue>, which is "xyz", to be an instance of `Number` (and not an instance of a subclass).',
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('the Number class does not match an inherited boxed primitive', () => {
@@ -175,7 +175,7 @@ describe('interpolation', () => {
       assert.throws(act, {
         message: 'Expected <receivedValue>, which is [object MyNumber], to be an instance of `Number` (and not an instance of a subclass).',
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 
@@ -194,7 +194,7 @@ describe('interpolation', () => {
           '(and not an instance of a subclass).'
         ),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     describe('error formatting', () => {
@@ -230,14 +230,14 @@ describe('interpolation', () => {
       const v = validator`${/^\d{3}$/g}`;
       const act = (): any => v.assertMatches('2345');
       assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects a non-string value', () => {
       const v = validator`${/^\d{3}$/g}`;
       const act = (): any => v.assertMatches(2345);
       assert.throws(act, { message: 'Expected <receivedValue>, which is 2345, to be a string that matches the regular expression /^\\d{3}$/g' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('can match against an inherited regular expression', () => {
@@ -246,7 +246,7 @@ describe('interpolation', () => {
       v.assertMatches('234');
       const act = (): any => v.assertMatches('2345');
       assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('resets the lastIndex property when `g` flag is set (because it internally uses string.matches(regex))', () => {
@@ -280,7 +280,7 @@ describe('interpolation', () => {
       }}`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, { message: 'Whoops' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('protocol function receives value being matched', () => {
@@ -317,7 +317,7 @@ describe('interpolation', () => {
       const v = validator`{ x: ${validator`{ y: number }`}}`;
       const act = (): any => v.assertMatches({ x: { y: 'xyz' } });
       assert.throws(act, { message: 'Expected <receivedValue>.x.y to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 

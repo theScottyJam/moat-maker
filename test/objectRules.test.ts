@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 import { FrozenMap } from '../src/util';
 
 describe('object rules', () => {
@@ -22,21 +22,21 @@ describe('object rules', () => {
     const v = validator`{ str: string }`;
     const act = (): any => v.assertMatches('xyz');
     assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects an object missing a required property', () => {
     const v = validator`{ str: string, "numb\"": number, bool: boolean }`;
     const act = (): any => v.assertMatches({ str: '' });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\"", "bool"' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects an object missing both required and optional properties', () => {
     const v = validator`{ str: string, "numb\"": number, bool?: boolean }`;
     const act = (): any => v.assertMatches({ str: '' });
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "numb\\""' });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('accepts a missing optional property', () => {
@@ -50,7 +50,7 @@ describe('object rules', () => {
     assert.throws(act, {
       message: 'Expected <receivedValue>["numb.\\t"] to be of type "number" but got type "boolean".',
     });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   test('rejects when a nested object property does not match the expected type', () => {
@@ -59,7 +59,7 @@ describe('object rules', () => {
     assert.throws(act, {
       message: 'Expected <receivedValue>.sub["sub 2"].value to be an object but got 2.',
     });
-    assert.throws(act, ValidatorAssertionError);
+    assert.throws(act, TypeError);
   });
 
   describe('object type checks', () => {
@@ -97,7 +97,7 @@ describe('object rules', () => {
           '  Variant 2: Expected <receivedValue>.another to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects when a required property in the input value does not match the index type', () => {
@@ -110,7 +110,7 @@ describe('object rules', () => {
           '  Variant 2: Expected <receivedValue>.num to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects when an optional property in the input value does not match the index type', () => {
@@ -123,7 +123,7 @@ describe('object rules', () => {
           '  Variant 2: Expected <receivedValue>.str to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('explicit properties are still enforced, even when an index type is also present', () => {
@@ -131,7 +131,7 @@ describe('object rules', () => {
       // Object the index type, but not the `num` type.
       const act = (): any => v.assertMatches({ num: 'xyz' });
       assert.throws(act, { message: 'Expected <receivedValue>.num to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('index type restrictions only apply to its index key type', () => {
@@ -150,7 +150,7 @@ describe('object rules', () => {
       });
       const act = (): any => v.assertMatches(inputObj);
       assert.throws(act, { message: 'Expected <receivedValue>.x to be of type "number" but got type "boolean".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('index type triggers getters', () => {
@@ -169,7 +169,7 @@ describe('object rules', () => {
       const v = validator`{ [symb: symbol]: number }`;
       const act = (): any => v.assertMatches({ [Symbol('symName')]: 'oops' });
       assert.throws(act, { message: 'Expected <receivedValue>[Symbol(symName)] to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('able to show unnamed symbols in error messages', () => {
@@ -177,7 +177,7 @@ describe('object rules', () => {
       // eslint-disable-next-line symbol-description
       const act = (): any => v.assertMatches({ [Symbol()]: 'oops' });
       assert.throws(act, { message: 'Expected <receivedValue>[Symbol()] to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 
@@ -191,14 +191,14 @@ describe('object rules', () => {
       const v = validator`{ [${'hello'}]: 'world'}`;
       const act = (): any => v.assertMatches({ hello: 'not world' });
       assert.throws(act, { message: 'Expected <receivedValue>.hello to be "world" but got "not world".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test("rejects an object that's missing the required dynamically-keyed entry", () => {
       const v = validator`{ [${'hello'}]: 'world'}`;
       const act = (): any => v.assertMatches({ hello2: 'world' });
       assert.throws(act, { message: '<receivedValue> is missing the required properties: "hello"' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('dynamic keys can be optional', () => {

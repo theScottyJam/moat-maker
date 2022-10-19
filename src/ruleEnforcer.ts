@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { InterpolationRule, ObjectRule, ObjectRuleContentValue, Rule, TupleRule, UnionRule } from './types/parsingRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
-import { createValidatorSyntaxError, ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
+import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
 import { AssertMatchesOpts } from './types/validator';

@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 
 describe('validator behavior', () => {
   test('a validator instance is a frozen object', () => {
@@ -17,14 +17,14 @@ describe('validator behavior', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('able to control the start lookupPath with the "at" parameter', () => {
       const v = validator`{ y: string }`;
       const act = (): any => v.assertMatches({ y: 2 }, { at: '<someValue>.x' });
       assert.throws(act, { message: 'Expected <someValue>.x.y to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('able to control the error type used with the errorFactory parameter', () => {
@@ -42,6 +42,15 @@ describe('validator behavior', () => {
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, Error);
     });
+
+    test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
+      const v = validator`string`;
+      const myUniquelyNamedFn = (): any => v.assertMatches(2);
+      assert.throws(myUniquelyNamedFn, (error: Error) => {
+        assert(error.stack !== undefined);
+        return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
+      });
+    });
   });
 
   describe('validator.assertionTypeGuard()', () => {
@@ -54,14 +63,14 @@ describe('validator behavior', () => {
       const v = validator`string`;
       const act = (): any => v.assertionTypeGuard(2);
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('able to control the start lookupPath with the "at" parameter', () => {
       const v = validator`{ y: string }`;
       const act = (): any => v.assertionTypeGuard({ y: 2 }, { at: '<someValue>.x' });
       assert.throws(act, { message: 'Expected <someValue>.x.y to be of type "string" but got type "number".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('able to control the error type used with the errorFactory parameter', () => {
@@ -78,6 +87,15 @@ describe('validator behavior', () => {
       const act = (): any => v.assertionTypeGuard(2, { at: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, Error);
+    });
+
+    test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
+      const v = validator`string`;
+      const myUniquelyNamedFn = (): any => v.assertionTypeGuard(2);
+      assert.throws(myUniquelyNamedFn, (error: Error) => {
+        assert(error.stack !== undefined);
+        return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
+      });
     });
   });
 
@@ -123,7 +141,7 @@ describe('validator behavior', () => {
       });
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('allow providing interpolated values', () => {
@@ -149,7 +167,7 @@ describe('validator behavior', () => {
 
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 
@@ -221,14 +239,14 @@ describe('validator behavior', () => {
           'Expected <receivedValue>, which is -2, to match a custom validatable.'
         ),
       });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('you can give your validatable object a custom description for error messages to use', () => {
       const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
 
     test('you can move the custom validatable protocol to your own class', () => {
@@ -241,7 +259,7 @@ describe('validator behavior', () => {
       v.assertMatches('xyz');
       const act = (): any => v.assertMatches(2);
       assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
-      assert.throws(act, ValidatorAssertionError);
+      assert.throws(act, TypeError);
     });
   });
 
@@ -249,12 +267,5 @@ describe('validator behavior', () => {
     const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
     assert.throws(act, (err: Error) => err.constructor === Error);
     assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
-  });
-
-  test('ValidatorAssertionError.isAssertionError() does an instanceof check', () => {
-    class MyValidatorAssertionError extends ValidatorAssertionError {}
-    expect(ValidatorAssertionError.isAssertionError(new ValidatorAssertionError('my message'))).toBe(true);
-    expect(ValidatorAssertionError.isAssertionError(new MyValidatorAssertionError('my message'))).toBe(true);
-    expect(ValidatorAssertionError.isAssertionError(new Error('my message'))).toBe(false);
   });
 });

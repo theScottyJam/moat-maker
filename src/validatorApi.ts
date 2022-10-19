@@ -4,6 +4,7 @@ import { AssertMatchesOpts, isValidatorInstance, Validator, ValidatorRef } from 
 import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { reprUnknownValue } from './util';
 import { uncheckedValidator } from './uncheckedValidatorApi';
+import { ValidatorAssertionError } from './exceptions';
 
 export function validator<T=unknown>(
   parts: TemplateStringsArray | { readonly raw: readonly string[] },
@@ -22,10 +23,36 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
-      return unwrappedValidator.assertMatches(value, opts);
+      try {
+        return unwrappedValidator.assertMatches(value, opts);
+      } catch (error) {
+        // Rethrow as TypeError as low down the call stack as possible, so we don't have too
+        // many unnecessary stack frames in the call stack.
+        if (error instanceof ValidatorAssertionError) {
+          // This version of TypeScript does not yet support error causes.
+          const errorOpts = (error as any).cause !== undefined
+            ? { cause: (error as any).cause }
+            : undefined;
+          throw new (TypeError as any)(error.message, errorOpts);
+        }
+        throw error;
+      }
     },
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
-      return unwrappedValidator.assertionTypeGuard(value, opts);
+      try {
+        return unwrappedValidator.assertionTypeGuard(value, opts);
+      } catch (error) {
+        // Rethrow as TypeError as low down the call stack as possible, so we don't have too
+        // many unnecessary stack frames in the call stack.
+        if (error instanceof ValidatorAssertionError) {
+          // This version of TypeScript does not yet support error causes.
+          const errorOpts = (error as any).cause !== undefined
+            ? { cause: (error as any).cause }
+            : undefined;
+          throw new (TypeError as any)(error.message, errorOpts);
+        }
+        throw error;
+      }
     },
     matches(value: unknown): value is T {
       return unwrappedValidator.matches(value);
