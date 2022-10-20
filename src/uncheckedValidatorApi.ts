@@ -65,6 +65,23 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
         throw error;
       }
     },
+    assertArgs(whichFn: string, args: ArrayLike<unknown>) {
+      const opts = {
+        errorPrefix: `received invalid argument for ${whichFn}():`,
+        at: '<argumentList>',
+      };
+
+      try {
+        assertMatches(rule, Array.from(args), interpolated, opts);
+      } catch (error) {
+        // Rethrow as TypeError relatively low down the call stack, so we don't have too
+        // many unnecessary stack frames in the call stack.
+        if (error instanceof ValidatorAssertionError) {
+          throw new TypeError(...buildTypeErrorArgs(error, opts));
+        }
+        throw error;
+      }
+    },
     matches(value: unknown): value is T {
       return doesMatch(rule, value, interpolated);
     },

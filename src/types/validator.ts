@@ -18,6 +18,7 @@ export interface Validator<T=unknown> extends ValidatableProtocol {
   readonly matches: (value: unknown) => value is T
   readonly assertMatches: (value: unknown, opts?: AssertMatchesOpts) => T
   readonly assertionTypeGuard: (value: unknown, opts?: AssertMatchesOpts) => asserts value is T
+  readonly assertArgs: (whichFn: string, args: ArrayLike<unknown>) => void
   readonly rule: Rule
   readonly interpolated: readonly unknown[]
 }

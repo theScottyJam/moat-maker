@@ -28,6 +28,9 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
       return unwrappedValidator.assertionTypeGuard(value, opts);
     },
+    assertArgs(whichFn: string, args: ArrayLike<unknown>) {
+      return unwrappedValidator.assertArgs(whichFn, args);
+    },
     matches(value: unknown): value is T {
       return unwrappedValidator.matches(value);
     },

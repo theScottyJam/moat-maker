@@ -125,6 +125,31 @@ describe('validator behavior', () => {
     });
   });
 
+  describe('validator.assertArgs()', () => {
+    test('throws on bad input', () => {
+      function fnWithValidation(x: any, y: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 'abc');
+      assert.throws(act, {
+        message: 'received invalid argument for fnWithValidation(): ' +
+        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('accepts any array-like object', () => {
+      const v = validator`[myStr: string, myNumb: number]`;
+      const act = (): any => v.assertArgs('myModule.myFn', { 0: 'a', 1: 'b', length: 2 });
+      assert.throws(act, {
+        message: 'received invalid argument for myModule.myFn(): ' +
+        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+  });
+
   describe('validator.matches()', () => {
     test('returns true if the provided value is valid', () => {
       const v = validator`string`;
