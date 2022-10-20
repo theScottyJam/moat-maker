@@ -10,6 +10,7 @@ export interface ValidatorRef extends ValidatableProtocol {
 export interface AssertMatchesOpts {
   readonly errorFactory?: (...params: ConstructorParameters<typeof Error>) => Error
   readonly at?: string
+  readonly errorPrefix?: string
 }
 
 export interface Validator<T=unknown> extends ValidatableProtocol {

@@ -27,6 +27,20 @@ describe('validator behavior', () => {
       assert.throws(act, TypeError);
     });
 
+    test('able to control the error message prefix', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(2, { errorPrefix: 'Error in some place:' });
+      assert.throws(act, { message: 'Error in some place: Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, TypeError);
+    });
+
+    test('the error prefix must end with ":"', () => {
+      const v = validator`any`;
+      const act = (): any => v.assertMatches('xyz', { errorPrefix: 'Error in some place.' });
+      assert.throws(act, { message: 'The assertMatches() errorPrefix string must end with a colon.' });
+      assert.throws(act, TypeError);
+    });
+
     test('able to control the error type used with the errorFactory parameter', () => {
       class MyError extends Error {}
       const v = validator`string`;
@@ -36,9 +50,8 @@ describe('validator behavior', () => {
     });
 
     test('able to explicitly supply undefined to "at" and "errorFactory" parameters', () => {
-      class MyError extends Error {}
       const v = validator`string`;
-      const act = (): any => v.assertMatches(2, { at: undefined, errorFactory: undefined });
+      const act = (): any => v.assertMatches(2, { at: undefined, errorPrefix: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, Error);
     });
@@ -73,6 +86,20 @@ describe('validator behavior', () => {
       assert.throws(act, TypeError);
     });
 
+    test('able to control the error message prefix', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertionTypeGuard(2, { errorPrefix: 'Error in some place:' });
+      assert.throws(act, { message: 'Error in some place: Expected <receivedValue> to be of type "string" but got type "number".' });
+      assert.throws(act, TypeError);
+    });
+
+    test('the error prefix must end with ":"', () => {
+      const v = validator`any`;
+      const act = (): any => v.assertionTypeGuard('xyz', { errorPrefix: 'Error in some place.' });
+      assert.throws(act, { message: 'The assertionTypeGuard() errorPrefix string must end with a colon.' });
+      assert.throws(act, TypeError);
+    });
+
     test('able to control the error type used with the errorFactory parameter', () => {
       class MyError extends Error {}
       const v = validator`string`;
@@ -82,9 +109,8 @@ describe('validator behavior', () => {
     });
 
     test('able to explicitly supply undefined to "at" and "errorFactory" parameters', () => {
-      class MyError extends Error {}
       const v = validator`string`;
-      const act = (): any => v.assertionTypeGuard(2, { at: undefined, errorFactory: undefined });
+      const act = (): any => v.assertionTypeGuard(2, { at: undefined, errorPrefix: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
       assert.throws(act, Error);
     });

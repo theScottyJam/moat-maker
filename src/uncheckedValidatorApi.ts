@@ -8,9 +8,8 @@ import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
-import { AssertMatchesOpts, isValidatorInstance, Validator, ValidatorRef } from './types/validator';
-import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
-import { reprUnknownValue } from './util';
+import { AssertMatchesOpts, isValidatorInstance, Validator } from './types/validator';
+import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { ValidatorAssertionError } from './exceptions';
 
 export function uncheckedValidator<T=unknown>(
@@ -28,17 +27,17 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
+      if (opts?.errorPrefix?.endsWith(':') === false) {
+        throw new TypeError('The assertMatches() errorPrefix string must end with a colon.');
+      }
+
       try {
         assertMatches(rule, value, interpolated, opts);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
-          // This version of TypeScript does not yet support error causes.
-          const errorOpts = (error as any).cause !== undefined
-            ? { cause: (error as any).cause }
-            : [];
-          throw new (TypeError as any)(error.message, errorOpts);
+          throw new TypeError(...buildTypeErrorArgs(error, opts));
         }
         throw error;
       }
@@ -51,17 +50,17 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     // return a value, which is why this is placed in a separate function.
     // If you're not using TypeScript, its recommended to simply ignore this.
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
+      if (opts?.errorPrefix?.endsWith(':') === false) {
+        throw new TypeError('The assertionTypeGuard() errorPrefix string must end with a colon.');
+      }
+
       try {
         assertMatches(rule, value, interpolated, opts);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
-          // This version of TypeScript does not yet support error causes.
-          const errorOpts = (error as any).cause !== undefined
-            ? { cause: (error as any).cause }
-            : [];
-          throw new (TypeError as any)(error.message, errorOpts);
+          throw new TypeError(...buildTypeErrorArgs(error, opts));
         }
         throw error;
       }
@@ -75,4 +74,13 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       assertMatches(rule, value, interpolated, { at, errorFactory: failure });
     },
   });
+}
+
+function buildTypeErrorArgs(error: ValidatorAssertionError, opts: AssertMatchesOpts | undefined): any {
+  const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
+  // This version of TypeScript does not yet support error causes.
+  const errorOpts = (error as any).cause !== undefined
+    ? { cause: (error as any).cause }
+    : [];
+  return [prefix + error.message, errorOpts];
 }

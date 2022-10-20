@@ -4,7 +4,11 @@ import { reprUnknownValue, UnreachableCaseError } from './util';
 import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
-import { AssertMatchesOpts } from './types/validator';
+
+interface RuleEnforcingOpts {
+  readonly errorFactory?: (...params: ConstructorParameters<typeof Error>) => Error
+  readonly at?: string
+}
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
@@ -48,7 +52,7 @@ export function assertMatches<T>(
   {
     at: lookupPath = '<receivedValue>',
     errorFactory = (...args) => new ValidatorAssertionError(...args),
-  }: AssertMatchesOpts = {},
+  }: RuleEnforcingOpts = {},
 ): asserts target is T {
   if (rule.category === 'noop') {
     // noop
@@ -121,7 +125,7 @@ function assertMatchesObject<T>(
   rule: ObjectRule,
   target: T,
   interpolated: readonly unknown[],
-  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
+  { at: lookupPath, errorFactory }: Required<RuleEnforcingOpts>,
 ): asserts target is T {
   if (!isObject(target)) {
     throw errorFactory(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
@@ -197,7 +201,7 @@ function assertMatchesTuple<T>(
   rule: TupleRule,
   target: T,
   interpolated: readonly unknown[],
-  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
+  { at: lookupPath, errorFactory }: Required<RuleEnforcingOpts>,
 ): asserts target is T {
   if (!Array.isArray(target)) {
     throw errorFactory(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
@@ -245,7 +249,7 @@ function assertMatchesInterpolation<T>(
   rule: InterpolationRule,
   target: T,
   interpolated: readonly unknown[],
-  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
+  { at: lookupPath, errorFactory }: Required<RuleEnforcingOpts>,
 ): asserts target is T {
   const valueToMatch = interpolated[rule.interpolationIndex];
 
@@ -297,7 +301,7 @@ function collectAssertionErrors(
   rules: readonly Rule[],
   value: unknown,
   interpolated: readonly unknown[],
-  { at: lookupPath, errorFactory }: Required<AssertMatchesOpts>,
+  { at: lookupPath, errorFactory }: Required<RuleEnforcingOpts>,
 ): readonly string[] {
   return rules
     .map(rule => {

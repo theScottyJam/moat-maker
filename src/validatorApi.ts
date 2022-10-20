@@ -23,36 +23,10 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
-      try {
-        return unwrappedValidator.assertMatches(value, opts);
-      } catch (error) {
-        // Rethrow as TypeError as low down the call stack as possible, so we don't have too
-        // many unnecessary stack frames in the call stack.
-        if (error instanceof ValidatorAssertionError) {
-          // This version of TypeScript does not yet support error causes.
-          const errorOpts = (error as any).cause !== undefined
-            ? { cause: (error as any).cause }
-            : undefined;
-          throw new (TypeError as any)(error.message, errorOpts);
-        }
-        throw error;
-      }
+      return unwrappedValidator.assertMatches(value, opts);
     },
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
-      try {
-        return unwrappedValidator.assertionTypeGuard(value, opts);
-      } catch (error) {
-        // Rethrow as TypeError as low down the call stack as possible, so we don't have too
-        // many unnecessary stack frames in the call stack.
-        if (error instanceof ValidatorAssertionError) {
-          // This version of TypeScript does not yet support error causes.
-          const errorOpts = (error as any).cause !== undefined
-            ? { cause: (error as any).cause }
-            : undefined;
-          throw new (TypeError as any)(error.message, errorOpts);
-        }
-        throw error;
-      }
+      return unwrappedValidator.assertionTypeGuard(value, opts);
     },
     matches(value: unknown): value is T {
       return unwrappedValidator.matches(value);
