@@ -32,12 +32,19 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       }
 
       try {
-        assertMatches(rule, value, interpolated, opts);
+        assertMatches(rule, value, interpolated, {
+          at: opts?.at,
+          errorFactory: (...args: any) => new ValidatorAssertionError(...args),
+        });
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
-          throw new TypeError(...buildTypeErrorArgs(error, opts));
+          if (opts?.errorFactory !== undefined) {
+            throw opts?.errorFactory(...buildRethrowErrorArgs(error, opts));
+          } else {
+            throw new TypeError(...buildRethrowErrorArgs(error, opts));
+          }
         }
         throw error;
       }
@@ -55,12 +62,19 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       }
 
       try {
-        assertMatches(rule, value, interpolated, opts);
+        assertMatches(rule, value, interpolated, {
+          at: opts?.at,
+          errorFactory: (...args: any) => new ValidatorAssertionError(...args),
+        });
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
-          throw new TypeError(...buildTypeErrorArgs(error, opts));
+          if (opts?.errorFactory !== undefined) {
+            throw opts?.errorFactory(...buildRethrowErrorArgs(error, opts));
+          } else {
+            throw new TypeError(...buildRethrowErrorArgs(error, opts));
+          }
         }
         throw error;
       }
@@ -77,7 +91,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
-          throw new TypeError(...buildTypeErrorArgs(error, opts));
+          throw new TypeError(...buildRethrowErrorArgs(error, opts));
         }
         throw error;
       }
@@ -93,7 +107,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
   });
 }
 
-function buildTypeErrorArgs(error: ValidatorAssertionError, opts: AssertMatchesOpts | undefined): any {
+function buildRethrowErrorArgs(error: ValidatorAssertionError, opts: AssertMatchesOpts | undefined): any {
   const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
   // This version of TypeScript does not yet support error causes.
   const errorOpts = (error as any).cause !== undefined

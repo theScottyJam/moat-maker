@@ -57,8 +57,22 @@ describe('validator behavior', () => {
     });
 
     test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
-      const v = validator`string`;
-      const myUniquelyNamedFn = (): any => v.assertMatches(2);
+      // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
+      const v = validator`[[[[string]]]]`;
+      const myUniquelyNamedFn = (): any => v.assertMatches([[[[2]]]]);
+      assert.throws(myUniquelyNamedFn, (error: Error) => {
+        assert(error.stack !== undefined);
+        return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
+      });
+    });
+
+    test('The thrown error does not have too many unnecessary stack frames in the call stack - with custom error', () => {
+      class MyError extends Error {}
+      const errorFactory = (...args: any): any => new MyError(...args);
+
+      // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
+      const v = validator`[[[[string]]]]`;
+      const myUniquelyNamedFn = (): any => v.assertMatches([[[[2]]]], { errorFactory });
       assert.throws(myUniquelyNamedFn, (error: Error) => {
         assert(error.stack !== undefined);
         return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
@@ -116,8 +130,22 @@ describe('validator behavior', () => {
     });
 
     test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
-      const v = validator`string`;
-      const myUniquelyNamedFn = (): any => v.assertionTypeGuard(2);
+      // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
+      const v = validator`[[[[string]]]]`;
+      const myUniquelyNamedFn = (): any => v.assertionTypeGuard([[[[2]]]]);
+      assert.throws(myUniquelyNamedFn, (error: Error) => {
+        assert(error.stack !== undefined);
+        return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
+      });
+    });
+
+    test('The thrown error does not have too many unnecessary stack frames in the call stack - with custom error', () => {
+      class MyError extends Error {}
+      const errorFactory = (...args: any): any => new MyError(...args);
+
+      // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
+      const v = validator`[[[[string]]]]`;
+      const myUniquelyNamedFn = (): any => v.assertionTypeGuard([[[[2]]]], { errorFactory });
       assert.throws(myUniquelyNamedFn, (error: Error) => {
         assert(error.stack !== undefined);
         return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
@@ -147,6 +175,16 @@ describe('validator behavior', () => {
         'Expected <argumentList>[1] to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
+    });
+
+    test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
+      // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
+      const v = validator`[[[[string]]]]`;
+      const myUniquelyNamedFn = (): any => v.assertArgs('myFn', [[[[2]]]]);
+      assert.throws(myUniquelyNamedFn, (error: Error) => {
+        assert(error.stack !== undefined);
+        return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');
+      });
     });
   });
 
