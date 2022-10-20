@@ -154,15 +154,82 @@ describe('validator behavior', () => {
   });
 
   describe('validator.assertArgs()', () => {
-    test('throws on bad input', () => {
+    test('gives the right error when failing to match against a tuple with named entries', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
         validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
       }
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
-        message: 'received invalid argument for fnWithValidation(): ' +
+        message: 'Received invalid "myNumb" argument for fnWithValidation(): ' +
         'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('gives the right error when failing to match against a tuple without named entries', () => {
+      function fnWithValidation(x: any, y: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[string, number]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 'abc');
+      assert.throws(act, {
+        message: 'Received invalid arguments for fnWithValidation(): ' +
+        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('gives the right error when failing to match against an optional entry of a tuple with named entries', () => {
+      function fnWithValidation(x: any, y: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: string, myNumb?: number]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 'abc');
+      assert.throws(act, {
+        message: 'Received invalid "myNumb" argument for fnWithValidation(): ' +
+        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('gives the right error when failing to match against the "rest" entries of a tuple with named entries', () => {
+      function fnWithValidation(x: any, y: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: string, ...myNumbs: number[]]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 'abc');
+      assert.throws(act, {
+        message: 'Received invalid "myNumbs" arguments for fnWithValidation(): ' +
+        'Expected <argumentList>.slice(1)[0] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('error formatting does not trip up if special strings are found in odd places in error string', () => {
+      // The message-updating algorithm does a find-and-replace algorithm. We want to make sure it
+      // won't get tripped up and finding the wrong thing.
+      function fnWithValidation(x: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: "xyz"]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('<argumentList>[2] -- Received invalid arguments for ');
+      assert.throws(act, {
+        message: 'Received invalid "myStr" argument for fnWithValidation(): ' +
+        'Expected <argumentList>[0] to be "xyz" but got "<argumentList>[2] -- Received invalid arguments for ".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('gives the right error when matching against a non-tuple', () => {
+      function fnWithValidation(x: any, y: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`string[]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 2);
+      assert.throws(act, {
+        message: 'Received invalid arguments for fnWithValidation(): ' +
+        'Expected <argumentList>[1] to be of type "string" but got type "number".',
       });
       assert.throws(act, TypeError);
     });
@@ -171,8 +238,34 @@ describe('validator behavior', () => {
       const v = validator`[myStr: string, myNumb: number]`;
       const act = (): any => v.assertArgs('myModule.myFn', { 0: 'a', 1: 'b', length: 2 });
       assert.throws(act, {
-        message: 'received invalid argument for myModule.myFn(): ' +
+        message: 'Received invalid "myNumb" argument for myModule.myFn(): ' +
         'Expected <argumentList>[1] to be of type "number" but got type "string".',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('throws when given too many arguments', () => {
+      function fnWithValidation(x: any, y: any, z: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz', 2, 3);
+      assert.throws(act, {
+        message: 'Received invalid arguments for fnWithValidation(): ' +
+        'Expected the <argumentList> array to have 2 entries, but found 3.',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('throws when given too few arguments', () => {
+      function fnWithValidation(x: any, y?: any): void {
+        // eslint-disable-next-line prefer-rest-params
+        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+      }
+      const act = (): any => fnWithValidation('xyz');
+      assert.throws(act, {
+        message: 'Received invalid arguments for fnWithValidation(): ' +
+        'Expected the <argumentList> array to have 2 entries, but found 1.',
       });
       assert.throws(act, TypeError);
     });
