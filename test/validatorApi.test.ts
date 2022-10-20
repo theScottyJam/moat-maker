@@ -407,25 +407,25 @@ describe('validator behavior', () => {
     });
   });
 
-  describe('validator.createValidatable()', () => {
+  describe('validator.checker()', () => {
     test('accepts a value that conforms to the custom validatable function', () => {
-      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
+      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0)}`;
       v.assertMatches(2);
     });
 
     test('rejects a value that does not conform to the custom validatable function', () => {
-      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0)}`;
+      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0)}`;
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is -2, to match a custom validatable.'
+          'Expected <receivedValue>, which is -2, to match a custom validity checker.'
         ),
       });
       assert.throws(act, TypeError);
     });
 
     test('you can give your validatable object a custom description for error messages to use', () => {
-      const v = validator`${validator.createValidatable(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
+      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
       assert.throws(act, TypeError);
@@ -434,13 +434,13 @@ describe('validator behavior', () => {
     test('you can move the custom validatable protocol to your own class', () => {
       // eslint-disable-next-line @typescript-eslint/no-extraneous-class
       class MyValidatable {
-        static [validator.validatable] = validator.createValidatable(x => typeof x === 'string').protocolFn;
+        static [validator.validatable] = validator.checker(x => typeof x === 'string').protocolFn;
       }
 
       const v = validator`${MyValidatable}`;
       v.assertMatches('xyz');
       const act = (): any => v.assertMatches(2);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validatable.' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validity checker.' });
       assert.throws(act, TypeError);
     });
   });

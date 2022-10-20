@@ -76,15 +76,15 @@ validator.createRef = function(): ValidatorRef {
   };
 };
 
-interface CustomValidatable extends ValidatableProtocol {
+interface CustomChecker extends ValidatableProtocol {
   protocolFn: ValidatableProtocolFn
 }
 
-validator.createValidatable = function(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomValidatable {
+validator.checker = function(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
   const protocolFn = (value: unknown, { failure, at: lookupPath }: ValidatableProtocolFnOpts): void => {
     if (!callback(value)) {
       const endOfError = opts.to === undefined
-        ? 'to match a custom validatable.'
+        ? 'to match a custom validity checker.'
         : `to ${opts.to}`;
 
       throw failure(`Expected ${lookupPath}, which is ${reprUnknownValue(value)}, ${endOfError}`);
@@ -95,7 +95,7 @@ validator.createValidatable = function(callback: (valueBeingMatched: unknown) =>
     [validatable]: protocolFn,
 
     /**
-     * Provides easy access to the protocol value, for use-cases where you want
+     * Provides easy access to the validatable protocol value, for use-cases where you want
      * to copy it out and put it on a different object.
      */
     protocolFn,

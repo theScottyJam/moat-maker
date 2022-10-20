@@ -140,11 +140,11 @@ describe('tuple rules', () => {
 
     test("the rest entry's validatable protocol gets used, even when it receives an empty array", () => {
       let calledWith: any = null;
-      const validatable = validator.createValidatable(value => {
+      const myChecker = validator.checker(value => {
         calledWith = value;
         return true;
       });
-      const v = validator`[string, ...${validatable}]`;
+      const v = validator`[string, ...${myChecker}]`;
       v.assertMatches(['xyz']);
       expect(calledWith).toMatchObject([]);
     });
