@@ -38,6 +38,10 @@ export type PointedAt = string | typeof INTERPOLATION_POINT | typeof END_OF_TEXT
 /** Same as `PointedAt`, except without the end-of-text symbol. */
 export type ContentPointedAt = string | typeof INTERPOLATION_POINT;
 
+function throwIndexOutOfBounds(): never {
+  throw new Error('Internal error: Attempted to index an array with an out-of-bounds index.');
+}
+
 export class TextPosition {
   readonly #sections: readonly string[];
   readonly sectionIndex: number;
@@ -73,7 +77,7 @@ export class TextPosition {
       assert(this.sectionIndex !== 0, 'Internal error: Reached beginning of text');
       return this.#getCharAt({
         sectionIndex: this.sectionIndex - 1,
-        textIndex: this.#sections[this.sectionIndex - 1].length,
+        textIndex: this.#sections[this.sectionIndex - 1]?.length ?? throwIndexOutOfBounds(),
       });
     } else {
       return this.#getCharAt({
@@ -85,11 +89,11 @@ export class TextPosition {
 
   #getCharAt({ textIndex, sectionIndex }: { textIndex: number, sectionIndex: number }): PointedAt {
     const isLastSection = sectionIndex === this.#sections.length - 1;
-    const endOfSection = textIndex === this.#sections[this.sectionIndex].length;
+    const endOfSection = textIndex >= (this.#sections[sectionIndex]?.length ?? throwIndexOutOfBounds());
 
     if (isLastSection && endOfSection) return END_OF_TEXT;
     if (endOfSection) return INTERPOLATION_POINT;
-    return this.#sections[sectionIndex][textIndex];
+    return this.#sections[sectionIndex]?.[textIndex] ?? throwIndexOutOfBounds();
   }
 
   /**
@@ -118,7 +122,7 @@ export class TextPosition {
   }
 
   #advanceOneUnit(): TextPosition {
-    if (this.textIndex === this.#sections[this.sectionIndex].length) {
+    if (this.textIndex === (this.#sections[this.sectionIndex]?.length ?? throwIndexOutOfBounds())) {
       // advance to next section
       assert(this.sectionIndex + 1 !== this.#sections.length, 'Internal error: Reached end of text');
       return new TextPosition(this.#sections, {
@@ -132,7 +136,7 @@ export class TextPosition {
       let lineNumb = this.lineNumb;
       let colNumb = this.colNumb;
 
-      const c = this.#sections[this.sectionIndex][this.textIndex];
+      const c = this.#sections[this.sectionIndex]?.[this.textIndex] ?? throwIndexOutOfBounds();
       if (c === '\n') {
         lineNumb++;
         colNumb = 1;
@@ -179,13 +183,13 @@ export class TextPosition {
       assert(this.sectionIndex > 0, 'Internal error: Reached beginning of text');
       return new TextPosition(this.#sections, {
         sectionIndex: this.sectionIndex - 1,
-        textIndex: this.#sections[this.sectionIndex - 1].length,
+        textIndex: this.#sections[this.sectionIndex - 1]?.length ?? throwIndexOutOfBounds(),
         lineNumb: this.lineNumb,
         colNumb: this.colNumb,
       });
     } else {
       // backtrack within current section
-      const c = this.#sections[this.sectionIndex][this.textIndex - 1];
+      const c = this.#sections[this.sectionIndex]?.[this.textIndex - 1] ?? throwIndexOutOfBounds();
       assert(c !== '\n', 'Attempted to backtrack a text-position across a new line.');
 
       return new TextPosition(this.#sections, {

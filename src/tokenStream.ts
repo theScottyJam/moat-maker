@@ -13,6 +13,10 @@ interface ExtractResult {
   readonly range: TextRange
 }
 
+function throwIndexOutOfBounds(): never {
+  throw new Error('Internal error: Attempted to index an array with an out-of-bounds index.');
+}
+
 export function createTokenStream(sections: readonly string[]): TokenStream {
   let tokenStack: [Token, Token, Token, Token];
   {
@@ -59,13 +63,13 @@ function extract(regex: RegExp, sections: readonly string[], pos: TextPosition):
   assert(regex.lastIndex === 0);
 
   regex.lastIndex = pos.textIndex;
-  const match = regex.exec(sections[pos.sectionIndex]);
+  const match = regex.exec(sections[pos.sectionIndex] ?? throwIndexOutOfBounds());
   regex.lastIndex = 0;
 
   if (match === null || match[0] === '') {
     return null;
   } else {
-    const theExtract = match[0];
+    const theExtract = match[0] ?? throwIndexOutOfBounds();
     const newPos = pos.advance(theExtract.length);
     return { value: theExtract, range: { start: pos, end: newPos } };
   }
@@ -346,5 +350,6 @@ function eatUntil(
 
 export function isIdentifier(text: string): boolean {
   const match = getIdentifierPattern().exec(text);
-  return match !== null && match[0].length === text.length;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return match !== null && match[0]!.length === text.length;
 }

@@ -231,7 +231,7 @@ function assertMatchesTuple<T>(
 
   const restItems = [];
   for (const [i, element] of target.entries()) {
-    const subRule: Rule = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
+    const subRule: Rule | undefined = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
     if (subRule !== undefined) {
       assertMatches(subRule, element, interpolated, { at: `${lookupPath}[${i}]`, errorFactory });
     } else {
