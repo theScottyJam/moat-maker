@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { InterpolationRule, ObjectRule, ObjectRuleContentValue, Rule, TupleRule, UnionRule } from './types/parsingRules';
-import { reprUnknownValue, UnreachableCaseError } from './util';
+import { indentMultilineString, reprUnknownValue, UnreachableCaseError } from './util';
 import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
@@ -80,7 +80,7 @@ export function assertMatches<T>(
       throw errorFactory(
         'Failed to match against every variant of a union.\n' +
         collectAssertionErrors(unionVariants, target, interpolated, { at: lookupPath, errorFactory })
-          .map((message, i) => `  Variant ${i + 1}: ${message}`)
+          .map((message, i) => `  Variant ${i + 1}: ${indentMultilineString(message, 4).slice(4)}`)
           .join('\n'),
       );
     }

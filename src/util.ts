@@ -5,6 +5,10 @@ export class UnreachableCaseError extends Error {
   }
 }
 
+export function indentMultilineString(multilineString: string, amount: number): string {
+  return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
+}
+
 export function reprUnknownValue(value: unknown): string {
   if (typeof value === 'function') {
     if (value.name === '') return '[anonymous function/class]';

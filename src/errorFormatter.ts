@@ -3,7 +3,7 @@
 
 import { strict as assert } from 'node:assert';
 import { TextPosition, TextRange, ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition';
-import { pipe } from './util';
+import { indentMultilineString, pipe } from './util';
 
 const MAX_LINE_WIDTH = 70;
 const MAX_UNDERLINED_WIDTH = 40;
@@ -50,7 +50,7 @@ export function generateMessageWithPosition(message: string, text: readonly stri
 
   return [
     `${message} (line ${range.start.lineNumb}, col ${range.start.colNumb})`,
-    indent(underlinedText, 2),
+    indentMultilineString(underlinedText, 2),
   ].join('\n');
 }
 
@@ -179,10 +179,6 @@ function findEndOfLine(startPos: TextPosition): TextPosition {
     }
   }
   assert.fail();
-}
-
-function indent(multilineString: string, amount: number): string {
-  return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
 }
 
 /**

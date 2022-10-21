@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { ValidatableProtocolFnOpts, validator, ValidatorSyntaxError } from '../src';
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
@@ -21,6 +21,25 @@ describe('union rules', () => {
       ].join('\n'),
     });
     assert.throws(act, TypeError);
+  });
+
+  test('properly indents multiline errors when composing multiple errors together.', () => {
+    const alwaysFail = {
+      [validator.validatable](value: unknown, { failure }: ValidatableProtocolFnOpts) {
+        throw failure('a\nmultiline\nerror.');
+      },
+    };
+    const v = validator`number | ${alwaysFail}`;
+    const act = (): any => v.assertMatches(null);
+    assert.throws(act, {
+      message: [
+        'Failed to match against every variant of a union.',
+        '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
+        '  Variant 2: a',
+        '    multiline',
+        '    error.',
+      ].join('\n'),
+    });
   });
 
   test('produces the correct rule', () => {
