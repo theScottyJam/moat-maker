@@ -33,6 +33,13 @@ describe('tuple rules', () => {
     assert.throws(act, TypeError);
   });
 
+  test('gives the correct pluralization in an error related to matching against a one-sized tuple', () => {
+    const v = validator`[string]`;
+    const act = (): any => v.assertMatches(['xyz', 'abc']);
+    assert.throws(act, { message: 'Expected the <receivedValue> array to have 1 entry, but found 2.' });
+    assert.throws(act, TypeError);
+  });
+
   test('rejects an array with the wrong properties', () => {
     const v = validator`[string, number]`;
     const act = (): any => v.assertMatches(['abc', 'def']);
@@ -114,6 +121,13 @@ describe('tuple rules', () => {
       const v = validator`[string, number, ...string[]]`;
       const act = (): any => v.assertMatches(['xyz']);
       assert.throws(act, { message: 'Expected the <receivedValue> array to have at least 2 entries, but found 1.' });
+      assert.throws(act, TypeError);
+    });
+
+    test('gives the correct pluralization in an error related to rejecting a tuple of at least length 1', () => {
+      const v = validator`[string, ...string[]]`;
+      const act = (): any => v.assertMatches([]);
+      assert.throws(act, { message: 'Expected the <receivedValue> array to have at least 1 entry, but found 0.' });
       assert.throws(act, TypeError);
     });
 

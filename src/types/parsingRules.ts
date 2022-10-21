@@ -1,12 +1,14 @@
 // Everything in here is publicly exported
 
-import type { FrozenMap } from '../util';
+import { FrozenMap } from '../util';
+import { Validator, ValidatorTemplateTag } from './validator';
+import { packagePrivate } from './packagePrivateAccess';
 
-export type simpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
+export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
 export interface SimpleRule {
   readonly category: 'simple'
-  readonly type: simpleTypeVariant
+  readonly type: SimpleTypeVariant
 }
 
 // Note that the "undefined" and "null" values are categorized as a type under SimpleRule,
@@ -86,3 +88,98 @@ export type Rule = (
   | IntersectionRule
   | InterpolationRule
 );
+
+function createRuleCheck(validator: ValidatorTemplateTag): Validator {
+  const ruleRef = validator.createRef();
+
+  const simpleTypeVariantCheck = validator`
+    'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined'
+  `;
+
+  const simpleRuleCheck = validator`{
+    category: 'simple'
+    type: ${simpleTypeVariantCheck}
+  }`;
+
+  const primitiveLiteralRuleCheck = validator`{
+    category: 'primitiveLiteral'
+    value: string | number | bigint | boolean
+  }`;
+
+  const noopRuleCheck = validator`{
+    category: 'noop'
+  }`;
+
+  const objectRuleContentValueCheck = validator`{
+    optional: boolean
+    rule: ${ruleRef}
+  }`;
+
+  const objectRuleIndexValueCheck = validator`{
+    key: ${ruleRef}
+    value: ${ruleRef}
+    label: string
+  }`;
+
+  const objectRuleCheck = validator`{
+    category: 'object'
+    content: (${FrozenMap} | ${Map})@<[string, ${objectRuleContentValueCheck}]>
+    dynamicContent: (${FrozenMap} | ${Map})@<[number, ${objectRuleContentValueCheck}]>
+    index: ${objectRuleIndexValueCheck} | null
+  }`;
+
+  const arrayRuleCheck = validator`{
+    category: 'array'
+    content: ${ruleRef}
+  }`;
+
+  const tupleRuleCheck = validator`{
+    category: 'tuple'
+    content: ${ruleRef}[]
+    optionalContent: ${ruleRef}[]
+    rest: ${ruleRef} | null
+    entryLabels: string[] | null
+  }`;
+
+  const iteratorRuleCheck = validator`{
+    category: 'iterator'
+    iterableType: ${ruleRef}
+    entryType: ${ruleRef}
+  }`;
+
+  const unionRuleCheck = validator`{
+    category: 'union'
+    variants: ${ruleRef}[]
+  }`;
+
+  const intersectionRuleCheck = validator`{
+    category: 'intersection'
+    variants: ${ruleRef}[]
+  }`;
+
+  const interpolationRuleCheck = validator`{
+    category: 'interpolation'
+    interpolationIndex: number
+  }`;
+
+  const ruleCheck = validator`
+    ${simpleRuleCheck}
+    | ${primitiveLiteralRuleCheck}
+    | ${noopRuleCheck}
+    | ${objectRuleCheck}
+    | ${arrayRuleCheck}
+    | ${tupleRuleCheck}
+    | ${iteratorRuleCheck}
+    | ${unionRuleCheck}
+    | ${intersectionRuleCheck}
+    | ${interpolationRuleCheck}
+  `;
+
+  ruleRef.set(ruleCheck);
+
+  return ruleCheck;
+}
+
+export const _parsingRulesInternals = {
+  [packagePrivate]: { createRuleCheck },
+};

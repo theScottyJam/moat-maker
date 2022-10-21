@@ -398,13 +398,6 @@ describe('validator behavior', () => {
       assert.throws(act, (err: Error) => err.constructor === Error);
       assert.throws(act, { message: 'Can not call ref.set(...) multiple times.' });
     });
-
-    test('can not call ref.set() with a non-validator instance', () => {
-      const consRef = validator.createRef();
-      const act = (): any => consRef.set({} as any);
-      assert.throws(act, (err: Error) => err.constructor === Error);
-      assert.throws(act, { message: 'Must call ref.set(...) with a validator instance. Received the non-validator [object Object].' });
-    });
   });
 
   describe('validator.checker()', () => {
@@ -418,7 +411,7 @@ describe('validator behavior', () => {
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is -2, to match a custom validity checker.'
+          'Expected <receivedValue>, which was -2, to match a custom validity checker.'
         ),
       });
       assert.throws(act, TypeError);
@@ -427,7 +420,7 @@ describe('validator behavior', () => {
     test('you can give your validatable object a custom description for error messages to use', () => {
       const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
       const act = (): any => v.assertMatches('xyz');
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "xyz", to be positive' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which was "xyz", to be positive.' });
       assert.throws(act, TypeError);
     });
 
@@ -440,7 +433,7 @@ describe('validator behavior', () => {
       const v = validator`${MyValidatable}`;
       v.assertMatches('xyz');
       const act = (): any => v.assertMatches(2);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is 2, to match a custom validity checker.' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which was 2, to match a custom validity checker.' });
       assert.throws(act, TypeError);
     });
   });

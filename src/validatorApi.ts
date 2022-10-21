@@ -1,105 +1,160 @@
-import { Rule } from './types/parsingRules';
+import { Rule, _parsingRulesInternals } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
-import { AssertMatchesOpts, isValidatorInstance, Validator, ValidatorRef } from './types/validator';
-import type { ValidatableProtocol, ValidatableProtocolFn, ValidatableProtocolFnOpts } from './types/validatableProtocol';
-import { reprUnknownValue } from './util';
+import {
+  AssertMatchesOpts,
+  createAssertMatchesOptsCheck,
+  isValidatorInstance,
+  Validator,
+  ValidatorRef,
+  CustomChecker,
+  ValidatorTemplateTagStaticFields,
+  ValidatorTemplateTag,
+} from './types/validator';
+import { ValidatableProtocolFnOpts, _validatableProtocolInternals } from './types/validatableProtocol';
 import { uncheckedValidator } from './uncheckedValidatorApi';
-import { ValidatorAssertionError } from './exceptions';
+import { packagePrivate } from './types/packagePrivateAccess';
 
-export function validator<T=unknown>(
+const { createValidatableProtocolFnOptsCheck } = _validatableProtocolInternals[packagePrivate];
+const { createRuleCheck } = _parsingRulesInternals[packagePrivate];
+const validatableProtocolFnOptsCheck = createValidatableProtocolFnOptsCheck(uncheckedValidator);
+
+const isValidatorCheck = uncheckedValidator.checker(
+  (value: unknown) => Object(value)[isValidatorInstance] === true,
+  { to: 'be a validator instance' },
+);
+
+const isArrayLikeCheck = uncheckedValidator.checker(
+  (value: unknown) => (
+    'length' in Object(value) &&
+    typeof (value as any).length === 'number' &&
+    (value as any).length >= 0 &&
+    Math.floor((value as any).length) === (value as any).length
+  ),
+  { to: 'be array-like' },
+);
+
+export const validator = function validator<T=unknown>(
   parts: TemplateStringsArray | { readonly raw: readonly string[] },
   ...interpolated: readonly unknown[]
 ): Validator<T> {
-  // eslint-disable-next-line prefer-rest-params
-  uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`.assertMatches([...arguments]);
-  return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));
-}
+  uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`
+    .assertArgs(validator.name, arguments);
 
-validator.fromRule = function<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
-  return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRule<T>(rule, interpolated));
-};
+  return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));
+} as ValidatorTemplateTag;
 
 function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): Validator<T> {
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
+      // TODO: I'm not validating the return value of opts.errorFactory
+      uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
+        .assertArgs('<validator instance>.assertMatches', arguments);
+
       return unwrappedValidator.assertMatches(value, opts);
     },
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
+      // TODO: I'm not validating the return value of opts.errorFactory
+      uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
+        .assertArgs('<validator instance>.assertionTypeGuard', arguments);
+
       return unwrappedValidator.assertionTypeGuard(value, opts);
     },
     assertArgs(whichFn: string, args: ArrayLike<unknown>) {
+      uncheckedValidator`[whichFn: string, args: ${isArrayLikeCheck}]`
+        .assertArgs('<validator instance>.assertArgs', arguments);
+
       return unwrappedValidator.assertArgs(whichFn, args);
     },
     matches(value: unknown): value is T {
+      uncheckedValidator`[value: unknown]`.assertArgs('<validator instance>.matches', arguments);
       return unwrappedValidator.matches(value);
     },
     rule: unwrappedValidator.rule,
     interpolated: unwrappedValidator.interpolated,
     [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
+      // TODO: I never validate the return value of opts.failure
+      uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+        .assertArgs('<validator instance>[validator.validatable]', arguments);
+
       return unwrappedValidator[validatable](value, opts);
     },
   });
 }
 
-validator.from = function(unknownValue: string | Validator): Validator {
-  if (typeof unknownValue === 'string') {
-    return validator({ raw: [unknownValue] });
-  } else if (Object(unknownValue)[isValidatorInstance] === true) {
-    return unknownValue;
-  } else {
-    throw new Error('Unexpected input value'); // TODO: Test
-  }
+const staticFields: ValidatorTemplateTagStaticFields = {
+  fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
+    uncheckedValidator`[rule: ${createRuleCheck(uncheckedValidator)}, interpolated?: unknown[]]`
+      .assertArgs('validator.fromRule', arguments);
+
+    return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRule<T>(rule, interpolated));
+  },
+
+  from(unknownValue: string | Validator): Validator {
+    uncheckedValidator`[stringOrValidator: string | ${isValidatorCheck}]`
+      .assertArgs('validator.from', arguments);
+
+    return typeof unknownValue === 'string'
+      ? validator({ raw: [unknownValue] })
+      : unknownValue;
+  },
+
+  createRef(): ValidatorRef {
+    uncheckedValidator`[]`.assertArgs('validator.createRef', arguments);
+    const ref = uncheckedValidator.createRef();
+    return {
+      [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
+        // TODO: I never validate the return value of opts.failure
+        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+          .assertArgs('<validator ref>[validator.validatable]', arguments);
+
+        return ref[validatable](value, opts);
+      },
+      set(validator_: Validator) {
+        uncheckedValidator`[validator: ${isValidatorCheck}]`
+          .assertArgs('<validator ref>.set', arguments);
+
+        return ref.set(validator_);
+      },
+    };
+  },
+
+  checker(doCheck_: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
+    uncheckedValidator`[doCheck: ${Function}, opts?: { to?: string }]`
+      .assertArgs('validator.checker', arguments);
+
+    const doCheck = (valueBeingMatched: unknown): boolean => {
+      const result = doCheck_(valueBeingMatched);
+      uncheckedValidator`boolean`.assertMatches(result, {
+        errorPrefix: 'validator.checker() received a bad "doCheck" function:',
+        at: '<doCheck return value>',
+      });
+      return result;
+    };
+
+    const checker = uncheckedValidator.checker(doCheck, opts);
+    return {
+      [validatable](value: unknown, opts: ValidatableProtocolFnOpts): void {
+        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+          .assertArgs('<validator checker>[validator.validatable]', arguments);
+
+        return checker.protocolFn(value, opts);
+      },
+
+      /**
+       * Provides easy access to the validatable protocol value, for use-cases where you want
+       * to copy it out and put it on a different object.
+       */
+      protocolFn(value: unknown, opts: ValidatableProtocolFnOpts): void {
+        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+          .assertArgs('<validator checker>.protocolFn', arguments);
+
+        return checker.protocolFn(value, opts);
+      },
+    };
+  },
+
+  validatable,
 };
 
-validator.createRef = function(): ValidatorRef {
-  let validator: Validator | null = null;
-  return {
-    [validatable](...args: Parameters<ValidatableProtocolFn>) {
-      if (validator === null) {
-        throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
-      }
-      return validator[validatable](...args);
-    },
-    set(validator_: Validator) {
-      if (validator !== null) {
-        throw new Error('Can not call ref.set(...) multiple times.');
-      }
-      if (Object(validator_)[isValidatorInstance] !== true) {
-        throw new Error(
-          'Must call ref.set(...) with a validator instance. ' +
-          `Received the non-validator ${reprUnknownValue(validator_)}.`,
-        );
-      }
-      validator = validator_;
-    },
-  };
-};
-
-interface CustomChecker extends ValidatableProtocol {
-  protocolFn: ValidatableProtocolFn
-}
-
-validator.checker = function(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
-  const protocolFn = (value: unknown, { failure, at: lookupPath }: ValidatableProtocolFnOpts): void => {
-    if (!callback(value)) {
-      const endOfError = opts.to === undefined
-        ? 'to match a custom validity checker.'
-        : `to ${opts.to}`;
-
-      throw failure(`Expected ${lookupPath}, which is ${reprUnknownValue(value)}, ${endOfError}`);
-    }
-  };
-
-  return {
-    [validatable]: protocolFn,
-
-    /**
-     * Provides easy access to the validatable protocol value, for use-cases where you want
-     * to copy it out and put it on a different object.
-     */
-    protocolFn,
-  };
-};
-
-validator.validatable = validatable;
+Object.assign(validator, staticFields);

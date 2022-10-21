@@ -215,7 +215,7 @@ function assertMatchesTuple<T>(
   if (target.length < minSize || target.length > maxSize) {
     if (minSize === maxSize) {
       throw errorFactory(
-        `Expected the ${lookupPath} array to have ${minSize} entries, but found ${target.length}.`,
+        `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
       );
     } else if (maxSize !== Infinity) {
       throw errorFactory(
@@ -224,7 +224,7 @@ function assertMatchesTuple<T>(
       );
     } else {
       throw errorFactory(
-        `Expected the ${lookupPath} array to have at least ${minSize} entries, but found ${target.length}.`,
+        `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
       );
     }
   }
@@ -267,19 +267,19 @@ function assertMatchesInterpolation<T>(
   if (typeof valueToMatch === 'function') {
     if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
       throw errorFactory(
-        `Expected ${lookupPath}, which is ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
+        `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
         '(and not an instance of a subclass).',
       );
     }
   } else if (valueToMatch instanceof RegExp) {
     if (typeof target !== 'string') {
       throw errorFactory(
-        `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to be a string that matches the regular expression ${valueToMatch.toString()}`,
+        `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${valueToMatch.toString()}`,
       );
     }
     if (target.match(valueToMatch) === null) {
       throw errorFactory(
-        `Expected <receivedValue>, which is ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
+        `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
       );
     }
   } else if (!sameValueZero(target, valueToMatch)) {

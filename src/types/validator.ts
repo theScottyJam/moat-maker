@@ -1,5 +1,6 @@
 import { Rule } from './parsingRules';
-import { ValidatableProtocol } from './validatableProtocol';
+import { ValidatableProtocol, ValidatableProtocolFn } from './validatableProtocol';
+import type { validatable } from '../validatableProtocol';
 
 export const isValidatorInstance = Symbol('isValidatorInstance');
 
@@ -8,9 +9,19 @@ export interface ValidatorRef extends ValidatableProtocol {
 }
 
 export interface AssertMatchesOpts {
-  readonly errorFactory?: (...params: ConstructorParameters<typeof Error>) => Error
-  readonly at?: string
-  readonly errorPrefix?: string
+  readonly errorFactory?: undefined | ((...params: ConstructorParameters<typeof Error>) => Error)
+  readonly at?: undefined | string
+  readonly errorPrefix?: undefined | string
+}
+
+export const createAssertMatchesOptsCheck = (validator: ValidatorTemplateTag): Validator => validator`{
+  errorFactory?: undefined | ${Function}
+  at?: undefined | string
+  errorPrefix?: undefined | string
+}`;
+
+export interface CustomChecker extends ValidatableProtocol {
+  protocolFn: ValidatableProtocolFn
 }
 
 export interface Validator<T=unknown> extends ValidatableProtocol {
@@ -22,3 +33,18 @@ export interface Validator<T=unknown> extends ValidatableProtocol {
   readonly rule: Rule
   readonly interpolated: readonly unknown[]
 }
+
+export interface ValidatorTemplateTagStaticFields {
+  fromRule: <T=unknown>(rule: Rule, interpolated?: readonly unknown[]) => Validator<T>
+  from: (unknownValue: string | Validator) => Validator
+  createRef: () => ValidatorRef
+  checker: (callback: (valueBeingMatched: unknown) => boolean, opts?: { to?: string }) => CustomChecker
+  validatable: typeof validatable
+}
+
+export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
+  <T>(
+    parts: TemplateStringsArray | { readonly raw: readonly string[] },
+    ...interpolated: readonly unknown[]
+  ) => Validator<T>
+);

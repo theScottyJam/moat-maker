@@ -9,20 +9,25 @@ import { freezeRule } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { Rule } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
-import { AssertMatchesOpts, isValidatorInstance, Validator } from './types/validator';
+import {
+  AssertMatchesOpts,
+  isValidatorInstance,
+  Validator,
+  CustomChecker,
+  ValidatorRef,
+  ValidatorTemplateTag,
+  ValidatorTemplateTagStaticFields,
+} from './types/validator';
 import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { ValidatorAssertionError } from './exceptions';
+import { reprUnknownValue } from './util';
 
-export function uncheckedValidator<T=unknown>(
+export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray | { readonly raw: readonly string[] },
   ...interpolated: readonly unknown[]
 ): Validator<T> {
   return fromRule<T>(parse(parts.raw), interpolated);
-}
-
-uncheckedValidator.fromRule = function<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
-  return fromRule<T>(freezeRule(rule), interpolated);
-};
+} as ValidatorTemplateTag;
 
 function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
   return Object.freeze({
@@ -111,6 +116,54 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
     },
   });
 }
+
+const staticFields: ValidatorTemplateTagStaticFields = {
+  fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
+    return fromRule<T>(freezeRule(rule), interpolated);
+  },
+
+  from(unknownValue: string | Validator): Validator {
+    return typeof unknownValue === 'string'
+      ? uncheckedValidator({ raw: [unknownValue] })
+      : unknownValue;
+  },
+
+  createRef(): ValidatorRef {
+    let validator: Validator | null = null;
+    return {
+      [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
+        if (validator === null) {
+          throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
+        }
+        return validator[validatable](value, opts);
+      },
+      set(validator_: Validator) {
+        if (validator !== null) {
+          throw new Error('Can not call ref.set(...) multiple times.');
+        }
+        validator = validator_;
+      },
+    };
+  },
+
+  checker(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
+    const protocolFn = (value: unknown, { failure, at: lookupPath }: ValidatableProtocolFnOpts): void => {
+      if (!callback(value)) {
+        const endOfError = opts.to === undefined
+          ? 'to match a custom validity checker.'
+          : `to ${opts.to}.`;
+
+        throw failure(`Expected ${lookupPath}, which was ${reprUnknownValue(value)}, ${endOfError}`);
+      }
+    };
+
+    return { protocolFn, [validatable]: protocolFn };
+  },
+
+  validatable,
+};
+
+Object.assign(uncheckedValidator, staticFields);
 
 function buildRethrowErrorArgs(error: ValidatorAssertionError, message: string): any {
   // This version of TypeScript does not yet support error causes, which

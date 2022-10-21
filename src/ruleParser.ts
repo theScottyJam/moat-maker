@@ -2,11 +2,11 @@ import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { freezeRule } from './ruleFreezer';
-import { Rule, ObjectRuleContentValue, simpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
+import { Rule, ObjectRuleContentValue, SimpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
 import { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
-const allSimpleTypes: simpleTypeVariant[] = [
+const allSimpleTypes: SimpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
 ];
 
@@ -171,7 +171,7 @@ function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
   } else if ((allSimpleTypes as string[]).includes(identifier)) {
     return {
       category: 'simple',
-      type: identifier as simpleTypeVariant,
+      type: identifier as SimpleTypeVariant,
     };
   } else {
     throw createValidatorSyntaxError('Expected to find a type here.', tokenStream.originalText, token.range);

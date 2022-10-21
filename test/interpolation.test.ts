@@ -163,7 +163,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, {
-        message: 'Expected <receivedValue>, which is "xyz", to be an instance of `Number` (and not an instance of a subclass).',
+        message: 'Expected <receivedValue>, which was "xyz", to be an instance of `Number` (and not an instance of a subclass).',
       });
       assert.throws(act, TypeError);
     });
@@ -173,7 +173,7 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches(new MyNumber(3));
       assert.throws(act, {
-        message: 'Expected <receivedValue>, which is [object MyNumber], to be an instance of `Number` (and not an instance of a subclass).',
+        message: 'Expected <receivedValue>, which was [object MyNumber], to be an instance of `Number` (and not an instance of a subclass).',
       });
       assert.throws(act, TypeError);
     });
@@ -190,7 +190,7 @@ describe('interpolation', () => {
       const act = (): any => v.assertMatches({ x: 2 });
       assert.throws(act, {
         message: (
-          'Expected <receivedValue>, which is [object Object], to be an instance of `Map` ' +
+          'Expected <receivedValue>, which was [object Object], to be an instance of `Map` ' +
           '(and not an instance of a subclass).'
         ),
       });
@@ -201,7 +201,7 @@ describe('interpolation', () => {
       test('the Map class does not match a null-prototype object', () => {
         const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
         assert.throws(act, {
-          message: 'Expected <receivedValue>, which is [object Object], to be an instance of `Map` (and not an instance of a subclass).',
+          message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Map` (and not an instance of a subclass).',
         });
       });
 
@@ -209,7 +209,7 @@ describe('interpolation', () => {
         class MyMap extends Map {}
         const act = (): any => validator`${Map}`.assertMatches(new MyMap());
         assert.throws(act, {
-          message: 'Expected <receivedValue>, which is [object MyMap], to be an instance of `Map` (and not an instance of a subclass).',
+          message: 'Expected <receivedValue>, which was [object MyMap], to be an instance of `Map` (and not an instance of a subclass).',
         });
       });
 
@@ -229,14 +229,14 @@ describe('interpolation', () => {
     test('rejects a non-matching value', () => {
       const v = validator`${/^\d{3}$/g}`;
       const act = (): any => v.assertMatches('2345');
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which was "2345", to match the regular expression /^\\d{3}$/g' });
       assert.throws(act, TypeError);
     });
 
     test('rejects a non-string value', () => {
       const v = validator`${/^\d{3}$/g}`;
       const act = (): any => v.assertMatches(2345);
-      assert.throws(act, { message: 'Expected <receivedValue>, which is 2345, to be a string that matches the regular expression /^\\d{3}$/g' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which was 2345, to be a string that matches the regular expression /^\\d{3}$/g' });
       assert.throws(act, TypeError);
     });
 
@@ -245,7 +245,7 @@ describe('interpolation', () => {
       const v = validator`${new MyRegExp(String.raw`^\d{3}$`, 'g')}`;
       v.assertMatches('234');
       const act = (): any => v.assertMatches('2345');
-      assert.throws(act, { message: 'Expected <receivedValue>, which is "2345", to match the regular expression /^\\d{3}$/g' });
+      assert.throws(act, { message: 'Expected <receivedValue>, which was "2345", to match the regular expression /^\\d{3}$/g' });
       assert.throws(act, TypeError);
     });
 
