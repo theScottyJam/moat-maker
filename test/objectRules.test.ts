@@ -284,19 +284,20 @@ describe('object rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`{ "numKey\n": number, strKey?: string, [${42}]: boolean, [${43}]?: undefined }`;
-    assert(v.rule.category === 'object');
+    expect(v.ruleset.interpolated).toMatchObject([42, 43]);
+    assert(v.ruleset.rootRule.category === 'object');
 
-    // v.rule.content
-    expect(v.rule.content).toBeInstanceOf(FrozenMap);
-    expect(v.rule.content.size).toBe(2);
-    expect(v.rule.content.get('numKey\n')).toMatchObject({
+    // v.ruleset.rootRule.content
+    expect(v.ruleset.rootRule.content).toBeInstanceOf(FrozenMap);
+    expect(v.ruleset.rootRule.content.size).toBe(2);
+    expect(v.ruleset.rootRule.content.get('numKey\n')).toMatchObject({
       optional: false,
       rule: {
         category: 'simple',
         type: 'number',
       },
     });
-    expect(v.rule.content.get('strKey')).toMatchObject({
+    expect(v.ruleset.rootRule.content.get('strKey')).toMatchObject({
       optional: true,
       rule: {
         category: 'simple',
@@ -304,17 +305,17 @@ describe('object rules', () => {
       },
     });
 
-    // v.rule.dynamicContent
-    expect(v.rule.dynamicContent).toBeInstanceOf(FrozenMap);
-    expect(v.rule.dynamicContent.size).toBe(2);
-    expect(v.rule.dynamicContent.get(0)).toMatchObject({
+    // v.ruleset.rootRule.dynamicContent
+    expect(v.ruleset.rootRule.dynamicContent).toBeInstanceOf(FrozenMap);
+    expect(v.ruleset.rootRule.dynamicContent.size).toBe(2);
+    expect(v.ruleset.rootRule.dynamicContent.get(0)).toMatchObject({
       optional: false,
       rule: {
         category: 'simple',
         type: 'boolean',
       },
     });
-    expect(v.rule.dynamicContent.get(1)).toMatchObject({
+    expect(v.ruleset.rootRule.dynamicContent.get(1)).toMatchObject({
       optional: true,
       rule: {
         category: 'simple',
@@ -322,25 +323,28 @@ describe('object rules', () => {
       },
     });
 
-    // v.rule.index
-    expect(v.rule.index).toBe(null);
+    // v.ruleset.rootRule.index
+    expect(v.ruleset.rootRule.index).toBe(null);
 
     // Is everything frozen?
-    expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.content.get('numKey\n'))).toBe(true);
-    expect(Object.isFrozen(v.rule.content.get('strKey'))).toBe(true);
-    expect(Object.isFrozen(v.rule.dynamicContent.get(0))).toBe(true);
-    expect(Object.isFrozen(v.rule.dynamicContent.get(1))).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.content.get('numKey\n'))).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.content.get('strKey'))).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.dynamicContent.get(0))).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.dynamicContent.get(1))).toBe(true);
   });
 
   test('produces the correct rule with an indexed type', () => {
     const v = validator`{ alwaysPresentKey: string, [index: "someOtherKey"]: string }`;
-    assert(v.rule.category === 'object');
+    expect(v.ruleset.interpolated).toMatchObject([]);
+    assert(v.ruleset.rootRule.category === 'object');
 
-    // v.rule.content
-    expect(v.rule.content).toBeInstanceOf(FrozenMap);
-    expect(v.rule.content.size).toBe(1);
-    expect(v.rule.content.get('alwaysPresentKey')).toMatchObject({
+    // v.ruleset.rootRule.content
+    expect(v.ruleset.rootRule.content).toBeInstanceOf(FrozenMap);
+    expect(v.ruleset.rootRule.content.size).toBe(1);
+    expect(v.ruleset.rootRule.content.get('alwaysPresentKey')).toMatchObject({
       optional: false,
       rule: {
         category: 'simple',
@@ -348,12 +352,12 @@ describe('object rules', () => {
       },
     });
 
-    // v.rule.dynamicContent
-    expect(v.rule.dynamicContent).toBeInstanceOf(FrozenMap);
-    expect(v.rule.dynamicContent.size).toBe(0);
+    // v.ruleset.rootRule.dynamicContent
+    expect(v.ruleset.rootRule.dynamicContent).toBeInstanceOf(FrozenMap);
+    expect(v.ruleset.rootRule.dynamicContent.size).toBe(0);
 
-    // v.rule.index
-    expect(v.rule.index).toMatchObject({
+    // v.ruleset.rootRule.index
+    expect(v.ruleset.rootRule.index).toMatchObject({
       key: {
         category: 'primitiveLiteral',
         value: 'someOtherKey',
@@ -366,38 +370,40 @@ describe('object rules', () => {
     });
 
     // Is everything frozen?
-    expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.content.get('alwaysPresentKey'))).toBe(true);
-    expect(Object.isFrozen(v.rule.index)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.content.get('alwaysPresentKey'))).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule.index)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator`{x :string ,y ? :number, [ index :"someOtherKey" ] :string ,[ ${'z'} ] ? : 2}`;
-    assert(v.rule.category === 'object');
-    expect(v.rule.content.size).toBe(2);
-    expect(v.rule.content.get('x')).toMatchObject({
+    assert(v.ruleset.rootRule.category === 'object');
+    expect(v.ruleset.rootRule.content.size).toBe(2);
+    expect(v.ruleset.rootRule.content.get('x')).toMatchObject({
       optional: false,
       rule: {
         category: 'simple',
         type: 'string',
       },
     });
-    expect(v.rule.content.get('y')).toMatchObject({
+    expect(v.ruleset.rootRule.content.get('y')).toMatchObject({
       optional: true,
       rule: {
         category: 'simple',
         type: 'number',
       },
     });
-    expect(v.rule.dynamicContent.size).toBe(1);
-    expect(v.rule.dynamicContent.get(0)).toMatchObject({
+    expect(v.ruleset.rootRule.dynamicContent.size).toBe(1);
+    expect(v.ruleset.rootRule.dynamicContent.get(0)).toMatchObject({
       optional: true,
       rule: {
         category: 'primitiveLiteral',
         value: 2,
       },
     });
-    expect(v.rule.index).toMatchObject({
+    expect(v.ruleset.rootRule.index).toMatchObject({
       key: {
         category: 'primitiveLiteral',
         value: 'someOtherKey',

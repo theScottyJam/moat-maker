@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { Ruleset, validator, ValidatorSyntaxError } from '../src';
 
 describe('validator behavior', () => {
   test('a validator instance is a frozen object', () => {
@@ -307,19 +307,25 @@ describe('validator behavior', () => {
     });
   });
 
-  describe('validator.fromRule()', () => {
+  describe('validator.fromRuleset()', () => {
     test('allows string inputs when given a simple string rule', () => {
-      const v = validator.fromRule({
-        category: 'simple',
-        type: 'string',
+      const v = validator.fromRuleset({
+        rootRule: {
+          category: 'simple',
+          type: 'string',
+        },
+        interpolated: [],
       });
       v.assertMatches('xyz');
     });
 
     test('forbids string inputs when given a simple number rule', () => {
-      const v = validator.fromRule({
-        category: 'simple',
-        type: 'number',
+      const v = validator.fromRuleset({
+        rootRule: {
+          category: 'simple',
+          type: 'number',
+        },
+        interpolated: [],
       });
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
@@ -327,28 +333,36 @@ describe('validator behavior', () => {
     });
 
     test('allow providing interpolated values', () => {
-      const v = validator.fromRule({
-        category: 'interpolation',
-        interpolationIndex: 0,
-      }, [2]);
+      const v = validator.fromRuleset({
+        rootRule: {
+          category: 'interpolation',
+          interpolationIndex: 0,
+        },
+        interpolated: [2],
+      });
       expect(v.matches(2)).toBe(true);
       expect(v.matches(3)).toBe(false);
     });
 
-    test('validator behavior does not change, even if input rule is mutated', () => {
-      const rule = {
-        category: 'simple',
-        type: 'number',
-      } as const;
+    test('validator behavior does not change, even if input ruleset is mutated', () => {
+      const ruleset = {
+        rootRule: {
+          category: 'interpolation' as const,
+          interpolationIndex: 0,
+        },
+        interpolated: [2],
+      };
 
-      const v = validator.fromRule(rule);
-      (rule as any).type = 'string';
+      const v = validator.fromRuleset(ruleset);
+      (ruleset as any).rootRule.interpolationIndex = 1;
+      (ruleset as any).interpolated.pop();
 
-      // Just making sure it actually mutates, and that fromRule didn't freeze the input object.
-      expect(rule.type).toBe('string');
+      // Just making sure it actually mutates, and that fromRuleset didn't freeze the input object.
+      expect(ruleset.rootRule.interpolationIndex).toBe(1);
+      expect(ruleset.interpolated).toMatchObject([]);
 
       const act = (): any => v.assertMatches('xyz');
-      assert.throws(act, { message: 'Expected <receivedValue> to be of type "number" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got "xyz".' });
       assert.throws(act, TypeError);
     });
   });

@@ -5,9 +5,9 @@
 
 import { strict as assert } from 'node:assert';
 import { parse } from './ruleParser';
-import { freezeRule } from './ruleFreezer';
+import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
-import { Rule } from './types/parsingRules';
+import { Rule, Ruleset } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import {
   AssertMatchesOpts,
@@ -26,10 +26,14 @@ export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray | { readonly raw: readonly string[] },
   ...interpolated: readonly unknown[]
 ): Validator<T> {
-  return fromRule<T>(parse(parts.raw), interpolated);
+  return fromRuleset<T>(freezeRuleset({
+    rootRule: parse(parts.raw),
+    interpolated,
+  }));
 } as ValidatorTemplateTag;
 
-function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
+// ruleset should already be frozen before this is called.
+function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
   return Object.freeze({
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
@@ -38,7 +42,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       }
 
       try {
-        assertMatches(rule, value, interpolated, {
+        assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
           at: opts?.at,
           errorFactory: (...args: any) => new ValidatorAssertionError(...args),
         });
@@ -69,7 +73,7 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       }
 
       try {
-        assertMatches(rule, value, interpolated, {
+        assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
           at: opts?.at,
           errorFactory: (...args: any) => new ValidatorAssertionError(...args),
         });
@@ -94,32 +98,31 @@ function fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []):
       };
 
       try {
-        assertMatches(rule, Array.from(args), interpolated, opts);
+        assertMatches(ruleset.rootRule, Array.from(args), ruleset.interpolated, opts);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
         if (error instanceof ValidatorAssertionError) {
           const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
-          const updatedMessage = rebuildAssertArgsMessage(rule, prefix + error.message);
+          const updatedMessage = rebuildAssertArgsMessage(ruleset.rootRule, prefix + error.message);
           throw new TypeError(...buildRethrowErrorArgs(error, updatedMessage));
         }
         throw error;
       }
     },
     matches(value: unknown): value is T {
-      return doesMatch(rule, value, interpolated);
+      return doesMatch(ruleset.rootRule, value, ruleset.interpolated);
     },
-    rule,
-    interpolated: Object.freeze(interpolated),
+    ruleset,
     [validatable](value: unknown, { failure, at }: ValidatableProtocolFnOpts) {
-      assertMatches(rule, value, interpolated, { at, errorFactory: failure });
+      assertMatches(ruleset.rootRule, value, ruleset.interpolated, { at, errorFactory: failure });
     },
   });
 }
 
 const staticFields: ValidatorTemplateTagStaticFields = {
-  fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
-    return fromRule<T>(freezeRule(rule), interpolated);
+  fromRuleset<T=unknown>(ruleset_: Ruleset): Validator<T> {
+    return fromRuleset<T>(freezeRuleset(ruleset_));
   },
 
   from(unknownValue: string | Validator): Validator {
@@ -189,6 +192,7 @@ function rebuildAssertArgsMessage(rule: Rule, message: string): string {
 
   const index = Number(indexAsString);
   const label = rule.entryLabels[index];
+  assert(label !== undefined);
 
   assert(message.startsWith('Received invalid arguments for'));
   const afterSlice = message.slice('Received invalid arguments for'.length);

@@ -33,11 +33,16 @@ describe('primitive literal rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`true`;
-      expect(v.rule).toMatchObject({
-        category: 'primitiveLiteral',
-        value: true,
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'primitiveLiteral',
+          value: true,
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -63,11 +68,16 @@ describe('primitive literal rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`42n`;
-      expect(v.rule).toMatchObject({
-        category: 'primitiveLiteral',
-        value: 42n,
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'primitiveLiteral',
+          value: 42n,
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
 
     describe('syntax', () => {
@@ -138,11 +148,16 @@ describe('primitive literal rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`'xyz'`;
-      expect(v.rule).toMatchObject({
-        category: 'primitiveLiteral',
-        value: 'xyz',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'primitiveLiteral',
+          value: 'xyz',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
 
     describe('syntax', () => {
@@ -374,11 +389,16 @@ describe('primitive literal rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`2`;
-      expect(v.rule).toMatchObject({
-        category: 'primitiveLiteral',
-        value: 2,
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'primitiveLiteral',
+          value: 2,
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
 
     test('-0 matches 0', () => {

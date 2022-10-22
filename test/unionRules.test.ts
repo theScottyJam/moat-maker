@@ -44,52 +44,62 @@ describe('union rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`string | null | undefined`;
-    expect(v.rule).toMatchObject({
-      category: 'union',
-      variants: [
-        {
-          category: 'simple',
-          type: 'string',
-        }, {
-          category: 'simple',
-          type: 'null',
-        }, {
-          category: 'simple',
-          type: 'undefined',
-        },
-      ],
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'union',
+        variants: [
+          {
+            category: 'simple',
+            type: 'string',
+          }, {
+            category: 'simple',
+            type: 'null',
+          }, {
+            category: 'simple',
+            type: 'undefined',
+          },
+        ],
+      },
+      interpolated: [],
     });
-    assert(v.rule.category === 'union');
-    expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.variants)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
+    expect(Object.isFrozen((v.ruleset.rootRule as any).variants)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator({ raw: [' \tnumber|string \t|\t undefined \t'] });
-    expect(v.rule).toMatchObject({
-      category: 'union',
-      variants: [
-        {
-          category: 'simple',
-          type: 'number',
-        }, {
-          category: 'simple',
-          type: 'string',
-        }, {
-          category: 'simple',
-          type: 'undefined',
-        },
-      ],
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'union',
+        variants: [
+          {
+            category: 'simple',
+            type: 'number',
+          }, {
+            category: 'simple',
+            type: 'string',
+          }, {
+            category: 'simple',
+            type: 'undefined',
+          },
+        ],
+      },
+      interpolated: [],
     });
   });
 
   test('behaves properly when there is only one variant in the union type', () => {
-    const v = validator.fromRule({
-      category: 'union',
-      variants: [{
-        category: 'simple',
-        type: 'string',
-      }],
+    const v = validator.fromRuleset({
+      rootRule: {
+        category: 'union',
+        variants: [{
+          category: 'simple',
+          type: 'string',
+        }],
+      },
+      interpolated: [],
     });
 
     v.assertMatches('xyz');
@@ -97,26 +107,29 @@ describe('union rules', () => {
   });
 
   test('Flattens nested union errors', () => {
-    const v = validator.fromRule({
-      category: 'union',
-      variants: [
-        {
-          category: 'simple',
-          type: 'number',
-        },
-        {
-          category: 'union',
-          variants: [
-            {
-              category: 'simple',
-              type: 'string',
-            }, {
-              category: 'simple',
-              type: 'undefined',
-            },
-          ],
-        },
-      ],
+    const v = validator.fromRuleset({
+      rootRule: {
+        category: 'union',
+        variants: [
+          {
+            category: 'simple',
+            type: 'number',
+          },
+          {
+            category: 'union',
+            variants: [
+              {
+                category: 'simple',
+                type: 'string',
+              }, {
+                category: 'simple',
+                type: 'undefined',
+              },
+            ],
+          },
+        ],
+      },
+      interpolated: [],
     });
 
     const act = (): any => v.assertMatches(null);

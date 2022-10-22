@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import { freezeRule } from './ruleFreezer';
 import { Rule, ObjectRuleContentValue, SimpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
 import { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
@@ -10,6 +9,7 @@ const allSimpleTypes: SimpleTypeVariant[] = [
   'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
 ];
 
+/** Returns a yet-to-be-frozen rule */
 export function parse(parts: readonly string[]): Rule {
   const tokenStream = createTokenStream(parts);
   if (tokenStream.peek().category === 'eof') {
@@ -23,7 +23,7 @@ export function parse(parts: readonly string[]): Rule {
     throw createValidatorSyntaxError('Expected EOF.', tokenStream.originalText, lastToken.range);
   }
 
-  return freezeRule(rule);
+  return rule;
 }
 
 function parseRuleAtPrecedence1(tokenStream: TokenStream): Rule {

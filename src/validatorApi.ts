@@ -1,4 +1,4 @@
-import { Rule, _parsingRulesInternals } from './types/parsingRules';
+import { Rule, Ruleset, _parsingRulesInternals } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import {
   AssertMatchesOpts,
@@ -15,7 +15,7 @@ import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './types/packagePrivateAccess';
 
 const { createValidatableProtocolFnOptsCheck } = _validatableProtocolInternals[packagePrivate];
-const { createRuleCheck } = _parsingRulesInternals[packagePrivate];
+const { createRulesetCheck } = _parsingRulesInternals[packagePrivate];
 const validatableProtocolFnOptsCheck = createValidatableProtocolFnOptsCheck(uncheckedValidator);
 
 const isValidatorCheck = uncheckedValidator.checker(
@@ -70,8 +70,7 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
       uncheckedValidator`[value: unknown]`.assertArgs('<validator instance>.matches', arguments);
       return unwrappedValidator.matches(value);
     },
-    rule: unwrappedValidator.rule,
-    interpolated: unwrappedValidator.interpolated,
+    ruleset: unwrappedValidator.ruleset,
     [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
       // TODO: I never validate the return value of opts.failure
       uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
@@ -83,11 +82,11 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
 }
 
 const staticFields: ValidatorTemplateTagStaticFields = {
-  fromRule<T=unknown>(rule: Rule, interpolated: readonly unknown[] = []): Validator<T> {
-    uncheckedValidator`[rule: ${createRuleCheck(uncheckedValidator)}, interpolated?: unknown[]]`
-      .assertArgs('validator.fromRule', arguments);
+  fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
+    uncheckedValidator`[ruleset: ${createRulesetCheck(uncheckedValidator)}]`
+      .assertArgs('validator.fromRuleset', arguments);
 
-    return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRule<T>(rule, interpolated));
+    return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRuleset<T>(ruleset));
   },
 
   from(unknownValue: string | Validator): Validator {

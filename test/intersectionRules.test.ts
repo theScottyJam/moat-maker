@@ -20,52 +20,62 @@ describe('intersection rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`string & null & undefined`;
-    expect(v.rule).toMatchObject({
-      category: 'intersection',
-      variants: [
-        {
-          category: 'simple',
-          type: 'string',
-        }, {
-          category: 'simple',
-          type: 'null',
-        }, {
-          category: 'simple',
-          type: 'undefined',
-        },
-      ],
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'intersection',
+        variants: [
+          {
+            category: 'simple',
+            type: 'string',
+          }, {
+            category: 'simple',
+            type: 'null',
+          }, {
+            category: 'simple',
+            type: 'undefined',
+          },
+        ],
+      },
+      interpolated: [],
     });
-    assert(v.rule.category === 'intersection');
-    expect(Object.isFrozen(v.rule)).toBe(true);
-    expect(Object.isFrozen(v.rule.variants)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
+    expect(Object.isFrozen((v.ruleset.rootRule as any).variants)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator({ raw: [' \tnumber&string \t&\t undefined \t'] });
-    expect(v.rule).toMatchObject({
-      category: 'intersection',
-      variants: [
-        {
-          category: 'simple',
-          type: 'number',
-        }, {
-          category: 'simple',
-          type: 'string',
-        }, {
-          category: 'simple',
-          type: 'undefined',
-        },
-      ],
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'intersection',
+        variants: [
+          {
+            category: 'simple',
+            type: 'number',
+          }, {
+            category: 'simple',
+            type: 'string',
+          }, {
+            category: 'simple',
+            type: 'undefined',
+          },
+        ],
+      },
+      interpolated: [],
     });
   });
 
   test('behaves properly when there is only one intersection in the intersection type', () => {
-    const v = validator.fromRule({
-      category: 'intersection',
-      variants: [{
-        category: 'simple',
-        type: 'string',
-      }],
+    const v = validator.fromRuleset({
+      rootRule: {
+        category: 'intersection',
+        variants: [{
+          category: 'simple',
+          type: 'string',
+        }],
+      },
+      interpolated: [],
     });
 
     v.assertMatches('xyz');

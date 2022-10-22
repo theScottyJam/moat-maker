@@ -49,11 +49,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`string`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'string',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'string',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -79,11 +84,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`number`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'number',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'number',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -102,11 +112,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`bigint`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'bigint',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'bigint',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -133,11 +148,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`boolean`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'boolean',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'boolean',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -156,11 +176,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`symbol`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'symbol',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'symbol',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -194,11 +219,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`object`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'object',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'object',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -217,11 +247,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`null`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'null',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'null',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
@@ -240,11 +275,16 @@ describe('simple rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`undefined`;
-      expect(v.rule).toMatchObject({
-        category: 'simple',
-        type: 'undefined',
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'simple',
+          type: 'undefined',
+        },
+        interpolated: [],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 });

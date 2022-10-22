@@ -84,72 +84,79 @@ describe('user input validation for validator API', () => {
     });
   });
 
-  test('validator.fromRule', () => {
-    const act = (): any => validator.fromRule({
-      category: 'union',
-      variants: [{
-        category: 'array',
-        content: {
-          category: 'intersection',
-          variants: [
-            {
-              category: 'interpolation',
-              interpolationIndex: 0,
-            }, {
-              category: 'nonsenseCategory' as any,
-            },
-          ],
-        },
-      }],
-    }, ['xyz']);
+  test('validator.fromRuleset', () => {
+    const act = (): any => validator.fromRuleset({
+      rootRule: {
+        category: 'union',
+        variants: [{
+          category: 'array',
+          content: {
+            category: 'intersection',
+            variants: [
+              {
+                category: 'interpolation',
+                interpolationIndex: 0,
+              }, {
+                category: 'nonsenseCategory' as any,
+              },
+            ],
+          },
+        }],
+      },
+      interpolated: ['xyz'],
+    });
 
     // TODO: Oh wow. This is an awful error. Lets figure out something we can do about this.
     assert.throws(act, {
       message: [
-        'Received invalid "rule" argument for validator.fromRule(): Failed to match against every variant of a union.',
-        '  Variant 1: <argumentList>[0] is missing the required properties: "type"',
-        '  Variant 2: <argumentList>[0] is missing the required properties: "value"',
-        '  Variant 3: Expected <argumentList>[0].category to be "noop" but got "union".',
-        '  Variant 4: <argumentList>[0] is missing the required properties: "content", "dynamicContent", "index"',
-        '  Variant 5: <argumentList>[0] is missing the required properties: "content"',
-        '  Variant 6: <argumentList>[0] is missing the required properties: "content", "optionalContent", "rest", "entryLabels"',
-        '  Variant 7: <argumentList>[0] is missing the required properties: "iterableType", "entryType"',
+        'Received invalid "ruleset" argument for validator.fromRuleset(): Failed to match against every variant of a union.',
+        '  Variant 1: <argumentList>[0].rootRule is missing the required properties: "type"',
+        '  Variant 2: <argumentList>[0].rootRule is missing the required properties: "value"',
+        '  Variant 3: Expected <argumentList>[0].rootRule.category to be "noop" but got "union".',
+        '  Variant 4: <argumentList>[0].rootRule is missing the required properties: "content", "dynamicContent", "index"',
+        '  Variant 5: <argumentList>[0].rootRule is missing the required properties: "content"',
+        '  Variant 6: <argumentList>[0].rootRule is missing the required properties: "content", "optionalContent", "rest", "entryLabels"',
+        '  Variant 7: <argumentList>[0].rootRule is missing the required properties: "iterableType", "entryType"',
         '  Variant 8: Failed to match against every variant of a union.',
-        '      Variant 1: <argumentList>[0].variants[0] is missing the required properties: "type"',
-        '      Variant 2: <argumentList>[0].variants[0] is missing the required properties: "value"',
-        '      Variant 3: Expected <argumentList>[0].variants[0].category to be "noop" but got "array".',
-        '      Variant 4: <argumentList>[0].variants[0] is missing the required properties: "dynamicContent", "index"',
+        '      Variant 1: <argumentList>[0].rootRule.variants[0] is missing the required properties: "type"',
+        '      Variant 2: <argumentList>[0].rootRule.variants[0] is missing the required properties: "value"',
+        '      Variant 3: Expected <argumentList>[0].rootRule.variants[0].category to be "noop" but got "array".',
+        '      Variant 4: <argumentList>[0].rootRule.variants[0] is missing the required properties: "dynamicContent", "index"',
         '      Variant 5: Failed to match against every variant of a union.',
-        '          Variant 1: <argumentList>[0].variants[0].content is missing the required properties: "type"',
-        '          Variant 2: <argumentList>[0].variants[0].content is missing the required properties: "value"',
-        '          Variant 3: Expected <argumentList>[0].variants[0].content.category to be "noop" but got "intersection".',
-        '          Variant 4: <argumentList>[0].variants[0].content is missing the required properties: "content", "dynamicContent", "index"',
-        '          Variant 5: <argumentList>[0].variants[0].content is missing the required properties: "content"',
-        '          Variant 6: <argumentList>[0].variants[0].content is missing the required properties: ' +
-          '"content", "optionalContent", "rest", "entryLabels"',
-        '          Variant 7: <argumentList>[0].variants[0].content is missing the required properties: "iterableType", "entryType"',
-        '          Variant 8: Expected <argumentList>[0].variants[0].content.category to be "union" but got "intersection".',
-        '          Variant 9: Failed to match against every variant of a union.',
-        '              Variant 1: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "type"',
-        '              Variant 2: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "value"',
-        '              Variant 3: Expected <argumentList>[0].variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".',
-        '              Variant 4: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: ' +
+        '          Variant 1: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "type"',
+        '          Variant 2: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "value"',
+        '          Variant 3: Expected <argumentList>[0].rootRule.variants[0].content.category to be "noop" but got "intersection".',
+        '          Variant 4: <argumentList>[0].rootRule.variants[0].content is missing the required properties: ' +
           '"content", "dynamicContent", "index"',
-        '              Variant 5: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "content"',
-        '              Variant 6: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: ' +
+        '          Variant 5: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "content"',
+        '          Variant 6: <argumentList>[0].rootRule.variants[0].content is missing the required properties: ' +
           '"content", "optionalContent", "rest", "entryLabels"',
-        '              Variant 7: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "iterableType", "entryType"',
-        '              Variant 8: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "variants"',
-        '              Variant 9: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "variants"',
-        '              Variant 10: <argumentList>[0].variants[0].content.variants[1] is missing the required properties: "interpolationIndex"',
-        '          Variant 10: <argumentList>[0].variants[0].content is missing the required properties: "interpolationIndex"',
-        '      Variant 6: <argumentList>[0].variants[0] is missing the required properties: "optionalContent", "rest", "entryLabels"',
-        '      Variant 7: <argumentList>[0].variants[0] is missing the required properties: "iterableType", "entryType"',
-        '      Variant 8: <argumentList>[0].variants[0] is missing the required properties: "variants"',
-        '      Variant 9: <argumentList>[0].variants[0] is missing the required properties: "variants"',
-        '      Variant 10: <argumentList>[0].variants[0] is missing the required properties: "interpolationIndex"',
-        '  Variant 9: Expected <argumentList>[0].category to be "intersection" but got "union".',
-        '  Variant 10: <argumentList>[0] is missing the required properties: "interpolationIndex"',
+        '          Variant 7: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "iterableType", "entryType"',
+        '          Variant 8: Expected <argumentList>[0].rootRule.variants[0].content.category to be "union" but got "intersection".',
+        '          Variant 9: Failed to match against every variant of a union.',
+        '              Variant 1: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "type"',
+        '              Variant 2: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "value"',
+        '              Variant 3: Expected <argumentList>[0].rootRule.variants[0].content.variants[1].category to be ' +
+          '"noop" but got "nonsenseCategory".',
+        '              Variant 4: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
+          '"content", "dynamicContent", "index"',
+        '              Variant 5: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "content"',
+        '              Variant 6: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
+          '"content", "optionalContent", "rest", "entryLabels"',
+        '              Variant 7: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
+          '"iterableType", "entryType"',
+        '              Variant 8: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "variants"',
+        '              Variant 9: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "variants"',
+        '              Variant 10: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
+          '"interpolationIndex"',
+        '          Variant 10: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "interpolationIndex"',
+        '      Variant 6: <argumentList>[0].rootRule.variants[0] is missing the required properties: "optionalContent", "rest", "entryLabels"',
+        '      Variant 7: <argumentList>[0].rootRule.variants[0] is missing the required properties: "iterableType", "entryType"',
+        '      Variant 8: <argumentList>[0].rootRule.variants[0] is missing the required properties: "variants"',
+        '      Variant 9: <argumentList>[0].rootRule.variants[0] is missing the required properties: "variants"',
+        '      Variant 10: <argumentList>[0].rootRule.variants[0] is missing the required properties: "interpolationIndex"',
+        '  Variant 9: Expected <argumentList>[0].rootRule.category to be "intersection" but got "union".',
+        '  Variant 10: <argumentList>[0].rootRule is missing the required properties: "interpolationIndex"',
       ].join('\n'),
     });
   });

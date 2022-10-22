@@ -14,15 +14,22 @@ describe('noop rules', () => {
 
     test('produces the correct rule', () => {
       const v = validator`unknown`;
-      expect(v.rule).toMatchObject({ category: 'noop' });
-      expect(Object.isFrozen(v.rule)).toBe(true);
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'noop',
+        },
+        interpolated: [],
+      });
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
   });
 
   describe('any', () => {
     test('produces the same rule structure as "unknown"', () => {
-      expect(validator`any`.rule).toMatchObject({ category: 'noop' });
-      expect(validator`unknown`.rule).toMatchObject({ category: 'noop' });
+      expect(validator`any`.ruleset.rootRule).toMatchObject({ category: 'noop' });
+      expect(validator`unknown`.ruleset.rootRule).toMatchObject({ category: 'noop' });
     });
   });
 });

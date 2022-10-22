@@ -5,38 +5,43 @@ describe('interpolation', () => {
   describe('misc', () => {
     test('produces the correct rule', () => {
       const v = validator`${'xyz'} | ${23}`;
-      expect(v.rule).toMatchObject({
-        category: 'union',
-        variants: [
-          {
-            category: 'interpolation',
-            interpolationIndex: 0,
-          }, {
-            category: 'interpolation',
-            interpolationIndex: 1,
-          },
-        ],
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'union',
+          variants: [
+            {
+              category: 'interpolation',
+              interpolationIndex: 0,
+            }, {
+              category: 'interpolation',
+              interpolationIndex: 1,
+            },
+          ],
+        },
+        interpolated: ['xyz', 23],
       });
-      expect(Object.isFrozen(v.rule)).toBe(true);
-      expect(v.interpolated).toMatchObject(['xyz', 23]);
-      expect(Object.isFrozen(v.interpolated)).toBe(true);
+      expect(Object.isFrozen(v.ruleset)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
     });
 
     test('works with funky whitespace', () => {
       const v = validator`${'xyz'}|${23}`;
-      expect(v.rule).toMatchObject({
-        category: 'union',
-        variants: [
-          {
-            category: 'interpolation',
-            interpolationIndex: 0,
-          }, {
-            category: 'interpolation',
-            interpolationIndex: 1,
-          },
-        ],
+      expect(v.ruleset).toMatchObject({
+        rootRule: {
+          category: 'union',
+          variants: [
+            {
+              category: 'interpolation',
+              interpolationIndex: 0,
+            }, {
+              category: 'interpolation',
+              interpolationIndex: 1,
+            },
+          ],
+        },
+        interpolated: ['xyz', 23],
       });
-      expect(v.interpolated).toMatchObject(['xyz', 23]);
     });
   });
 
@@ -62,7 +67,7 @@ describe('interpolation', () => {
 
     test('No interpolation points produces an empty interpolated array', () => {
       const v = validator`string`;
-      expect(v.interpolated).toMatchObject([]);
+      expect(v.ruleset.interpolated).toMatchObject([]);
     });
 
     describe('uses sameValueZero comparison algorithm', () => {

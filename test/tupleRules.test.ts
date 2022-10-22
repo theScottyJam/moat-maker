@@ -183,78 +183,91 @@ describe('tuple rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`[string, number?, boolean?]`;
-    expect(v.rule).toMatchObject({
-      category: 'tuple',
-      content: [
-        {
-          category: 'simple',
-          type: 'string',
-        },
-      ],
-      optionalContent: [
-        {
-          category: 'simple',
-          type: 'number',
-        },
-        {
-          category: 'simple',
-          type: 'boolean',
-        },
-      ],
-      rest: null,
-      entryLabels: null,
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'tuple',
+        content: [
+          {
+            category: 'simple',
+            type: 'string',
+          },
+        ],
+        optionalContent: [
+          {
+            category: 'simple',
+            type: 'number',
+          },
+          {
+            category: 'simple',
+            type: 'boolean',
+          },
+        ],
+        rest: null,
+        entryLabels: null,
+      },
+      interpolated: [],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
   });
 
   test('produces the correct rule for tuples with a rest operator', () => {
     const v = validator`[string, ...boolean[]]`;
-    expect(v.rule).toMatchObject({
-      category: 'tuple',
-      content: [
-        {
-          category: 'simple',
-          type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'tuple',
+        content: [
+          {
+            category: 'simple',
+            type: 'string',
+          },
+        ],
+        optionalContent: [],
+        rest: {
+          category: 'array',
+          content: {
+            category: 'simple',
+            type: 'boolean',
+          },
         },
-      ],
-      optionalContent: [],
-      rest: {
-        category: 'array',
-        content: {
-          category: 'simple',
-          type: 'boolean',
-        },
+        entryLabels: null,
       },
-      entryLabels: null,
+      interpolated: [],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
   });
 
   test('produces the correct entry names in the rule', () => {
     const v = validator`[x: string, y?: number, ...z: unknown[]]`;
-    assert(v.rule.category === 'tuple');
-    expect(v.rule.entryLabels).toMatchObject(['x', 'y', 'z']);
+    assert(v.ruleset.rootRule.category === 'tuple');
+    expect(v.ruleset.rootRule.entryLabels).toMatchObject(['x', 'y', 'z']);
   });
 
   test('works with funky whitespace', () => {
     const v = validator`[  string ,... boolean [ ] ]`;
-    expect(v.rule).toMatchObject({
-      category: 'tuple',
-      content: [
-        {
-          category: 'simple',
-          type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'tuple',
+        content: [
+          {
+            category: 'simple',
+            type: 'string',
+          },
+        ],
+        optionalContent: [],
+        rest: {
+          category: 'array',
+          content: {
+            category: 'simple',
+            type: 'boolean',
+          },
         },
-      ],
-      optionalContent: [],
-      rest: {
-        category: 'array',
-        content: {
-          category: 'simple',
-          type: 'boolean',
-        },
+        entryLabels: null,
       },
-      entryLabels: null,
+      interpolated: [],
     });
   });
 

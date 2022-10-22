@@ -46,30 +46,38 @@ describe('iterator rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`unknown@<string>`;
-    expect(v.rule).toMatchObject({
-      category: 'iterator',
-      iterableType: {
-        category: 'noop',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'iterator',
+        iterableType: {
+          category: 'noop',
+        },
+        entryType: {
+          category: 'simple',
+          type: 'string',
+        },
       },
-      entryType: {
-        category: 'simple',
-        type: 'string',
-      },
+      interpolated: [],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator`unknown @ < string >`;
-    expect(v.rule).toMatchObject({
-      category: 'iterator',
-      iterableType: {
-        category: 'noop',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'iterator',
+        iterableType: {
+          category: 'noop',
+        },
+        entryType: {
+          category: 'simple',
+          type: 'string',
+        },
       },
-      entryType: {
-        category: 'simple',
-        type: 'string',
-      },
+      interpolated: [],
     });
   });
 

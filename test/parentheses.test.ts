@@ -23,24 +23,32 @@ describe('parentheses', () => {
 
   test('produces the correct rule', () => {
     const v = validator`(string)`;
-    expect(v.rule).toMatchObject({
-      category: 'simple',
-      type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'simple',
+        type: 'string',
+      },
+      interpolated: [],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator`( string  )`;
-    expect(v.rule).toMatchObject({
-      category: 'simple',
-      type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'simple',
+        type: 'string',
+      },
+      interpolated: [],
     });
   });
 
   test('union types are flattened through parentheses (test 1)', () => {
     const v = validator`number | (string | boolean) | ((null)) | undefined`;
-    expect(v.rule).toMatchObject({
+    expect(v.ruleset.rootRule).toMatchObject({
       category: 'union',
       variants: [
         { category: 'simple', type: 'number' },
@@ -50,12 +58,12 @@ describe('parentheses', () => {
         { category: 'simple', type: 'undefined' },
       ],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
   });
 
   test('union types are flattened through parentheses (test 2)', () => {
     const v = validator`(number | null) | ((string | boolean))`;
-    expect(v.rule).toMatchObject({
+    expect(v.ruleset.rootRule).toMatchObject({
       category: 'union',
       variants: [
         { category: 'simple', type: 'number' },
@@ -64,12 +72,12 @@ describe('parentheses', () => {
         { category: 'simple', type: 'boolean' },
       ],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
   });
 
   test('intersection types are flattened through parentheses (test 1)', () => {
     const v = validator`number & (string & boolean) & ((null)) & undefined`;
-    expect(v.rule).toMatchObject({
+    expect(v.ruleset.rootRule).toMatchObject({
       category: 'intersection',
       variants: [
         { category: 'simple', type: 'number' },
@@ -79,12 +87,12 @@ describe('parentheses', () => {
         { category: 'simple', type: 'undefined' },
       ],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
   });
 
   test('intersection types are flattened through parentheses (test 2)', () => {
     const v = validator`(number & null) & ((string & boolean))`;
-    expect(v.rule).toMatchObject({
+    expect(v.ruleset.rootRule).toMatchObject({
       category: 'intersection',
       variants: [
         { category: 'simple', type: 'number' },
@@ -93,7 +101,7 @@ describe('parentheses', () => {
         { category: 'simple', type: 'boolean' },
       ],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
   });
 
   describe('syntax', () => {

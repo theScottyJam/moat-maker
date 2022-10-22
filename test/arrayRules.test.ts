@@ -72,24 +72,32 @@ describe('array rules', () => {
 
   test('produces the correct rule', () => {
     const v = validator`string[]`;
-    expect(v.rule).toMatchObject({
-      category: 'array',
-      content: {
-        category: 'simple',
-        type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'array',
+        content: {
+          category: 'simple',
+          type: 'string',
+        },
       },
+      interpolated: [],
     });
-    expect(Object.isFrozen(v.rule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.rootRule)).toBe(true);
+    expect(Object.isFrozen(v.ruleset.interpolated)).toBe(true);
   });
 
   test('works with funky whitespace', () => {
     const v = validator`string [ ]`;
-    expect(v.rule).toMatchObject({
-      category: 'array',
-      content: {
-        category: 'simple',
-        type: 'string',
+    expect(v.ruleset).toMatchObject({
+      rootRule: {
+        category: 'array',
+        content: {
+          category: 'simple',
+          type: 'string',
+        },
       },
+      interpolated: [],
     });
   });
 

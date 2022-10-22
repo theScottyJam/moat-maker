@@ -1,7 +1,14 @@
-import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from './types/parsingRules';
+import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule, Ruleset } from './types/parsingRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
-export function freezeRule(rule: Rule): Rule {
+export function freezeRuleset(ruleset: Ruleset): Ruleset {
+  return Object.freeze({
+    rootRule: freezeRule(ruleset.rootRule),
+    interpolated: Object.freeze([...ruleset.interpolated]),
+  });
+}
+
+function freezeRule(rule: Rule): Rule {
   if (rule.category === 'simple') {
     return f({
       category: rule.category,

@@ -89,7 +89,12 @@ export type Rule = (
   | InterpolationRule
 );
 
-function createRuleCheck(validator: ValidatorTemplateTag): Validator {
+export interface Ruleset {
+  readonly rootRule: Rule
+  readonly interpolated: readonly unknown[]
+}
+
+function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
   const ruleRef = validator.createRef();
 
   const simpleTypeVariantCheck = validator`
@@ -177,9 +182,14 @@ function createRuleCheck(validator: ValidatorTemplateTag): Validator {
 
   ruleRef.set(ruleCheck);
 
-  return ruleCheck;
+  const rulesetCheck = validator`{
+    rootRule: ${ruleCheck}
+    interpolated: unknown[]
+  }`;
+
+  return rulesetCheck;
 }
 
 export const _parsingRulesInternals = {
-  [packagePrivate]: { createRuleCheck },
+  [packagePrivate]: { createRulesetCheck },
 };

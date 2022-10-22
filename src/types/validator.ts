@@ -1,4 +1,4 @@
-import { Rule } from './parsingRules';
+import { Rule, Ruleset } from './parsingRules';
 import { ValidatableProtocol, ValidatableProtocolFn } from './validatableProtocol';
 import type { validatable } from '../validatableProtocol';
 
@@ -30,12 +30,11 @@ export interface Validator<T=unknown> extends ValidatableProtocol {
   readonly assertMatches: (value: unknown, opts?: AssertMatchesOpts) => T
   readonly assertionTypeGuard: (value: unknown, opts?: AssertMatchesOpts) => asserts value is T
   readonly assertArgs: (whichFn: string, args: ArrayLike<unknown>) => void
-  readonly rule: Rule
-  readonly interpolated: readonly unknown[]
+  readonly ruleset: Ruleset
 }
 
 export interface ValidatorTemplateTagStaticFields {
-  fromRule: <T=unknown>(rule: Rule, interpolated?: readonly unknown[]) => Validator<T>
+  fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
   from: (unknownValue: string | Validator) => Validator
   createRef: () => ValidatorRef
   checker: (callback: (valueBeingMatched: unknown) => boolean, opts?: { to?: string }) => CustomChecker
