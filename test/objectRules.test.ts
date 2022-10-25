@@ -153,6 +153,21 @@ describe('object rules', () => {
       assert.throws(act, TypeError);
     });
 
+    test('index type does not apply to inherited properties', () => {
+      // If index types did apply to inherited properties, you would have to fit
+      // the type of Object.prototype into your index type, which would be silly.
+
+      class MyClass {
+        // Not inherited. Must obey the index type.
+        x = 2;
+        // Inherited. Should be ignored.
+        f(): void {}
+      }
+
+      const v = validator`{ [index: string]: number }`
+        .assertMatches(new MyClass());
+    });
+
     test('index type triggers getters', () => {
       const v = validator`{ [symb: string]: number }`;
       expect(v.matches({ get x() { return 2; } })).toBe(true);
