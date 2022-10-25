@@ -19,7 +19,7 @@ import {
   ValidatorTemplateTagStaticFields,
 } from './types/validator';
 import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
-import { createValidatorAssertionError, ValidatorAssertionError } from './exceptions';
+import { ValidatorAssertionError } from './exceptions';
 import { reprUnknownValue } from './util';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
@@ -42,10 +42,7 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       }
 
       try {
-        assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
-          at: opts?.at,
-          errorFactory: (...args: any) => createValidatorAssertionError(...args),
-        });
+        assertMatches(ruleset.rootRule, value, ruleset.interpolated, opts?.at);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
@@ -73,10 +70,7 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       }
 
       try {
-        assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
-          at: opts?.at,
-          errorFactory: (...args: any) => createValidatorAssertionError(...args),
-        });
+        assertMatches(ruleset.rootRule, value, ruleset.interpolated, opts?.at);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
@@ -98,7 +92,7 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       };
 
       try {
-        assertMatches(ruleset.rootRule, Array.from(args), ruleset.interpolated, opts);
+        assertMatches(ruleset.rootRule, Array.from(args), ruleset.interpolated, opts.at);
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
         // many unnecessary stack frames in the call stack.
@@ -115,7 +109,14 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
     },
     ruleset,
     [validatable](value: unknown, { failure, at }: ValidatableProtocolFnOpts) {
-      assertMatches(ruleset.rootRule, value, ruleset.interpolated, { at, errorFactory: failure });
+      try {
+        assertMatches(ruleset.rootRule, value, ruleset.interpolated, at);
+      } catch (error) {
+        if (error instanceof ValidatorAssertionError) {
+          throw failure(...buildRethrowErrorArgs(error));
+        }
+        throw error;
+      }
     },
   });
 }
@@ -168,7 +169,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
 
 Object.assign(uncheckedValidator, staticFields);
 
-function buildRethrowErrorArgs(error: ValidatorAssertionError, message: string): any {
+function buildRethrowErrorArgs(error: ValidatorAssertionError, message: string = error.message): any {
   // This version of TypeScript does not yet support error causes, which
   // is why we have to use the `any` type here.
   const errorOpts = (error as any).cause !== undefined
