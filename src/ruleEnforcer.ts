@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { InterpolationRule, ObjectRule, ObjectRuleContentValue, Rule, TupleRule, UnionRule } from './types/parsingRules';
 import { indentMultilineString, reprUnknownValue, UnreachableCaseError } from './util';
-import { createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
+import { createValidatorAssertionError, createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
 import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
 import { isIdentifier } from './tokenStream';
 
@@ -51,7 +51,7 @@ export function assertMatches<T>(
   interpolated: readonly unknown[],
   {
     at: lookupPath = '<receivedValue>',
-    errorFactory = (...args) => new ValidatorAssertionError(...args),
+    errorFactory = (...args) => createValidatorAssertionError(...args),
   }: RuleEnforcingOpts = {},
 ): asserts target is T {
   if (rule.category === 'noop') {

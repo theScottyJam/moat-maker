@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { Ruleset, validator, ValidatorSyntaxError } from '../src';
+import { ValidatorAssertionError } from '../src/exceptions';
 
 describe('validator behavior', () => {
   test('a validator instance is a frozen object', () => {
@@ -450,6 +451,12 @@ describe('validator behavior', () => {
       assert.throws(act, { message: 'Expected <receivedValue>, which was 2, to match a custom validity checker.' });
       assert.throws(act, TypeError);
     });
+  });
+
+  test('forbids outside users from instantiating ValidatorAssertionError', () => {
+    const act = (): any => new (ValidatorAssertionError as any)('Whoops!');
+    assert.throws(act, (err: Error) => err.constructor === Error);
+    assert.throws(act, { message: 'The ValidatorAssertionError constructor is private.' });
   });
 
   test('forbids outside users from instantiating ValidatorSyntaxError', () => {

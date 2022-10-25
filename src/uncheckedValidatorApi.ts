@@ -19,7 +19,7 @@ import {
   ValidatorTemplateTagStaticFields,
 } from './types/validator';
 import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
-import { ValidatorAssertionError } from './exceptions';
+import { createValidatorAssertionError, ValidatorAssertionError } from './exceptions';
 import { reprUnknownValue } from './util';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
@@ -44,7 +44,7 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       try {
         assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
           at: opts?.at,
-          errorFactory: (...args: any) => new ValidatorAssertionError(...args),
+          errorFactory: (...args: any) => createValidatorAssertionError(...args),
         });
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
@@ -75,7 +75,7 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       try {
         assertMatches(ruleset.rootRule, value, ruleset.interpolated, {
           at: opts?.at,
-          errorFactory: (...args: any) => new ValidatorAssertionError(...args),
+          errorFactory: (...args: any) => createValidatorAssertionError(...args),
         });
       } catch (error) {
         // Rethrow as TypeError relatively low down the call stack, so we don't have too
