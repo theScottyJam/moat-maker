@@ -1,18 +1,31 @@
 {
-  "name": "type-validator",
+  "name": "moat-maker",
   "version": "0.0.1",
-  "description": "",
-  "author": "scotty ",
+  "description": "Validate your runtime data with easy to pick up, TypeScript-inspired syntax. ",
+  "author": "Scotty Jamison",
+  "keywords": [
+    "TypeScript",
+    "validate",
+    "validation",
+    "validator",
+    "verify",
+    "check",
+    "data"
+  ],
   "main": "build/index.js",
   "scripts": {
-    "build": "npx tsc --build tsconfig.json",
+    "prepublish": "npm run build",
+    "build": "rm -r ./build && npx tsc --build tsconfig.json",
     "test": "npx jest -c jest.config.js --maxWorkers=1",
     "test:watch": "npx jest -c jest.config.js --maxWorkers=1 --watch",
     "lint": "eslint test/*.ts src/*.ts",
     "lint:fix": "eslint test/*.ts src/*.ts --fix"
   },
-  "keywords": [],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theScottyJam/moat-maker"
+  },
   "devDependencies": {
     "@types/jest": "^23.3.14",
     "@typescript-eslint/eslint-plugin": "^5.36.2",
