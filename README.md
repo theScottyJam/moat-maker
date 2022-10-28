@@ -1,6 +1,6 @@
 # Moat Maker
 
-**Alpha Warning:** This tool is still under development and its content is API will receive frequent breaking changes.
+**Beta Warning:** This tool is code-complete, with some minor work that still needs to be done around some rough edges. You can expect a fair amount of stability at this point, but no promises.
 
 Validate your runtime JavaScript data with easy to pick up, TypeScript-inspired syntax. It's as easy as:
 
