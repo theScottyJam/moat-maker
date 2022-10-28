@@ -87,7 +87,7 @@ describe('object rules', () => {
       v.assertMatches({ num: 2, str: 'x', another: 1, andAnother: '2' });
     });
 
-    test('rejects when an extra property in the input value does not match the index type', () => {
+    test('rejects when an extra property in the input value does not match the index type (test 1)', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
       const act = (): any => v.assertMatches({ num: 2, str: 'x', another: true });
       assert.throws(act, {
@@ -100,7 +100,7 @@ describe('object rules', () => {
       assert.throws(act, TypeError);
     });
 
-    test('rejects when a required property in the input value does not match the index type', () => {
+    test('rejects when a required property in the input value does not match the index type (test 2)', () => {
       const v = validator`{ num: number | boolean, str?: string, str2?: string, [index: string]: string | number }`;
       const act = (): any => v.assertMatches({ num: true, str: 'x' });
       assert.throws(act, {
@@ -134,11 +134,17 @@ describe('object rules', () => {
       assert.throws(act, TypeError);
     });
 
-    test('index type restrictions only apply to its index key type', () => {
-      const v = validator`{ [index: 'another']: number, num: string }`;
+    test('index type restrictions only apply to its index key type (test 1)', () => {
+      const v = validator`{ [index: symbol]: number, num: string }`;
       v.assertMatches({ num: 'xyz' });
       v.assertMatches({ num: 'xyz', someOtherProp: 'xyz' });
       expect(v.matches({ another: 'xyz' })).toBe(false);
+    });
+
+    test('index type restrictions only apply to its index key type (test 2)', () => {
+      const v = validator`{ [index: string]: number }`;
+      v.assertMatches({ [Symbol('mySymb')]: 'not-a-number' });
+      expect(v.matches({ 123: 'xyz' })).toBe(false);
     });
 
     test('index type applies to non-enumerable properties', () => {
@@ -193,6 +199,30 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ [Symbol()]: 'oops' });
       assert.throws(act, { message: 'Expected <receivedValue>[Symbol()] to be of type "number" but got type "string".' });
       assert.throws(act, TypeError);
+    });
+
+    test('Can not use other types as an index key type', () => {
+      const act = (): any => validator`{ [ key: 'hi there' ]: number }`;
+      assert.throws(act, {
+        message: [
+          'An index type must be either "string", "number", or "symbol". (line 1, col 10)',
+          "  { [ key: 'hi there' ]: number }",
+          '           ~~~~~~~~~~',
+        ].join('\n'),
+      });
+      assert.throws(act, ValidatorSyntaxError);
+    });
+
+    test('able to use the number type as an index type', () => {
+      const v = validator`{ [index: number]: number }`;
+      v.assertMatches({ num: 'xyz', 123: 4 });
+      expect(v.matches({ 123: 'xyz' })).toBe(false);
+    });
+
+    test('parentheses can be used in an index type key type', () => {
+      const v = validator`{ [index: (((string)))]: number }`;
+      v.assertMatches({ num: 2, 123: 4 });
+      expect(v.matches({ str: 'x' })).toBe(false);
     });
   });
 
@@ -352,7 +382,7 @@ describe('object rules', () => {
   });
 
   test('produces the correct rule with an indexed type', () => {
-    const v = validator`{ alwaysPresentKey: string, [index: "someOtherKey"]: string }`;
+    const v = validator`{ alwaysPresentKey: string, [index: symbol]: string }`;
     expect(v.ruleset.interpolated).toMatchObject([]);
     assert(v.ruleset.rootRule.category === 'object');
 
@@ -374,8 +404,8 @@ describe('object rules', () => {
     // v.ruleset.rootRule.index
     expect(v.ruleset.rootRule.index).toMatchObject({
       key: {
-        category: 'primitiveLiteral',
-        value: 'someOtherKey',
+        category: 'simple',
+        type: 'symbol',
       },
       value: {
         category: 'simple',
@@ -393,7 +423,7 @@ describe('object rules', () => {
   });
 
   test('works with funky whitespace', () => {
-    const v = validator`{x :string ,y ? :number, [ index :"someOtherKey" ] :string ,[ ${'z'} ] ? : 2}`;
+    const v = validator`{x :string ,y ? :number, [ index :symbol ] :string ,[ ${'z'} ] ? : 2}`;
     assert(v.ruleset.rootRule.category === 'object');
     expect(v.ruleset.rootRule.content.size).toBe(2);
     expect(v.ruleset.rootRule.content.get('x')).toMatchObject({
@@ -420,8 +450,8 @@ describe('object rules', () => {
     });
     expect(v.ruleset.rootRule.index).toMatchObject({
       key: {
-        category: 'primitiveLiteral',
-        value: 'someOtherKey',
+        category: 'simple',
+        type: 'symbol',
       },
       value: {
         category: 'simple',

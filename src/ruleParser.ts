@@ -288,7 +288,7 @@ function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
         optional,
       };
     } else if (tokenStream.peek().category === 'identifier') {
-      // parse mapped type
+      // parse index type
 
       const nameToken = tokenStream.next();
       assert(nameToken.category === 'identifier');
@@ -302,11 +302,21 @@ function parseObjectKey(tokenStream: TokenStream): ParseObjectKeyReturn {
         );
       }
 
+      const beforeIndexType = tokenStream.peek().range.start;
       const indexType = parseRuleAtPrecedence1(tokenStream);
+      const afterIndexType = tokenStream.last().range.end;
 
       const endBracketToken = tokenStream.next();
       if (endBracketToken.value !== ']') {
         throw createValidatorSyntaxError('Expected a closing right bracket (`]`).', tokenStream.originalText, endBracketToken.range);
+      }
+
+      if (indexType.category !== 'simple' || !['string', 'number', 'symbol'].includes(indexType.type)) {
+        throw createValidatorSyntaxError(
+          'An index type must be either "string", "number", or "symbol".',
+          tokenStream.originalText,
+          { start: beforeIndexType, end: afterIndexType },
+        );
       }
 
       return { indexType, name: nameToken.value };

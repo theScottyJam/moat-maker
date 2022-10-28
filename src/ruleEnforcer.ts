@@ -176,7 +176,14 @@ function assertMatchesObject<T>(
 
   if (rule.index !== null) {
     for (const [key, value] of allObjectEntries(target)) {
-      if (doesMatch(rule.index.key, key, interpolated)) {
+      const numericKey = typeof key === 'string' ? Number(key) : NaN;
+      const matchesIndexSignature = (
+        doesMatch(rule.index.key, key, interpolated) ||
+        // Handles the case where we're matching the key against the `number` rule.
+        // The key has to be turned into a number first, before the `number` rule will take it.
+        (!isNaN(numericKey) && doesMatch(rule.index.key, numericKey, interpolated))
+      );
+      if (matchesIndexSignature) {
         assertMatches(rule.index.value, value, interpolated, calcSubLookupPath(lookupPath, key));
       }
     }
