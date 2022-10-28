@@ -1,6 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
-import { ValidatorAssertionError } from '../src/exceptions';
+import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 import { testableHelpers as cacheApi } from '../src/cacheControl';
 
 describe('validator behavior', () => {
