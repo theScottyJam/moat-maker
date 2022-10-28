@@ -1,9 +1,15 @@
 import { ObjectRuleContentValue, ObjectRuleIndexValue, Rule, Ruleset } from './types/parsingRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
-export function freezeRuleset(ruleset: Ruleset): Ruleset {
+interface FreezeRuleSetOpts {
+  readonly assumeRootRuleIsDeepFrozen: boolean
+}
+
+export function freezeRuleset(ruleset: Ruleset, opts?: FreezeRuleSetOpts): Ruleset {
   return Object.freeze({
-    rootRule: freezeRule(ruleset.rootRule),
+    rootRule: opts?.assumeRootRuleIsDeepFrozen === true
+      ? ruleset.rootRule
+      : freezeRule(ruleset.rootRule),
     interpolated: Object.freeze([...ruleset.interpolated]),
   });
 }

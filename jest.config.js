@@ -4,4 +4,5 @@ module.exports = {
   },
   testRegex: "(/__test__/.*|(\\.|/)(test|spec))\\.(js?|ts?)$",
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  setupFilesAfterEnv: ['./test/beforeEach.ts']
 };

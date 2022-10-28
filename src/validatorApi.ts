@@ -14,8 +14,9 @@ import { ValidatableProtocolFnOpts, _validatableProtocolInternals } from './type
 import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './types/packagePrivateAccess';
 
-const { createValidatableProtocolFnOptsCheck } = _validatableProtocolInternals[packagePrivate];
 const { createRulesetCheck } = _parsingRulesInternals[packagePrivate];
+const rulesetCheck = createRulesetCheck(uncheckedValidator);
+const { createValidatableProtocolFnOptsCheck } = _validatableProtocolInternals[packagePrivate];
 const validatableProtocolFnOptsCheck = createValidatableProtocolFnOptsCheck(uncheckedValidator);
 
 const isValidatorCheck = uncheckedValidator.checker(
@@ -83,7 +84,7 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
 
 const staticFields: ValidatorTemplateTagStaticFields = {
   fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
-    uncheckedValidator`[ruleset: ${createRulesetCheck(uncheckedValidator)}]`
+    uncheckedValidator`[ruleset: ${rulesetCheck}]`
       .assertArgs('validator.fromRuleset', arguments);
 
     return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRuleset<T>(ruleset));
@@ -94,7 +95,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
       .assertArgs('validator.from', arguments);
 
     return typeof unknownValue === 'string'
-      ? validator({ raw: [unknownValue] })
+      ? wrapValidatorWithUserInputChecks(uncheckedValidator.from(unknownValue))
       : unknownValue;
   },
 

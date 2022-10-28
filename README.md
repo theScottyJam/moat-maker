@@ -35,7 +35,7 @@ This tool can be used anywhere where you might want to validate the correctness 
 This project strives to follow a number of code-quality standards to keep the tool flexible and useful for anyone who needs it. For you, this means you can expect this project to be:
 * **Lightweight:** To keep out the bloat, this project has a zero-dependencies policy.
 * **Stable:** Aside from bug-fixes or rare exceptions, once a behavior is public, it's not coming back out. If, for whatever reason your codebase breaks after an update, please [let us know](https://github.com/theScottyJam/moat-maker/issues/new) so it can be addressed. (NOTE: This principle only applies once Moat Maker is out of beta. Expect frequent changes to the API until then).
-* **Fast:** The hand-built parser is designed to be fast. And the built-in caching system (available in a soon-to-come release) will cause the parsing step to be skipped entirely when the same template string is re-used.
+* **Fast:** The hand-built parser is designed to be fast. And the built-in caching system will cause the parsing step to be skipped entirely when the same template string is re-used.
 * **Supported:** Bugs or feature suggestions? Please leave your thoughts in a [github issue](https://github.com/theScottyJam/moat-maker/issues/new). Every raised issue will be responded to and handled appropriately.
 * **Open Source:** This project is licensed under the [MIT](https://github.com/theScottyJam/moat-maker/blob/main/LICENSE) license. Feel free to do with it as you wish.
 

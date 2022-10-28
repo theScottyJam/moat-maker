@@ -7,8 +7,9 @@ import { strict as assert } from 'node:assert';
 import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
-import { Rule, Ruleset } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
+import { lookupCacheEntry } from './cacheControl';
+import { Rule, Ruleset } from './types/parsingRules';
 import {
   AssertMatchesOpts,
   isValidatorInstance,
@@ -26,10 +27,20 @@ export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray | { readonly raw: readonly string[] },
   ...interpolated: readonly unknown[]
 ): Validator<T> {
-  return fromRuleset<T>(freezeRuleset({
-    rootRule: parse(parts.raw),
-    interpolated,
-  }));
+  const cacheEntry = lookupCacheEntry(parts.raw);
+  if (cacheEntry.exists()) {
+    return fromRuleset<T>(freezeRuleset({
+      rootRule: cacheEntry.get(),
+      interpolated,
+    }, { assumeRootRuleIsDeepFrozen: true }));
+  } else {
+    const ruleset = freezeRuleset({
+      rootRule: parse(parts.raw),
+      interpolated,
+    });
+    cacheEntry.set(ruleset.rootRule);
+    return fromRuleset<T>(ruleset);
+  }
 } as ValidatorTemplateTag;
 
 // ruleset should already be frozen before this is called.
@@ -128,7 +139,10 @@ const staticFields: ValidatorTemplateTagStaticFields = {
 
   from(unknownValue: string | Validator): Validator {
     return typeof unknownValue === 'string'
-      ? uncheckedValidator({ raw: [unknownValue] })
+      ? fromRuleset(freezeRuleset({
+        rootRule: parse([unknownValue]),
+        interpolated: [],
+      }))
       : unknownValue;
   },
 

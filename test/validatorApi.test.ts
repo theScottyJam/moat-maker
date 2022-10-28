@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
-import { Ruleset, validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 import { ValidatorAssertionError } from '../src/exceptions';
+import { testableHelpers as cacheApi } from '../src/cacheControl';
 
 describe('validator behavior', () => {
   test('a validator instance is a frozen object', () => {
@@ -306,6 +307,17 @@ describe('validator behavior', () => {
       const v2 = validator.from(v1);
       expect(v1).toBe(v2);
     });
+
+    it('the returns validator has input checking on its methods', () => {
+      const v = validator.from('string');
+      const act = (): any => v.assertMatches('bad', 'arguments' as any);
+      assert.throws(act, {
+        message: (
+          'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
+          'Expected <argumentList>[1] to be an object but got "arguments".'
+        ),
+      });
+    });
   });
 
   describe('validator.fromRuleset()', () => {
@@ -463,5 +475,108 @@ describe('validator behavior', () => {
     const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
     assert.throws(act, (err: Error) => err.constructor === Error);
     assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
+  });
+
+  describe('cache', () => {
+    // This test also shows that the cache does not care about what gets interpolated in.
+    // And its able to handle special characters.
+    test('Using the validator template tag adds the parsed result to the cache', () => {
+      expect(cacheApi.getCacheEntryFor`[${null}, 'cacheme\n']`.exists()).toBe(false);
+      validator`[${2}, 'cacheme\n']`;
+      expect(cacheApi.getCacheEntryFor`[${null}, 'cacheme\n']`.exists()).toBe(true);
+      expect(cacheApi.getCacheEntryFor`[${null}, 'cacheme\n']`.get()).toMatchObject({
+        category: 'tuple',
+        content: [
+          {
+            category: 'interpolation',
+            interpolationIndex: 0,
+          }, {
+            category: 'primitiveLiteral',
+            value: 'cacheme\n',
+          },
+        ],
+        optionalContent: [],
+        rest: null,
+        entryLabels: null,
+      });
+    });
+
+    // This test also shows that the cache does not care about what gets interpolated in.
+    // And its able to handle special characters.
+    test('The validator template tag will fetch values from the cache if they are present.', () => {
+      cacheApi.getCacheEntryFor`[${null}, 'cacheme\n']`.set({
+        category: 'tuple',
+        content: [
+          {
+            category: 'interpolation',
+            interpolationIndex: 0,
+          }, {
+            category: 'primitiveLiteral',
+            value: 'aTotallyWrongValue',
+          },
+        ],
+        optionalContent: [],
+        rest: null,
+        entryLabels: null,
+      });
+
+      expect(validator`[${2}, 'cacheme\n']`.ruleset).toMatchObject({
+        rootRule: {
+          category: 'tuple',
+          content: [
+            {
+              category: 'interpolation',
+              interpolationIndex: 0,
+            }, {
+              category: 'primitiveLiteral',
+              value: 'aTotallyWrongValue',
+            },
+          ],
+        },
+        interpolated: [2],
+      });
+    });
+
+    // Since .from() can easily be used with dynamically generated strings,
+    // it should bypass the cache to prevent it from hogging all the ram.
+    test('Using validator.from() does not add the parsed result to the cache', () => {
+      validator.from('"cacheme"');
+      expect(cacheApi.getCacheEntryFor`"cacheme"`.exists()).toBe(false);
+    });
+
+    // It's not important whether or not validator.from() looks up information from the cache.
+    // This test is mostly here to document the current behavior.
+    test('validator.from() will not fetch values from the cache if they are present.', () => {
+      cacheApi.getCacheEntryFor`"cacheme"`.set({
+        category: 'primitiveLiteral',
+        value: 'aTotallyWrongValue',
+      });
+
+      expect(validator.from('"cacheme"').ruleset).toMatchObject({
+        rootRule: {
+          category: 'primitiveLiteral',
+          value: 'cacheme',
+        },
+        interpolated: [],
+      });
+    });
+
+    test('cached result is frozen', () => {
+      validator`'cacheme'`;
+      const ruleset = validator`'cacheme'`.ruleset;
+      expect(Object.isFrozen(ruleset)).toBe(true);
+      expect(Object.isFrozen(ruleset.rootRule)).toBe(true);
+      expect(Object.isFrozen(ruleset.interpolated)).toBe(true);
+    });
+
+    test('internal uses of the type checker gets cached', () => {
+      expect(cacheApi.getCacheEntryFor`[]`.exists()).toBe(false);
+
+      // createRef() takes no arguments. Calling this function should
+      // run the type-checker against the empty tuple.
+      validator.createRef();
+
+      expect(cacheApi.getCacheEntryFor`[]`.exists()).toBe(true);
+    });
   });
 });
