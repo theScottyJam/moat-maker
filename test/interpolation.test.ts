@@ -139,17 +139,18 @@ describe('interpolation', () => {
   });
 
   describe('object without validatable protocol interpolation', () => {
-    test('allows strict equal objects to match', () => {
+    test('forbids non-validatable objects to be interpolated', () => {
       const obj = { x: 2 };
-      const v = validator`${obj}`;
-      v.assertMatches(obj);
-    });
-
-    test('forbids objects of the same shape but different identities from matching', () => {
-      const getObj = (): any => ({ x: 2 });
-      const v = validator`${getObj()}`;
-      const act = (): any => v.assertMatches(getObj());
-      assert.throws(act, { message: 'Expected <receivedValue> to be the value [object Object] but got [object Object].' });
+      const act = (): any => validator`${obj}`.assertMatches(2);
+      assert.throws(act,
+        {
+          message: (
+            'Not allowed to interpolate a regular object into a validator. ' +
+            '(Exceptions include classes, objects that define the validatable protocol, etc)'
+          ),
+        },
+      );
+      assert.throws(act, TypeError);
     });
   });
 

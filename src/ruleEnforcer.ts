@@ -275,6 +275,13 @@ function assertMatchesInterpolation<T>(
         `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
       );
     }
+  } else if (isObject(valueToMatch)) {
+    // TODO: It would be nice if we could do this check earlier, when the validator instance is first made
+    // (There's already tests for this, so those tests can be updated as well).
+    throw new TypeError(
+      'Not allowed to interpolate a regular object into a validator. ' +
+      '(Exceptions include classes, objects that define the validatable protocol, etc)',
+    );
   } else if (!sameValueZero(target, valueToMatch)) {
     throw createValidatorAssertionError(
       `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(target)}.`,
