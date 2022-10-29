@@ -43,7 +43,7 @@ export interface ValidatorTemplateTagStaticFields {
 
 export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
   <T>(
-    parts: TemplateStringsArray | { readonly raw: readonly string[] },
+    parts: TemplateStringsArray,
     ...interpolated: readonly unknown[]
   ) => Validator<T>
 );

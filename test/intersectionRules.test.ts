@@ -45,7 +45,7 @@ describe('intersection rules', () => {
   });
 
   test('works with funky whitespace', () => {
-    const v = validator({ raw: [' \tnumber&string \t&\t undefined \t'] });
+    const v = validator({ raw: [' \tnumber&string \t&\t undefined \t'] } as any);
     expect(v.ruleset).toMatchObject({
       rootRule: {
         category: 'intersection',

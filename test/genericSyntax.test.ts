@@ -50,7 +50,7 @@ describe('generic syntax', () => {
   });
 
   test('throws on whitespace-only input', () => {
-    const act = (): any => validator({ raw: [' \t\n'] });
+    const act = (): any => validator({ raw: [' \t\n'] } as any);
     assert.throws(act, { message: 'The validator had no content.' });
     assert.throws(act, ValidatorSyntaxError);
   });

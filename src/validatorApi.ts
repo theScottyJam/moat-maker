@@ -35,7 +35,7 @@ const isArrayLikeCheck = uncheckedValidator.checker(
 );
 
 export const validator = function validator<T=unknown>(
-  parts: TemplateStringsArray | { readonly raw: readonly string[] },
+  parts: TemplateStringsArray,
   ...interpolated: readonly unknown[]
 ): Validator<T> {
   uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`

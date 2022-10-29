@@ -24,7 +24,7 @@ import { ValidatorAssertionError } from './exceptions';
 import { reprUnknownValue } from './util';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
-  parts: TemplateStringsArray | { readonly raw: readonly string[] },
+  parts: TemplateStringsArray,
   ...interpolated: readonly unknown[]
 ): Validator<T> {
   const cacheEntry = lookupCacheEntry(parts.raw);
