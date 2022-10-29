@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { Ruleset, validator } from '../src';
 
 // These are not meant to be comprehensive tests, rather,
 // they're simple smoke tests to make sure the validation checks
@@ -250,6 +250,42 @@ describe('user input validation for validator API', () => {
         'Expected <argumentList>[1].failure, which was "wrongValue", to be an instance of `Function` ' +
         '(and not an instance of a subclass).'
       ),
+    });
+  });
+
+  // TODO: Fix existing tests and add more tests, once the large union error problem is fixed
+  // (so the error messages aren't super long).
+  xdescribe('custom validation requirements for rulesets', () => {
+    test('union rules can not have zero variants', () => {
+      const ruleset: Ruleset = {
+        rootRule: {
+          category: 'union',
+          variants: [],
+        },
+        interpolated: [],
+      };
+
+      const act = (): any => validator.fromRuleset(ruleset);
+
+      assert.throws(act, {
+        message: '<Something really long>',
+      });
+    });
+
+    test('intersection rules can not have zero variants', () => {
+      const ruleset: Ruleset = {
+        rootRule: {
+          category: 'intersection',
+          variants: [],
+        },
+        interpolated: [],
+      };
+
+      const act = (): any => validator.fromRuleset(ruleset);
+
+      assert.throws(act, {
+        message: '<Something really long>',
+      });
     });
   });
 });

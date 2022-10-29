@@ -95,6 +95,11 @@ export interface Ruleset {
 }
 
 function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
+  const nonEmptyArrayCheck = validator.checker(
+    value => Array.isArray(value) && value.length > 0,
+    { to: 'be non-empty' },
+  );
+
   const ruleRef = validator.createRef();
 
   const simpleTypeVariantCheck = validator`
@@ -154,12 +159,12 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 
   const unionRuleCheck = validator`{
     category: 'union'
-    variants: ${ruleRef}[]
+    variants: ${ruleRef}[] & ${nonEmptyArrayCheck}
   }`;
 
   const intersectionRuleCheck = validator`{
     category: 'intersection'
-    variants: ${ruleRef}[]
+    variants: ${ruleRef}[] & ${nonEmptyArrayCheck}
   }`;
 
   const interpolationRuleCheck = validator`{
