@@ -310,4 +310,102 @@ describe('error formatting', () => {
       });
     });
   });
+
+  describe('edge cases', () => {
+    test('an interpolation point followed by a newline', () => {
+      const act = (): any => createInterpolatedValidator([42], [
+        '<INTERPOLATE>',
+        'NONSENSE',
+      ].join('\n'));
+
+      assert.throws(act, {
+        message: [
+          'Expected EOF. (line 2, col 1)',
+          '  NONSENSE',
+          '  ~~~~~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('an new line followed by an interpolation point', () => {
+      const act = (): any => createInterpolatedValidator([42], [
+        'string',
+        '<INTERPOLATE>',
+      ].join('\n'));
+
+      assert.throws(act, {
+        message: [
+          'Expected EOF. (line 2, col 1)',
+          '  ${…}',
+          '  ~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('an underline just after an interpolation point does not accidentally include the interpolation point', () => {
+      const act = (): any => validator`${42}NONSENSE`;
+
+      assert.throws(act, {
+        message: [
+          'Expected EOF. (line 1, col 1)',
+          '  ${…}NONSENSE',
+          '      ~~~~~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('an underline just before an interpolation point does not accidentally include the interpolation point', () => {
+      const act = (): any => validator`NONSENSE${42}`;
+
+      assert.throws(act, {
+        message: [
+          'Expected to find a type here. (line 1, col 1)',
+          '  NONSENSE${…}',
+          '  ~~~~~~~~',
+        ].join('\n'),
+      });
+    });
+
+    test('empty lines (test 1)', () => {
+      const act = (): any => createInterpolatedValidator([42], [
+        '[',
+        '<INTERPOLATE>?,',
+        '',
+        '{',
+        '',
+        '}',
+        '',
+        ']',
+      ].join('\n'));
+
+      assert.throws(act, {
+        message: [
+          'Required entries can not appear after optional entries. (line 4, col 1)',
+          '  {' + '\\' + 'n' + '\\' + 'n}',
+          // eslint-disable-next-line no-multi-spaces
+          '  ~' + '~'  + '~' + '~'  + '~~',
+        ].join('\n'),
+      });
+    });
+
+    // Also tests triggering an EOF error, with the last interesting token being on
+    // a line other than the last line.
+    test('empty lines (test 2)', () => {
+      const act = (): any => createInterpolatedValidator([42], [
+        '',
+        '<INTERPOLATE>',
+        '',
+        'NONSENSE',
+        '',
+      ].join('\n'));
+
+      assert.throws(act, {
+        message: [
+          'Expected EOF. (line 4, col 1)',
+          '  NONSENSE',
+          '  ~~~~~~~~',
+        ].join('\n'),
+      });
+    });
+  });
 });
