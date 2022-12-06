@@ -59,12 +59,12 @@ If Moat Maker's goals don't align with yours, feel free to take a look at the gr
 
 ## Quick Start
 
-Moat Maker supports all of the major syntactic features from TypeScript's type syntax, including syntax support for arrays, tuples, objects, unions, intersections, and more. If you want to know which TypeScript features are supported, take a look at the [syntax cheat sheet](https://thescottyjam.gitbook.io/moat-maker/resources/syntax-cheat-sheet), or just try it out and see what happens. Here's a quick takes of of what is possible:
+Moat Maker supports all of the major syntactic features from TypeScript's type syntax, including syntax support for arrays, tuples, objects, unions, intersections, and more. If you want to know which TypeScript features are supported, take a look at the [syntax cheat sheet](https://thescottyjam.gitbook.io/moat-maker/resources/syntax-cheat-sheet), or just try it out and see what happens. Here's a quick taste of what is possible:
 
 ```javascript
 validator`{
   arrayOfStringsOrNumbers: (string | number)[]
-  canBeMissingOrOptional?: boolean | undefined
+  canBeMissingOrBoolean?: boolean | undefined
   mustBe42: 42
   aOneOrTwoLengthedTupleOfBooleans: [boolean, boolean?]
   stringToNumberMapping: { [index: string]: number }
@@ -101,7 +101,7 @@ Finally, if you need a custom validation behavior that isn't supported by this l
 // The `{ to: ... }` argument provides context about what this is checking for,
 // and is used to build nicer error messages.
 const greaterThanZero = validator.checker(
-  value => typeof value !== 'number' || value <= 0,
+  value => typeof value === 'number' && value > 0,
   { to: 'be a number greater than zero' },
 );
 
@@ -110,7 +110,7 @@ validatePositivePoint = validator`{
   y: ${greaterThanZero}
 }`;
 
-// ✕ - Expected <receivedValue>.x, which was 2, to be a number greater than zero.
+// ✕ - Expected <receivedValue>.y, which was -2, to be a number greater than zero.
 validatePositivePoint.assertMatches({
   x: 2,
   y: -2,
