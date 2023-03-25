@@ -55,7 +55,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
 }
 
 /**
- * Returns the extracted result, the first position in the extracted range range
+ * Returns the extracted result, the first position in the extracted range
  * (i.e. the passed in pos object), and the last position in the extracted range.
  */
 function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult | null {

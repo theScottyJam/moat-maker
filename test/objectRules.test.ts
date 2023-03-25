@@ -62,6 +62,20 @@ describe('object rules', () => {
     assert.throws(act, TypeError);
   });
 
+  test('for performance/short-circuit reasons, all non-nested checks should be performed before nested ones', () => {
+    const v = validator`{ firstProp: { nestedProp: true }, secondProp: 3 }`;
+    const act = (): any => v.assertMatches({
+      firstProp: {
+        get nestedProp() {
+          throw new Error('This should never execute - it should be short-circuited by the outside checks.');
+        },
+      },
+      // We're missing the property "secondProp"
+    });
+
+    assert.throws(act, { message: '<receivedValue> is missing the required properties: "secondProp"' });
+  });
+
   describe('object type checks', () => {
     test('accepts an array', () => {
       validator`{}`.assertMatches([2]);
@@ -92,7 +106,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: 2, str: 'x', another: true });
       assert.throws(act, {
         message: [
-          'Failed to match against every variant of a union.',
+          'Failed to match against any variant of a union.',
           '  Variant 1: Expected <receivedValue>.another to be of type "string" but got type "boolean".',
           '  Variant 2: Expected <receivedValue>.another to be of type "number" but got type "boolean".',
         ].join('\n'),
@@ -105,7 +119,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: true, str: 'x' });
       assert.throws(act, {
         message: [
-          'Failed to match against every variant of a union.',
+          'Failed to match against any variant of a union.',
           '  Variant 1: Expected <receivedValue>.num to be of type "string" but got type "boolean".',
           '  Variant 2: Expected <receivedValue>.num to be of type "number" but got type "boolean".',
         ].join('\n'),
@@ -118,7 +132,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: 2, str: true });
       assert.throws(act, {
         message: [
-          'Failed to match against every variant of a union.',
+          'Failed to match against any variant of a union.',
           '  Variant 1: Expected <receivedValue>.str to be of type "string" but got type "boolean".',
           '  Variant 2: Expected <receivedValue>.str to be of type "number" but got type "boolean".',
         ].join('\n'),
