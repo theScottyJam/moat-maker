@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { InterpolationRule, Rule, TupleRule, UnionRule } from './types/parsingRules';
 import { reprUnknownValue, UnreachableCaseError } from './util';
 import { createValidatorAssertionError, ValidatorAssertionError } from './exceptions';
-import { validatable, conformsToValidatableProtocol } from './validatableProtocol';
+import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from './validatableProtocol';
 import { assertMatchesUnion, assertMatchesObject, getSimpleTypeOf } from './unionRuleEnforcer';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
@@ -150,18 +150,14 @@ function assertMatchesInterpolation<T>(
 ): asserts target is T {
   const valueToMatch = interpolated[rule.interpolationIndex];
 
-  if (conformsToValidatableProtocol(valueToMatch)) {
-    assert(typeof valueToMatch[validatable] === 'function'); // <-- TODO: Test
+  if (hasValidatableProperty(valueToMatch)) {
+    assertConformsToValidatableProtocol(valueToMatch);
 
     valueToMatch[validatable](target, {
       failure: (...args) => createValidatorAssertionError(...args),
       at: lookupPath,
     });
-
-    return;
-  }
-
-  if (typeof valueToMatch === 'function') {
+  } else if (typeof valueToMatch === 'function') {
     if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
       throw createValidatorAssertionError(
         `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +

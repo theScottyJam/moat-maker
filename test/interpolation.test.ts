@@ -273,6 +273,18 @@ describe('interpolation', () => {
   });
 
   describe('userland protocol implementations', () => {
+    test('throws if the validatable property value is not a function', () => {
+      const v = validator`${{ [validator.validatable]: 'not a function' }}`;
+      const act = (): any => v.assertMatches(42);
+      assert.throws(act, {
+        message: (
+          'An invalid object was interpolated into a validator instance. ' +
+          "It had a validator.validatable key who's value was not of type function."
+        ),
+      });
+      assert.throws(act, TypeError);
+    });
+
     test('accepts if validatable does not throw', () => {
       const v = validator`${{ [validator.validatable]: () => {} }}`;
       v.assertMatches(2);
