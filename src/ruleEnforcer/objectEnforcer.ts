@@ -1,21 +1,18 @@
-// When validating a complex type, we first validate the "outward" information about the type itself,
-// then we recurse into the "inward", nested type information.
-// This module uses these two terms, "outward" and "inward", to refer to these two steps of validation.
-// This distinction is important, because when handling unions, we do all outward validation before recursing inwards.
-
 import { strict as assert } from 'node:assert';
-import { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule, UnionRule } from './types/parsingRules';
-import { indentMultilineString, reprUnknownValue } from './util';
-import { createValidatorAssertionError, createValidatorSyntaxError, ValidatorAssertionError } from './exceptions';
-import { isIdentifier } from './tokenStream';
+import { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule, UnionRule } from '../types/parsingRules';
+import { reprUnknownValue } from '../util';
+import { createValidatorAssertionError, createValidatorSyntaxError, ValidatorAssertionError } from '../exceptions';
 import { assertMatches, doesMatch } from './ruleEnforcer';
+import { isIdentifier } from '../tokenStream';
+import { getSimpleTypeOf } from './shared';
+import { assertMatchesUnion } from './unionEnforcer';
 
 /**
  * Not a real rule, rather, this data was derived from rule data.
  * This type is similar to ObjectRule, but all dynamic keys have been accounted for,
  * and added to this value, as if they were static keys all along.
  */
-interface ObjectRuleWithStaticKeys {
+export interface ObjectRuleWithStaticKeys {
   // In the case of `{ x: 1, [${'x'}]: 2 }`, the key `x` will have multiple values,
   // which is why this maps keys to lists of values.
   readonly content: Map<string | symbol, readonly ObjectRuleContentValue[]>
@@ -27,7 +24,7 @@ interface ObjectRuleWithStaticKeys {
  * and added to this value, as if they were static keys all along. Also, union variants
  * have been pushed inwards (e.g. `{ x: 1 } | { x: 2 }` becomes `{ x: 1 | 2 }`).
  */
-interface UnionPushedInwards {
+interface ObjectUnionPushedInwards {
   readonly content: Map<string | symbol, UnionRule>
   // Maps references of the original union variants, to the union variants that were
   // "pushed inwards", Once we know which pushed-inward variants have matched, we can use
@@ -39,57 +36,6 @@ interface UnionPushedInwards {
 interface InProgressUnion {
   category: 'union'
   variants: Rule[]
-}
-
-/**
- * If all variants fail, an error will be thrown. If only some fail, then
- * this assertion will pass, but the failed variant errors will be returned anyways,
- * in case it's needed for further processing.
- */
-export function assertMatchesUnion(
-  rule: UnionRule,
-  target: unknown,
-  interpolated: readonly unknown[],
-  lookupPath: string,
-): { variantRefToError: Map<Rule, ValidatorAssertionError> } {
-  const unionVariants = flattenUnionVariants(rule);
-
-  // Collect all outward errors, along with intermediate data needed for the next step.
-  const variantRefToOutwardError = new Map<Rule, ValidatorAssertionError>();
-  const variantRefToProcessedObjectRule = new Map<Rule, ObjectRuleWithStaticKeys>();
-  for (const variant of unionVariants) {
-    const maybeError = captureValidatorAssertionError(() => {
-      if (variant.category === 'object') {
-        const [ruleWithStaticKeys] = assertOutwardObjCheck(variant, target, interpolated, lookupPath);
-        variantRefToProcessedObjectRule.set(variant, ruleWithStaticKeys);
-      } else {
-        assertMatches(variant, target, interpolated, lookupPath);
-      }
-    });
-
-    if (maybeError !== null) {
-      variantRefToOutwardError.set(variant, maybeError);
-    }
-  }
-
-  // assert inward object logic
-  if (variantRefToProcessedObjectRule.size > 0) {
-    // For variantIndexToProcessedObjectRule to have content, an outward object
-    // check would have passed, which means the target is an object.
-    assert(isObject(target));
-
-    assertInwardObjectCheck([...variantRefToProcessedObjectRule.values()], target, interpolated, lookupPath);
-  }
-
-  // throw an outward union error, if there are no valid variants
-  if (variantRefToOutwardError.size === unionVariants.length) {
-    throw buildUnionError(unique(
-      [...variantRefToOutwardError.values()]
-        .map(error => error.message),
-    ));
-  }
-
-  return { variantRefToError: variantRefToOutwardError };
 }
 
 // Object checks happen in two phases, the outward-object-check and the inward-object-check.
@@ -111,7 +57,7 @@ export function assertMatchesObject<T>(
  * is the received `target` parameter with no changes, except for the
  * fact that it's labels with the type `object` instead of `unknown`.
  */
-function assertOutwardObjCheck(
+export function assertOutwardObjCheck(
   rule: ObjectRule,
   target: unknown,
   interpolated: readonly unknown[],
@@ -129,7 +75,7 @@ function assertOutwardObjCheck(
   return [ruleWithStaticKeys, target];
 }
 
-function assertInwardObjectCheck(
+export function assertInwardObjectCheck(
   ruleVariants: readonly ObjectRuleWithStaticKeys[],
   target: object,
   interpolated: readonly unknown[],
@@ -137,7 +83,7 @@ function assertInwardObjectCheck(
 ): void {
   assert(ruleVariants.length > 0);
 
-  const unionPushedInwards = pushUnionInwards(ruleVariants, interpolated);
+  const unionPushedInwards = pushObjectUnionInwards(ruleVariants, interpolated);
 
   // Do assertions with the pushed-inward union
   const allPushedVariantRefsToErrors = new Map<Rule, ValidatorAssertionError>();
@@ -188,10 +134,10 @@ function assertInwardObjectCheck(
  * Or, an example with index signatures, you can go from
  * `{ [n: number]: boolean } | { 0: string }` to `{ 0: boolean | string }`;
  */
-function pushUnionInwards(
+function pushObjectUnionInwards(
   ruleVariants: readonly ObjectRuleWithStaticKeys[],
   interpolated: readonly unknown[],
-): UnionPushedInwards {
+): ObjectUnionPushedInwards {
   /** Converts stuff like `{ x: A, ['x']: B }` to `{ x: A & B }` */
   function duplicateKeysToIntersection(expectations: readonly ObjectRuleContentValue[]): Rule {
     // The array should have at least one item in it.
@@ -255,43 +201,6 @@ function pushUnionInwards(
 function assertIsObject(target: unknown, lookupPath: string): asserts target is object {
   if (!isObject(target)) {
     throw createValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
-  }
-}
-
-function buildUnionError(variantErrorMessages: readonly string[]): ValidatorAssertionError {
-  if (variantErrorMessages.length === 1) {
-    assert(variantErrorMessages[0] !== undefined);
-    throw createValidatorAssertionError(variantErrorMessages[0]);
-  }
-
-  return createValidatorAssertionError(
-    'Failed to match against any variant of a union.\n' +
-    variantErrorMessages
-      .map((message, i) => `  Variant ${i + 1}: ${indentMultilineString(message, 4).slice(4)}`)
-      .join('\n'),
-  );
-}
-
-function captureValidatorAssertionError(fn: () => unknown): ValidatorAssertionError | null {
-  try {
-    fn();
-    return null;
-  } catch (error) {
-    if (error instanceof ValidatorAssertionError) {
-      return error;
-    }
-    throw error;
-  }
-}
-
-/** Calculates the next lookup path, given the current lookup path and an object key. */
-function calcSubLookupPath(lookupPath: string, key: string | symbol): string {
-  if (typeof key === 'string' && isIdentifier(key)) {
-    return `${lookupPath}.${key}`;
-  } else if (typeof key === 'string') {
-    return `${lookupPath}[${JSON.stringify(key)}]`;
-  } else {
-    return `${lookupPath}[Symbol(${key.description ?? ''})]`;
   }
 }
 
@@ -379,12 +288,15 @@ function doesIndexSignatureApplyToProperty(
   );
 }
 
-function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
-  return rule.variants.flatMap(variant => {
-    return variant.category === 'union'
-      ? flattenUnionVariants(variant)
-      : [variant];
-  });
+/** Calculates the next lookup path, given the current lookup path and an object key. */
+function calcSubLookupPath(lookupPath: string, key: string | symbol): string {
+  if (typeof key === 'string' && isIdentifier(key)) {
+    return `${lookupPath}.${key}`;
+  } else if (typeof key === 'string') {
+    return `${lookupPath}[${JSON.stringify(key)}]`;
+  } else {
+    return `${lookupPath}[Symbol(${key.description ?? ''})]`;
+  }
 }
 
 // ------------------------------
@@ -403,10 +315,6 @@ function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
   }
 }
 
-function unique<T>(array: readonly T[]): readonly T[] {
-  return [...new Set(array)];
-}
-
 const isObject = (value: unknown): value is object => Object(value) === value;
 
 function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
@@ -415,22 +323,4 @@ function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
   }
 
   return map.get(key) as any;
-}
-
-// ------------------------------
-//   SHARED DOMAIN LOGIC
-// ------------------------------
-
-/**
- * Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.
- * This tries to mimic how TypeScript compares simple types.
- */
-export function getSimpleTypeOf(value: unknown): string {
-  if (value === null) {
-    return 'null';
-  } else if (typeof value === 'function') {
-    return 'object';
-  } else {
-    return typeof value;
-  }
 }

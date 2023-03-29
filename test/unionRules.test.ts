@@ -252,7 +252,7 @@ describe('union rules', () => {
     // TypeScript's error messages, so I'm not overly worried about it. And, if we don't pick-and-choose,
     // we may run into errors that are extremely large, due to the many possible things that could have gone wrong
     // at every step of the nesting process. Though, ideally, we would still leave some sort of note stating that
-    // they may be other ways to fix the issue, than what's stated in the error message - maybe in a future release.
+    // they may be other ways to fix the issue then what's stated in the error message - maybe in a future release.
 
     test('fail to match all variants, because deep primitive properties are incorrect', () => {
       const v = validator`{ sub: { y: 2 } } | { sub: { y: 3 } } | { sub2: { y: 2 } } | { sub2: { y: 3 } }`;

@@ -1,9 +1,10 @@
-import { strict as assert } from 'node:assert';
-import { InterpolationRule, Rule, TupleRule, UnionRule } from './types/parsingRules';
-import { reprUnknownValue, UnreachableCaseError } from './util';
-import { createValidatorAssertionError, ValidatorAssertionError } from './exceptions';
-import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from './validatableProtocol';
-import { assertMatchesUnion, assertMatchesObject, getSimpleTypeOf } from './unionRuleEnforcer';
+import { InterpolationRule, Rule, TupleRule } from '../types/parsingRules';
+import { reprUnknownValue, UnreachableCaseError } from '../util';
+import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
+import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from '../validatableProtocol';
+import { assertMatchesUnion } from './unionEnforcer';
+import { assertMatchesObject } from './objectEnforcer';
+import { getSimpleTypeOf } from './shared';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
 
