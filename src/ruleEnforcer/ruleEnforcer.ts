@@ -1,9 +1,10 @@
-import { InterpolationRule, Rule, TupleRule } from '../types/parsingRules';
+import { InterpolationRule, Rule } from '../types/parsingRules';
 import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from '../validatableProtocol';
 import { assertMatchesUnion } from './unionEnforcer';
 import { assertMatchesObject } from './objectEnforcer';
+import { assertMatchesTuple } from './tupleEnforcer';
 import { getSimpleTypeOf } from './shared';
 
 const isObject = (value: unknown): value is object => Object(value) === value;
@@ -92,54 +93,6 @@ export function assertMatches<T>(
     assertMatchesInterpolation(rule, target, interpolated, lookupPath);
   } else {
     throw new UnreachableCaseError(rule);
-  }
-}
-
-function assertMatchesTuple<T>(
-  rule: TupleRule,
-  target: T,
-  interpolated: readonly unknown[],
-  lookupPath: string,
-): asserts target is T {
-  if (!Array.isArray(target)) {
-    throw createValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
-  }
-
-  const minSize = rule.content.length;
-  const maxSize = rule.rest !== null
-    ? Infinity
-    : rule.content.length + rule.optionalContent.length;
-
-  if (target.length < minSize || target.length > maxSize) {
-    if (minSize === maxSize) {
-      throw createValidatorAssertionError(
-        `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
-      );
-    } else if (maxSize !== Infinity) {
-      throw createValidatorAssertionError(
-        `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
-        `but found ${target.length}.`,
-      );
-    } else {
-      throw createValidatorAssertionError(
-        `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
-      );
-    }
-  }
-
-  const restItems = [];
-  for (const [i, element] of target.entries()) {
-    const subRule: Rule | undefined = rule.content[i] ?? rule.optionalContent[i - rule.content.length];
-    if (subRule !== undefined) {
-      assertMatches(subRule, element, interpolated, `${lookupPath}[${i}]`);
-    } else {
-      restItems.push(element);
-    }
-  }
-
-  if (rule.rest !== null) {
-    const restStartIndex = rule.content.length + rule.optionalContent.length;
-    assertMatches(rule.rest, restItems, interpolated, `${lookupPath}.slice(${restStartIndex})`);
   }
 }
 

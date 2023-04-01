@@ -41,9 +41,9 @@ interface InProgressUnion {
 // Object checks happen in two phases, the outward-object-check and the inward-object-check.
 // These two phases are bundled together in this function, but union checks will trigger the phases
 // separately by themselves.
-export function assertMatchesObject<T>(
+export function assertMatchesObject(
   rule: ObjectRule,
-  target: T,
+  target: unknown,
   interpolated: readonly unknown[],
   lookupPath: string,
 ): void {
@@ -52,7 +52,7 @@ export function assertMatchesObject<T>(
 }
 
 /**
- * Returns a tuple, where the first item is the passed-in rule, updated
+ * Returns a tuple, where the first item is the passed-in rule
  * transformed into a ObjectRuleWithStaticKeys instance, and the second
  * is the received `target` parameter with no changes, except for the
  * fact that it's labels with the type `object` instead of `unknown`.
@@ -75,6 +75,7 @@ export function assertOutwardObjCheck(
   return [ruleWithStaticKeys, target];
 }
 
+// inward checks only happen against variants that haven't failed the outward check.
 export function assertInwardObjectCheck(
   ruleVariants: readonly ObjectRuleWithStaticKeys[],
   target: object,
@@ -86,17 +87,14 @@ export function assertInwardObjectCheck(
   const unionPushedInwards = pushObjectUnionInwards(ruleVariants, interpolated);
 
   // Do assertions with the pushed-inward union
-  const allPushedVariantRefsToErrors = new Map<Rule, ValidatorAssertionError>();
+  const pushedVariantRefsToErrors = new Map<Rule, ValidatorAssertionError>();
   for (const [key, unionRule] of unionPushedInwards.content) {
     if (!(key in target)) {
       continue;
     }
 
     const { variantRefToError } = assertMatchesUnion(unionRule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
-
-    for (const [variantRef, error] of variantRefToError) {
-      allPushedVariantRefsToErrors.set(variantRef, error);
-    }
+    mergeMap(pushedVariantRefsToErrors, variantRefToError);
   }
 
   // Look at the failures from the pushed-inward union, to see if we have a combination of them
@@ -116,7 +114,7 @@ export function assertInwardObjectCheck(
       return true;
     }
 
-    const success = matchingPushedVariants.every(v => !allPushedVariantRefsToErrors.has(v));
+    const success = matchingPushedVariants.every(v => !pushedVariantRefsToErrors.has(v));
     return success;
   });
 
@@ -316,6 +314,12 @@ function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
 }
 
 const isObject = (value: unknown): value is object => Object(value) === value;
+
+function mergeMap<K, V>(map1: Map<K, V>, map2: Map<K, V>): void {
+  for (const [key, value] of map2) {
+    map1.set(key, value);
+  }
+}
 
 function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
   if (!map.has(key)) {

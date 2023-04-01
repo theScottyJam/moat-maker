@@ -4,11 +4,12 @@
 // This distinction is important, because when handling unions, we do all outward validation before recursing inwards.
 
 import { strict as assert } from 'node:assert';
-import { Rule, UnionRule } from '../types/parsingRules';
+import { Rule, TupleRule, UnionRule } from '../types/parsingRules';
 import { indentMultilineString } from '../util';
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import { assertMatches } from './ruleEnforcer';
 import { assertOutwardObjCheck, assertInwardObjectCheck, ObjectRuleWithStaticKeys } from './objectEnforcer';
+import { assertOutwardTupleCheck, assertInwardTupleCheck } from './tupleEnforcer';
 
 /**
  * If all variants fail, an error will be thrown. If only some fail, then
@@ -26,11 +27,15 @@ export function assertMatchesUnion(
   // Collect all outward errors, along with intermediate data needed for the next step.
   const variantRefToOutwardError = new Map<Rule, ValidatorAssertionError>();
   const variantRefToProcessedObjectRule = new Map<Rule, ObjectRuleWithStaticKeys>();
+  const variantRefToProcessedTupleRule = new Map<Rule, TupleRule>();
   for (const variant of unionVariants) {
     const maybeError = captureValidatorAssertionError(() => {
       if (variant.category === 'object') {
         const [ruleWithStaticKeys] = assertOutwardObjCheck(variant, target, interpolated, lookupPath);
         variantRefToProcessedObjectRule.set(variant, ruleWithStaticKeys);
+      } else if (variant.category === 'tuple') {
+        const [tupleRule] = assertOutwardTupleCheck(variant, target, lookupPath);
+        variantRefToProcessedTupleRule.set(variant, tupleRule);
       } else {
         assertMatches(variant, target, interpolated, lookupPath);
       }
@@ -48,6 +53,15 @@ export function assertMatchesUnion(
     assert(isObject(target));
 
     assertInwardObjectCheck([...variantRefToProcessedObjectRule.values()], target, interpolated, lookupPath);
+  }
+
+  // assert inward tuple logic
+  if (variantRefToProcessedTupleRule.size > 0) {
+    // For variantIndexToProcessedObjectRule to have content, an outward object
+    // check would have passed, which means the target is an array.
+    assert(Array.isArray(target));
+
+    assertInwardTupleCheck([...variantRefToProcessedTupleRule.values()], target, interpolated, lookupPath);
   }
 
   // throw an outward union error, if there are no valid variants
