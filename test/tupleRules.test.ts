@@ -158,7 +158,7 @@ describe('tuple rules', () => {
         calledWith = value;
         return true;
       });
-      const v = validator`[string, ...${myChecker}]`;
+      const v = validator`[string, number?, ...${myChecker}]`;
       v.assertMatches(['xyz']);
       expect(calledWith).toMatchObject([]);
     });

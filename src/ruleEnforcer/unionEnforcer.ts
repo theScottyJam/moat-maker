@@ -1,15 +1,15 @@
 // When validating a complex type, we first validate the "outward" information about the type itself,
 // then we recurse into the "inward", nested type information.
-// This module uses these two terms, "outward" and "inward", to refer to these two steps of validation.
+// This module (and other modules as well) uses these two terms, "outward" and "inward", to refer to these two steps of validation.
 // This distinction is important, because when handling unions, we do all outward validation before recursing inwards.
 
 import { strict as assert } from 'node:assert';
 import { Rule, TupleRule, UnionRule } from '../types/parsingRules';
-import { indentMultilineString } from '../util';
-import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import { assertMatches } from './ruleEnforcer';
 import { assertOutwardObjCheck, assertInwardObjectCheck, ObjectRuleWithStaticKeys } from './objectEnforcer';
 import { assertOutwardTupleCheck, assertInwardTupleCheck } from './tupleEnforcer';
+import { buildUnionError, captureValidatorAssertionError } from './shared';
 
 /**
  * If all variants fail, an error will be thrown. If only some fail, then
@@ -26,16 +26,16 @@ export function assertMatchesUnion(
 
   // Collect all outward errors, along with intermediate data needed for the next step.
   const variantRefToOutwardError = new Map<Rule, ValidatorAssertionError>();
-  const variantRefToProcessedObjectRule = new Map<Rule, ObjectRuleWithStaticKeys>();
-  const variantRefToProcessedTupleRule = new Map<Rule, TupleRule>();
+  const processedObjectRules: ObjectRuleWithStaticKeys[] = [];
+  const tupleRules: TupleRule[] = [];
   for (const variant of unionVariants) {
     const maybeError = captureValidatorAssertionError(() => {
       if (variant.category === 'object') {
         const [ruleWithStaticKeys] = assertOutwardObjCheck(variant, target, interpolated, lookupPath);
-        variantRefToProcessedObjectRule.set(variant, ruleWithStaticKeys);
+        processedObjectRules.push(ruleWithStaticKeys);
       } else if (variant.category === 'tuple') {
-        const [tupleRule] = assertOutwardTupleCheck(variant, target, lookupPath);
-        variantRefToProcessedTupleRule.set(variant, tupleRule);
+        assertOutwardTupleCheck(variant, target, lookupPath);
+        tupleRules.push(variant);
       } else {
         assertMatches(variant, target, interpolated, lookupPath);
       }
@@ -47,58 +47,32 @@ export function assertMatchesUnion(
   }
 
   // assert inward object logic
-  if (variantRefToProcessedObjectRule.size > 0) {
+  if (processedObjectRules.length > 0) {
     // For variantIndexToProcessedObjectRule to have content, an outward object
     // check would have passed, which means the target is an object.
     assert(isObject(target));
 
-    assertInwardObjectCheck([...variantRefToProcessedObjectRule.values()], target, interpolated, lookupPath);
+    assertInwardObjectCheck(processedObjectRules, target, interpolated, lookupPath);
   }
 
   // assert inward tuple logic
-  if (variantRefToProcessedTupleRule.size > 0) {
+  if (tupleRules.length > 0) {
     // For variantIndexToProcessedObjectRule to have content, an outward object
     // check would have passed, which means the target is an array.
     assert(Array.isArray(target));
 
-    assertInwardTupleCheck([...variantRefToProcessedTupleRule.values()], target, interpolated, lookupPath);
+    assertInwardTupleCheck(tupleRules, target, interpolated, lookupPath);
   }
 
-  // throw an outward union error, if there are no valid variants
+  // throw an outward union error if there are no valid variants
   if (variantRefToOutwardError.size === unionVariants.length) {
-    throw buildUnionError(unique(
+    throw buildUnionError(
       [...variantRefToOutwardError.values()]
         .map(error => error.message),
-    ));
+    );
   }
 
   return { variantRefToError: variantRefToOutwardError };
-}
-
-function buildUnionError(variantErrorMessages: readonly string[]): ValidatorAssertionError {
-  if (variantErrorMessages.length === 1) {
-    assert(variantErrorMessages[0] !== undefined);
-    throw createValidatorAssertionError(variantErrorMessages[0]);
-  }
-
-  return createValidatorAssertionError(
-    'Failed to match against any variant of a union.\n' +
-    variantErrorMessages
-      .map((message, i) => `  Variant ${i + 1}: ${indentMultilineString(message, 4).slice(4)}`)
-      .join('\n'),
-  );
-}
-
-function captureValidatorAssertionError(fn: () => unknown): ValidatorAssertionError | null {
-  try {
-    fn();
-    return null;
-  } catch (error) {
-    if (error instanceof ValidatorAssertionError) {
-      return error;
-    }
-    throw error;
-  }
 }
 
 function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
@@ -112,9 +86,5 @@ function flattenUnionVariants(rule: UnionRule): readonly Rule[] {
 // ------------------------------
 //   UTILITY FUNCTIONS
 // ------------------------------
-
-function unique<T>(array: readonly T[]): readonly T[] {
-  return [...new Set(array)];
-}
 
 const isObject = (value: unknown): value is object => Object(value) === value;

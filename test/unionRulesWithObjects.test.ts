@@ -104,7 +104,7 @@ describe('union rules with objects', () => {
       });
     });
 
-    test('sub-objects are missing required (and optional) properties', () => {
+    test('sub-objects are missing required and optional properties', () => {
       const v = validator`{ sub: { w?: 2, x: 0 } } | { sub2: { y?: 2, z: 0 } }`;
       const act = (): any => v.assertMatches({ sub: {}, sub2: {} });
       assert.throws(act, {
