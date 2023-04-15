@@ -1,4 +1,4 @@
-import { ValidatableProtocol } from './types/validatableProtocol';
+import type { ValidatableProtocol } from './types/validatableProtocol';
 
 export const validatable = Symbol('validatable');
 

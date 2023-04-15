@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ValidatableProtocolFnOpts, validator, ValidatorSyntaxError } from '../src';
+import { type ValidatableProtocolFnOpts, validator, ValidatorSyntaxError } from '../src';
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {

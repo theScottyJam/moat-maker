@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ValidatableProtocolFnOpts, validator } from '../src';
+import { type ValidatableProtocolFnOpts, validator } from '../src';
 
 describe('interpolation', () => {
   describe('misc', () => {

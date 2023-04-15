@@ -2,7 +2,7 @@
 // and may call strings like "${…}" or "\\n" a "char".
 
 import { strict as assert } from 'node:assert';
-import { TextPosition, TextRange, ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition';
+import { TextPosition, type TextRange, type ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition';
 import { indentMultilineString, pipe } from './util';
 
 const MAX_LINE_WIDTH = 70;

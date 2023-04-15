@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-confusing-void-expression */
+
 import { strict as assert } from 'node:assert';
-import { Ruleset, validator } from '../src';
+import { type Ruleset, validator } from '../src';
 import { DISABLE_PARAM_VALIDATION } from '../src/config';
 
 // These are not meant to be comprehensive tests, rather,
@@ -72,10 +74,12 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
   });
 
   test('<validator instance>[validatable]()', () => {
-    const act = (): any => validator`string`[validator.validatable](
-      'myValue',
-      { at: '<somewhere>', failure: 'whoops' as any },
-    );
+    const act = (): any => {
+      validator`string`[validator.validatable](
+        'myValue',
+        { at: '<somewhere>', failure: 'whoops' as any },
+      );
+    };
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>[validator.validatable](): ' +
@@ -193,10 +197,12 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
   });
 
   test('validator.createRef()[validatable]()', () => {
-    const act = (): any => validator.createRef()[validator.validatable](
-      'myValue',
-      { at: '<somewhere>', failure: 'whoops' as any },
-    );
+    const act = (): any => {
+      validator.createRef()[validator.validatable](
+        'myValue',
+        { at: '<somewhere>', failure: 'whoops' as any },
+      );
+    };
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator ref>[validator.validatable](): ' +

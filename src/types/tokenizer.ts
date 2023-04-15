@@ -1,4 +1,4 @@
-import type { TextPosition, TextRange } from '../TextPosition';
+import type { TextRange } from '../TextPosition';
 
 // Note that a number like "Infinity" get classified as an identifier,
 export interface TextToken {

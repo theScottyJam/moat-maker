@@ -48,7 +48,7 @@ export class FrozenMap<K, V> {
   entries(...args: Parameters<Map<K, V>['entries']>) { return this.#content.entries(...args); }
   get(...args: Parameters<Map<K, V>['get']>) { return this.#content.get(...args); }
   has(...args: Parameters<Map<K, V>['has']>) { return this.#content.has(...args); }
-  forEach(...args: Parameters<Map<K, V>['forEach']>) { return this.#content.forEach(...args); }
+  forEach(...args: Parameters<Map<K, V>['forEach']>) { this.#content.forEach(...args); }
   keys(...args: Parameters<Map<K, V>['keys']>) { return this.#content.keys(...args); }
   values(...args: Parameters<Map<K, V>['values']>) { return this.#content.values(...args); }
   /* eslint-enable @typescript-eslint/explicit-function-return-type */
@@ -61,7 +61,7 @@ export class FrozenMap<K, V> {
 type AnyFunc = (...arg: any) => any;
 
 type PipeArgs<F extends AnyFunc[], Acc extends AnyFunc[] = []> = F extends [
-  (...args: infer A) => infer B
+  (...args: infer A) => infer B,
 ]
   ? [...Acc, (...args: A) => B]
   : F extends [(...args: infer A) => any, ...infer Tail]
@@ -72,7 +72,7 @@ type PipeArgs<F extends AnyFunc[], Acc extends AnyFunc[] = []> = F extends [
 
 type LastFnReturnType<F extends AnyFunc[], Else = never> = F extends [
   ...any[],
-  (...arg: any) => infer R
+  (...arg: any) => infer R,
 ] ? R : Else;
 
 export function pipe<FirstFn extends AnyFunc, F extends AnyFunc[]>(

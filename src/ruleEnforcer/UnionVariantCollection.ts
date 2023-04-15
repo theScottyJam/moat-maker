@@ -1,6 +1,6 @@
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/parsingRules';
-import { matchResponseFromErrorMap, FailedMatchResponse, stepVariantsBackTo, VariantMatchResponse } from './VariantMatchResponse';
+import { matchResponseFromErrorMap, FailedMatchResponse, stepVariantsBackTo, type VariantMatchResponse } from './VariantMatchResponse';
 
 interface BackLinks<NewRuleType extends Rule, OldRuleType extends Rule> {
   readonly lastInstance: UnionVariantCollection<OldRuleType>

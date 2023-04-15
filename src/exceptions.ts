@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { TextRange } from './TextPosition';
+import type { TextRange } from './TextPosition';
 import { generateMessageWithPosition } from './errorFormatter';
 
 const ExceptionConstructionKey = Symbol('exception constructor key');

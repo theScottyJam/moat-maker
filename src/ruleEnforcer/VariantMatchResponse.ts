@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { indentMultilineString } from '../util';
-import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
+import { createValidatorAssertionError, type ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/parsingRules';
 import type { UnionVariantCollection } from './UnionVariantCollection';
 

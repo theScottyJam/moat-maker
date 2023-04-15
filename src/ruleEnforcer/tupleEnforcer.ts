@@ -3,8 +3,8 @@ import type { Rule, TupleRule } from '../types/parsingRules';
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError } from '../exceptions';
 import { assertMatches } from './ruleEnforcer';
-import { SuccessMatchResponse, FailedMatchResponse, VariantMatchResponse } from './VariantMatchResponse';
-import { UnionVariantCollection } from './UnionVariantCollection';
+import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
+import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
 
 export function matchTupleVariants(

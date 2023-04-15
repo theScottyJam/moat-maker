@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import { Rule, ObjectRuleContentValue, SimpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
-import { TokenStream } from './types/tokenizer';
+import type { Rule, ObjectRuleContentValue, SimpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
+import type { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
 const allSimpleTypes: SimpleTypeVariant[] = [

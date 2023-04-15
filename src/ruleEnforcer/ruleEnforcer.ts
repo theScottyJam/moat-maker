@@ -1,4 +1,4 @@
-import { InterpolationRule, Rule } from '../types/parsingRules';
+import type { InterpolationRule, Rule } from '../types/parsingRules';
 import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from '../validatableProtocol';

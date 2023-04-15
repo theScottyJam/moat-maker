@@ -9,15 +9,15 @@ import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { validatable } from './validatableProtocol';
 import { lookupCacheEntry } from './cacheControl';
-import { Rule, Ruleset } from './types/parsingRules';
+import type { Rule, Ruleset } from './types/parsingRules';
 import {
-  AssertMatchesOpts,
+  type AssertMatchesOpts,
   isValidatorInstance,
-  Validator,
-  CustomChecker,
-  ValidatorRef,
-  ValidatorTemplateTag,
-  ValidatorTemplateTagStaticFields,
+  type Validator,
+  type CustomChecker,
+  type ValidatorRef,
+  type ValidatorTemplateTag,
+  type ValidatorTemplateTagStaticFields,
 } from './types/validator';
 import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { ValidatorAssertionError } from './exceptions';
@@ -153,7 +153,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
         if (validator === null) {
           throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
         }
-        return validator[validatable](value, opts);
+        validator[validatable](value, opts);
       },
       set(validator_: Validator) {
         if (validator !== null) {

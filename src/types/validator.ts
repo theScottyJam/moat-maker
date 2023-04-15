@@ -1,5 +1,5 @@
-import { Rule, Ruleset } from './parsingRules';
-import { ValidatableProtocol, ValidatableProtocolFn } from './validatableProtocol';
+import type { Ruleset } from './parsingRules';
+import type { ValidatableProtocol, ValidatableProtocolFn } from './validatableProtocol';
 import type { validatable } from '../validatableProtocol';
 
 export const isValidatorInstance = Symbol('isValidatorInstance');

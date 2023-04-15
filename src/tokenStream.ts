@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
-import { createValidatorSyntaxError, ValidatorSyntaxError } from './exceptions';
-import { TextPosition, TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
-import { Token, TokenStream } from './types/tokenizer';
+import { createValidatorSyntaxError, type ValidatorSyntaxError } from './exceptions';
+import { TextPosition, type TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
+import type { Token, TokenStream } from './types/tokenizer';
 import { UnreachableCaseError } from './util';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
@@ -188,7 +188,7 @@ function extractStringEscapeSequence(sections: readonly string[], slashPos: Text
       range: { start: slashPos, end: extracted.range.end },
     };
   } else {
-    const mapSpecialChars: { [index: string]: string | undefined } = {
+    const mapSpecialChars: Record<string, string | undefined> = {
       0: '\0',
       '\\': '\\',
       n: '\n',

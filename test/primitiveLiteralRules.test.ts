@@ -452,7 +452,7 @@ describe('primitive literal rules', () => {
 
       test('looses precision as normal for long decimals', () => {
         const v = validator`0.12000000000000000000000000001`;
-        // eslint-disable-next-line no-loss-of-precision
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision
         expect(v.matches(0.12000000000000000000000000001)).toBe(true);
         expect(v.matches(0.12)).toBe(true);
         expect(v.matches(0.13)).toBe(false);
@@ -521,9 +521,9 @@ describe('primitive literal rules', () => {
 
       test('overly large number', () => {
         const v = validator`1234567890123456789012345678901234567890`;
-        // eslint-disable-next-line no-loss-of-precision
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision
         expect(v.matches(1234567890123456789012345678901234567890)).toBe(true);
-        // eslint-disable-next-line no-loss-of-precision
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision
         expect(v.matches(1234567890123456789012345678901234567000)).toBe(true);
       });
 

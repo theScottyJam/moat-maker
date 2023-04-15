@@ -1,7 +1,7 @@
 // Everything in here is publicly exported
 
 import { FrozenMap } from '../util';
-import { Validator, ValidatorTemplateTag } from './validator';
+import type { Validator, ValidatorTemplateTag } from './validator';
 import { packagePrivate } from './packagePrivateAccess';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';

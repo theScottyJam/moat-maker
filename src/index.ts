@@ -1,5 +1,5 @@
-import { Validator } from './types/validator';
-import { FrozenMap as FrozenMapClass } from './util';
+import type { Validator } from './types/validator';
+import type { FrozenMap as FrozenMapClass } from './util';
 import { ValidatorAssertionError, ValidatorSyntaxError } from './exceptions';
 import { validator } from './validatorApi';
 

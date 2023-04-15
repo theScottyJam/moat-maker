@@ -1,9 +1,9 @@
-import { ArrayRule, ObjectRule, Rule, TupleRule } from '../types/parsingRules';
+import type { ArrayRule, ObjectRule, Rule, TupleRule } from '../types/parsingRules';
 import { assertMatches } from './ruleEnforcer';
 import { matchObjectVariants } from './objectEnforcer';
 import { matchTupleVariants } from './tupleEnforcer';
-import { SuccessMatchResponse, stepVariantsBackTo, VariantMatchResponse } from './VariantMatchResponse';
-import { UnionVariantCollection } from './UnionVariantCollection';
+import { SuccessMatchResponse, stepVariantsBackTo, type VariantMatchResponse } from './VariantMatchResponse';
+import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchArrayVariants } from './arrayEnforcer';
 
 export function matchVariants<RuleType extends Rule>(

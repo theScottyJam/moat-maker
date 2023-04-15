@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
-import { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/parsingRules';
+import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/parsingRules';
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { getSimpleTypeOf } from './shared';
-import { SuccessMatchResponse, FailedMatchResponse, VariantMatchResponse } from './VariantMatchResponse';
-import { UnionVariantCollection } from './UnionVariantCollection';
+import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
+import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
 
 /**

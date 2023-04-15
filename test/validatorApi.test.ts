@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-confusing-void-expression */
+
 import { strict as assert } from 'node:assert';
 import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
 import { testableHelpers as cacheApi } from '../src/cacheControl';
