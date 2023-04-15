@@ -170,6 +170,17 @@ describe('user input validation for validator API', () => {
     });
   });
 
+  test('A validator returned from validator.from() input checking on its methods', () => {
+    const v = validator.from('string');
+    const act = (): any => v.assertMatches('bad', 'arguments' as any);
+    assert.throws(act, {
+      message: (
+        'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
+        'Expected <argumentList>[1] to be an object but got "arguments".'
+      ),
+    });
+  });
+
   test('validator.createRef()', () => {
     const act = (): any => (validator.createRef as any)(42);
     assert.throws(act, {

@@ -1,14 +1,17 @@
 import { strict as assert } from 'node:assert';
-import { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule, UnionRule } from '../types/parsingRules';
+import { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/parsingRules';
 import { reprUnknownValue } from '../util';
-import { createValidatorAssertionError, createValidatorSyntaxError, ValidatorAssertionError } from '../exceptions';
-import { assertMatches, doesMatch } from './ruleEnforcer';
+import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
+import { assertMatches, doesMatch } from './ruleEnforcer';
 import { getSimpleTypeOf } from './shared';
-import { assertMatchesUnion } from './unionEnforcer';
+import { SuccessMatchResponse, FailedMatchResponse, VariantMatchResponse } from './VariantMatchResponse';
+import { UnionVariantCollection } from './UnionVariantCollection';
+import { matchVariants } from './unionEnforcer';
 
 /**
- * Not a real rule, rather, this data was derived from rule data.
+ * Not a real rule,
+ * rather, this data was derived from rule data.
  * This type is similar to ObjectRule, but all dynamic keys have been accounted for,
  * and added to this value, as if they were static keys all along.
  */
@@ -19,187 +22,137 @@ export interface ObjectRuleWithStaticKeys {
   readonly index: ObjectRuleIndexValue | null
 }
 
-/**
- * This type is similar to ObjectRule, but all dynamic keys have been accounted for,
- * and added to this value, as if they were static keys all along. Also, union variants
- * have been pushed inwards (e.g. `{ x: 1 } | { x: 2 }` becomes `{ x: 1 | 2 }`).
- */
-interface ObjectUnionPushedInwards {
-  readonly content: Map<string | symbol, UnionRule>
-  // Maps references of the original union variants, to the union variants that were
-  // "pushed inwards", Once we know which pushed-inward variants have matched, we can use
-  // this mapping to take a step back and see if the original variants match as well.
-  readonly unpushedVariantRefToPushedVariantRef: Map<ObjectRuleWithStaticKeys, readonly Rule[]>
-}
-
-/** A non-readonly version of the union rule. */
-interface InProgressUnion {
-  category: 'union'
-  variants: Rule[]
-}
-
-// Object checks happen in two phases, the outward-object-check and the inward-object-check.
-// These two phases are bundled together in this function, but union checks will trigger the phases
-// separately by themselves.
-export function assertMatchesObject(
-  rule: ObjectRule,
+export function matchObjectVariants(
+  variantCollection: UnionVariantCollection<ObjectRule>,
   target: unknown,
   interpolated: readonly unknown[],
   lookupPath: string,
-): void {
-  const [ruleWithStaticKeys, targetObj] = assertOutwardObjCheck(rule, target, interpolated, lookupPath);
-  assertInwardObjectCheck([ruleWithStaticKeys], targetObj, interpolated, lookupPath);
-}
-
-/**
- * Returns a tuple, where the first item is the passed-in rule
- * transformed into a ObjectRuleWithStaticKeys instance, and the second
- * is the received `target` parameter with no changes, except for the
- * fact that it's labels with the type `object` instead of `unknown`.
- */
-export function assertOutwardObjCheck(
-  rule: ObjectRule,
-  target: unknown,
-  interpolated: readonly unknown[],
-  lookupPath: string,
-): [ObjectRuleWithStaticKeys, object] {
-  const ruleWithStaticKeys = validateAndApplyDynamicKeys(rule, interpolated);
-  assertIsObject(target, lookupPath);
-  assertRequiredKeysArePresent(ruleWithStaticKeys, target, lookupPath);
-
-  if (rule.index !== null) {
-    assertIndexSignatureIsSatisfied(rule.index, target, interpolated, lookupPath);
+): VariantMatchResponse<ObjectRule> {
+  let curVariantCollection = variantCollection;
+  if (curVariantCollection.isEmpty()) {
+    return SuccessMatchResponse.createEmpty(curVariantCollection);
   }
 
-  // Returning `target`, but with the TS type of `object` instead of `unknown`.
-  return [ruleWithStaticKeys, target];
-}
+  if (!isObject(target)) {
+    return variantCollection.createFailResponse(
+      `Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`,
+    );
+  }
 
-// inward checks only happen against variants that haven't failed the outward check.
-export function assertInwardObjectCheck(
-  ruleVariants: readonly ObjectRuleWithStaticKeys[],
-  target: object,
-  interpolated: readonly unknown[],
-  lookupPath: string,
-): void {
-  assert(ruleVariants.length > 0);
+  const objRuleToProcessedObjects = new Map<ObjectRule, ObjectRuleWithStaticKeys>();
 
-  const unionPushedInwards = pushObjectUnionInwards(ruleVariants, interpolated);
+  const matchEachFailuires = curVariantCollection.matchEach(variant => {
+    const ruleWithStaticKeys = validateAndApplyDynamicKeys(variant, interpolated);
+    objRuleToProcessedObjects.set(variant, ruleWithStaticKeys);
+    assertRequiredKeysArePresent(ruleWithStaticKeys, target, lookupPath);
 
-  // Do assertions with the pushed-inward union
-  const pushedVariantRefsToErrors = new Map<Rule, ValidatorAssertionError>();
-  for (const [key, unionRule] of unionPushedInwards.content) {
+    if (variant.index !== null) {
+      assertIndexSignatureIsSatisfied(variant.index, target, interpolated, lookupPath);
+    }
+  });
+
+  curVariantCollection = curVariantCollection.removeFailed(matchEachFailuires);
+  if (curVariantCollection.isEmpty()) {
+    assert(matchEachFailuires instanceof FailedMatchResponse);
+    return matchEachFailuires.asFailedResponseFor(variantCollection);
+  }
+
+  const keysFromAllRules = new Set<string | symbol>(
+    curVariantCollection.variants
+      .flatMap(variant => {
+        const objectRuleWithStaticKeys = objRuleToProcessedObjects.get(variant);
+        assert(objectRuleWithStaticKeys !== undefined);
+        return [...objectRuleWithStaticKeys.content.keys()];
+      }),
+  );
+
+  // Do assertions on each property
+  let filteredView = curVariantCollection.asFilteredView();
+  for (const key of keysFromAllRules) {
+    // The assertions to check if all required keys are present have already happened.
+    // Here, we assume those checks still hold, and if a key is missing, that must be ok.
     if (!(key in target)) {
       continue;
     }
 
-    const { variantRefToError } = assertMatchesUnion(unionRule, (target as any)[key], interpolated, calcSubLookupPath(lookupPath, key));
-    mergeMap(pushedVariantRefsToErrors, variantRefToError);
+    const derivedCollection = curVariantCollection.map(variant => {
+      const objectRuleWithStaticKeys = objRuleToProcessedObjects.get(variant);
+      assert(objectRuleWithStaticKeys !== undefined);
+      return derivePropertyRule(objectRuleWithStaticKeys, key, interpolated);
+    });
+    assert(derivedCollection.variants.length > 0);
+
+    const matchResponse = matchVariants(
+      derivedCollection,
+      (target as any)[key],
+      interpolated,
+      calcSubLookupPath(lookupPath, key),
+    );
+
+    if (matchResponse instanceof FailedMatchResponse) {
+      return matchResponse.asFailedResponseFor(variantCollection);
+    }
+    filteredView = filteredView.removeFailed(matchResponse);
   }
 
-  // Look at the failures from the pushed-inward union, to see if we have a combination of them
-  // that are incompatible with the non-pushed union.
-  // e.g. `{ x: 2, y: 2 } | { x: 3, y: 3 }` pushed inward would be `{ x: 2 | 3, y: 2 | 3 }`.
-  // If we validate `{ x: 2, y: 3 }` against the pushed-inward rule, we won't get any errors thrown,
-  // but we do get back what failures happened during the validation, and we can see that the
-  // the particular combination of failures (`x` prop not being 3, and `y` prop not being 2) is
-  // incompatible with the original, unpushed union.
-  const { unpushedVariantRefToPushedVariantRef } = unionPushedInwards;
-  const outwardUnionsAreObeyed = ruleVariants.some(unpushedVariant => {
-    const matchingPushedVariants = unpushedVariantRefToPushedVariantRef.get(unpushedVariant);
-
-    // Happens if you have a particular outer variant that doesn't get pushed inwards, e.g.
-    // the first two variants won't be pushed inwards in `{} | { [index: string]: string } | { x: 2 }`.
-    if (matchingPushedVariants === undefined) {
-      return true;
-    }
-
-    const success = matchingPushedVariants.every(v => !pushedVariantRefsToErrors.has(v));
-    return success;
-  });
-
-  if (!outwardUnionsAreObeyed) {
-    throw createValidatorAssertionError(
+  // An example of when this would happen is if we had the pattern `{ x: 1, y: 2 } | { x: 11, y: 22 }`.
+  // Above, we would compare the "x" property against `1 | 11` and the "y" property against `2 | 22`.
+  // If an object like `{ x: 1, y: 22 }` were provided, then it would pass the above checks.
+  // However, we would still fail the overall pattern.
+  if (filteredView.isEmpty()) {
+    return variantCollection.createFailResponse(
       `${lookupPath}'s properties matches various union variants ` +
       'when it needs to pick a single variant to follow.',
     );
   }
+
+  return matchEachFailuires;
 }
 
 /**
  * Takes a type like `{ x: number, y: string } | { x: boolean }`
- * and converts to `{ x: number | boolean, y: string }`.
+ * and a property name like "x", and returns all variants that it must
+ * conform to, like `number | boolean`.
  * Or, an example with index signatures, you can go from
- * `{ [n: number]: boolean } | { 0: string }` to `{ 0: boolean | string }`;
+ * `{ [n: number]: boolean } | { 0: string }` with the property `0`
+ * to `boolean | string`;
  */
-function pushObjectUnionInwards(
-  ruleVariants: readonly ObjectRuleWithStaticKeys[],
+function derivePropertyRule(
+  ruleWithStaticKeys: ObjectRuleWithStaticKeys,
+  key: string | symbol,
   interpolated: readonly unknown[],
-): ObjectUnionPushedInwards {
-  /** Converts stuff like `{ x: A, ['x']: B }` to `{ x: A & B }` */
-  function duplicateKeysToIntersection(expectations: readonly ObjectRuleContentValue[]): Rule {
-    // The array should have at least one item in it.
-    assert(expectations[0] !== undefined);
+): null | Rule {
+  const expectations = [];
 
-    return expectations.length === 1
-      ? expectations[0].rule
-      : {
-          category: 'intersection' as const,
-          variants: expectations.map(expectation => expectation.rule),
-        };
+  if (ruleWithStaticKeys.content.has(key)) {
+    expectations.push(...ruleWithStaticKeys.content.get(key) as ObjectRuleContentValue[]);
   }
 
-  const emptyUnionRule = (): InProgressUnion => ({ category: 'union' as const, variants: [] });
-
-  const content = new Map<string | symbol, InProgressUnion>();
-
-  // pre-fill the content map, so all keys are present.
-  for (const ruleWithStaticKeys of ruleVariants) {
-    for (const [key, expectations] of ruleWithStaticKeys.content) {
-      if (!content.has(key)) {
-        content.set(key, emptyUnionRule());
-      }
-    }
+  if (
+    ruleWithStaticKeys.index !== null &&
+    doesIndexSignatureApplyToProperty(ruleWithStaticKeys.index, key, interpolated)
+  ) {
+    expectations.push({ optional: true, rule: ruleWithStaticKeys.index.value });
   }
 
-  const unpushedVariantRefToPushedVariantRef = new Map<ObjectRuleWithStaticKeys, Rule[]>();
-
-  // A portion of this logic is here to help merge index signatures in.
-  // Note that full validation of the index signature isn't happening here,
-  // This function gets called during the "inward" check process, but separate
-  // validation of the index signatures have also happened during the "outward" checks.
-  for (const ruleWithStaticKeys of ruleVariants) {
-    for (const [key, unionRule] of content) {
-      const expectations = [];
-
-      if (ruleWithStaticKeys.content.has(key)) {
-        expectations.push(...ruleWithStaticKeys.content.get(key) as ObjectRuleContentValue[]);
-      }
-
-      if (
-        ruleWithStaticKeys.index !== null &&
-        doesIndexSignatureApplyToProperty(ruleWithStaticKeys.index, key, interpolated)
-      ) {
-        expectations.push({ optional: true, rule: ruleWithStaticKeys.index.value });
-      }
-
-      if (expectations.length === 0) {
-        continue;
-      }
-
-      const inwardVariant = duplicateKeysToIntersection(expectations);
-      setDefaultAndGet(unpushedVariantRefToPushedVariantRef, ruleWithStaticKeys, []).push(inwardVariant);
-      unionRule.variants.push(inwardVariant);
-    }
+  if (expectations.length === 0) {
+    return null;
   }
 
-  return { content, unpushedVariantRefToPushedVariantRef };
+  return duplicateKeysToIntersection(expectations);
 }
 
-function assertIsObject(target: unknown, lookupPath: string): asserts target is object {
-  if (!isObject(target)) {
-    throw createValidatorAssertionError(`Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`);
-  }
+/** Helps to convert stuff like `{ x: A, ['x']: B }` to `{ x: A & B }` */
+function duplicateKeysToIntersection(expectations: readonly ObjectRuleContentValue[]): Rule {
+  // The array should have at least one item in it.
+  assert(expectations[0] !== undefined);
+
+  return expectations.length === 1
+    ? expectations[0].rule
+    : {
+        category: 'intersection' as const,
+        variants: expectations.map(expectation => expectation.rule),
+      };
 }
 
 /**
@@ -314,17 +267,3 @@ function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
 }
 
 const isObject = (value: unknown): value is object => Object(value) === value;
-
-function mergeMap<K, V>(map1: Map<K, V>, map2: Map<K, V>): void {
-  for (const [key, value] of map2) {
-    map1.set(key, value);
-  }
-}
-
-function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
-  if (!map.has(key)) {
-    map.set(key, defaultValue);
-  }
-
-  return map.get(key) as any;
-}

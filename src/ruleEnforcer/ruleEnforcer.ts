@@ -2,31 +2,19 @@ import { InterpolationRule, Rule } from '../types/parsingRules';
 import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from '../validatableProtocol';
-import { assertMatchesUnion } from './unionEnforcer';
-import { assertMatchesObject } from './objectEnforcer';
-import { assertMatchesTuple } from './tupleEnforcer';
+import { matchVariants } from './unionEnforcer';
 import { getSimpleTypeOf } from './shared';
-
-const isObject = (value: unknown): value is object => Object(value) === value;
-
-const isIterable = (value: unknown): value is { [Symbol.iterator]: () => Iterator<unknown> } => (
-  typeof Object(value)[Symbol.iterator] === 'function'
-);
-
-/** Compares two values using JavaScript's SameValueZero algorithm. */
-const sameValueZero = (x: unknown, y: unknown): boolean => (
-  x === y || (Number.isNaN(x) && Number.isNaN(y))
-);
+import { UnionVariantCollection } from './UnionVariantCollection';
 
 export function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
   try {
     assertMatches(rule, target, interpolated);
     return true;
-  } catch (err) {
-    if (err instanceof ValidatorAssertionError) {
+  } catch (error) {
+    if (error instanceof ValidatorAssertionError) {
       return false;
     }
-    throw err;
+    throw error;
   }
 }
 
@@ -58,13 +46,16 @@ export function assertMatches<T>(
       );
     }
   } else if (rule.category === 'union') {
-    assertMatchesUnion(rule, target, interpolated, lookupPath);
+    const variantCollection = new UnionVariantCollection(rule.variants);
+    matchVariants(variantCollection, target, interpolated, lookupPath).throwIfFailed();
   } else if (rule.category === 'intersection') {
     for (const variant of rule.variants) {
       assertMatches(variant, target, interpolated, lookupPath);
     }
-  } else if (rule.category === 'object') {
-    assertMatchesObject(rule, target, interpolated, lookupPath);
+  } else if (rule.category === 'object' || rule.category === 'tuple') {
+    // TODO Eventually, all the business logic from this function should probably be moved into unionEnforcer.ts (or vice verca).
+    const variantCollection = new UnionVariantCollection([rule]);
+    matchVariants(variantCollection, target, interpolated, lookupPath).throwIfFailed();
   } else if (rule.category === 'array') {
     if (!Array.isArray(target)) {
       throw createValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
@@ -73,8 +64,6 @@ export function assertMatches<T>(
     for (const [i, element] of target.entries()) {
       assertMatches(rule.content, element, interpolated, `${lookupPath}[${i}]`);
     }
-  } else if (rule.category === 'tuple') {
-    assertMatchesTuple(rule, target, interpolated, lookupPath);
   } else if (rule.category === 'iterator') {
     assertMatches(rule.iterableType, target, interpolated, lookupPath);
 
@@ -142,3 +131,18 @@ function assertMatchesInterpolation<T>(
     );
   }
 }
+
+// ------------------------------
+//   UTILITY FUNCTIONS
+// ------------------------------
+
+const isObject = (value: unknown): value is object => Object(value) === value;
+
+const isIterable = (value: unknown): value is { [Symbol.iterator]: () => Iterator<unknown> } => (
+  typeof Object(value)[Symbol.iterator] === 'function'
+);
+
+/** Compares two values using JavaScript's SameValueZero algorithm. */
+const sameValueZero = (x: unknown, y: unknown): boolean => (
+  x === y || (Number.isNaN(x) && Number.isNaN(y))
+);

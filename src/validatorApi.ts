@@ -1,4 +1,4 @@
-import { Rule, Ruleset, _parsingRulesInternals } from './types/parsingRules';
+import { Ruleset, _parsingRulesInternals } from './types/parsingRules';
 import { validatable } from './validatableProtocol';
 import {
   AssertMatchesOpts,

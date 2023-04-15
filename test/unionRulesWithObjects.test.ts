@@ -34,6 +34,53 @@ describe('union rules with objects', () => {
     });
   });
 
+  describe('object properties are a union', () => {
+    test('given a valid input, the simple case does not throw', () => {
+      const v = validator`{ x: 0 | 1 }`;
+      v.assertMatches({ x: 0 });
+    });
+
+    test('given an invalid input, the simple case properly throws', () => {
+      const v = validator`{ x: 0 | 1 }`;
+      const act = (): any => v.assertMatches({ x: 2 });
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.x to be 0 but got 2.',
+          '  Variant 2: Expected <receivedValue>.x to be 1 but got 2.',
+        ].join('\n'),
+      });
+    });
+
+    test('having nested and outer unions with the same property correctly allows valid input (test 1)', () => {
+      const v = validator`{ x: 0 | 1 } | { x: 2 }`;
+      v.assertMatches({ x: 0 });
+    });
+
+    test('having nested and outer unions with the same property correctly allows valid input (test 2)', () => {
+      const v = validator`{ x: 0 | 1 } | { x: 2 }`;
+      v.assertMatches({ x: 2 });
+    });
+
+    test('having nested and outer unions with the same property correctly throws with invalid input', () => {
+      const v = validator`{ x: 0 | 1 } | { x: 2 }`;
+      const act = (): any => v.assertMatches({ x: 3 });
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.x to be 0 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 1 but got 3.',
+          '  Variant 3: Expected <receivedValue>.x to be 2 but got 3.',
+        ].join('\n'),
+      });
+    });
+  });
+
+  test('able to match against a primitive, when a primitive and object is found in a union', () => {
+    const v = validator`{ x: 2 } | 3`;
+    v.assertMatches(3);
+  });
+
   describe('if all required keys are found for an object variant, sibling rule errors are omitted', () => {
     test('primitive sibling rule errors are ignored', () => {
       const v = validator`number | { x: 2 } | { x: 3 }`;

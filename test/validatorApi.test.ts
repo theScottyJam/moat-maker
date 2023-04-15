@@ -295,27 +295,16 @@ describe('validator behavior', () => {
   });
 
   describe('validator.from()', () => {
-    it('converts a string to a validator', () => {
+    test('converts a string to a validator', () => {
       const v = validator.from('string');
       expect(v.matches('xyz')).toBe(true);
       expect(v.matches(2)).toBe(false);
     });
 
-    it('returns validator instances as-is', () => {
+    test('returns validator instances as-is', () => {
       const v1 = validator`string`;
       const v2 = validator.from(v1);
       expect(v1).toBe(v2);
-    });
-
-    it('the returns validator has input checking on its methods', () => {
-      const v = validator.from('string');
-      const act = (): any => v.assertMatches('bad', 'arguments' as any);
-      assert.throws(act, {
-        message: (
-          'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-          'Expected <argumentList>[1] to be an object but got "arguments".'
-        ),
-      });
     });
   });
 

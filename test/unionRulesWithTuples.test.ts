@@ -26,6 +26,53 @@ describe('union rules with tuples', () => {
     });
   });
 
+  describe('tuples entries are a union', () => {
+    test('given a valid input, the simple case does not throw', () => {
+      const v = validator`[0 | 1]`;
+      v.assertMatches([0]);
+    });
+
+    test('given an invalid input, the simple case properly throws', () => {
+      const v = validator`[0 | 1]`;
+      const act = (): any => v.assertMatches([2]);
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>[0] to be 0 but got 2.',
+          '  Variant 2: Expected <receivedValue>[0] to be 1 but got 2.',
+        ].join('\n'),
+      });
+    });
+
+    test('having nested and outer unions with the same entry correctly allows valid input (test 1)', () => {
+      const v = validator`[0 | 1] | [2]`;
+      v.assertMatches([0]);
+    });
+
+    test('having nested and outer unions with the same entry correctly allows valid input (test 2)', () => {
+      const v = validator`[0 | 1] | [2]`;
+      v.assertMatches([2]);
+    });
+
+    test('having nested and outer unions with the same entry correctly throws with invalid input', () => {
+      const v = validator`[0 | 1] | [2]`;
+      const act = (): any => v.assertMatches([3]);
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>[0] to be 0 but got 3.',
+          '  Variant 2: Expected <receivedValue>[0] to be 1 but got 3.',
+          '  Variant 3: Expected <receivedValue>[0] to be 2 but got 3.',
+        ].join('\n'),
+      });
+    });
+  });
+
+  test('able to match against a primitive, when a primitive and tuple is found in a union', () => {
+    const v = validator`[2] | 3`;
+    v.assertMatches(3);
+  });
+
   describe('if the tuple length check passes, sibling rule errors are omitted', () => {
     test('primitive sibling rule errors are ignored', () => {
       const v = validator`number | [0] | [1]`;
@@ -99,8 +146,8 @@ describe('union rules with tuples', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>[0][0] to be 2 but got 0.',
-          '  Variant 2: Expected <receivedValue>[0][0] to be 3 but got 0.',
+          '  Variant 1: Expected <receivedValue>[1][0] to be 2 but got 0.',
+          '  Variant 2: Expected <receivedValue>[1][0] to be 3 but got 0.',
         ].join('\n'),
       });
     });
