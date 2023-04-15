@@ -52,18 +52,10 @@ export function assertMatches<T>(
     for (const variant of rule.variants) {
       assertMatches(variant, target, interpolated, lookupPath);
     }
-  } else if (rule.category === 'object' || rule.category === 'tuple') {
+  } else if (rule.category === 'object' || rule.category === 'array' || rule.category === 'tuple') {
     // TODO Eventually, all the business logic from this function should probably be moved into unionEnforcer.ts (or vice verca).
     const variantCollection = new UnionVariantCollection([rule]);
     matchVariants(variantCollection, target, interpolated, lookupPath).throwIfFailed();
-  } else if (rule.category === 'array') {
-    if (!Array.isArray(target)) {
-      throw createValidatorAssertionError(`Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`);
-    }
-
-    for (const [i, element] of target.entries()) {
-      assertMatches(rule.content, element, interpolated, `${lookupPath}[${i}]`);
-    }
   } else if (rule.category === 'iterator') {
     assertMatches(rule.iterableType, target, interpolated, lookupPath);
 

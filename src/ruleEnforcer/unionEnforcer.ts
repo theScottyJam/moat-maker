@@ -1,9 +1,10 @@
-import { ObjectRule, Rule, TupleRule } from '../types/parsingRules';
+import { ArrayRule, ObjectRule, Rule, TupleRule } from '../types/parsingRules';
 import { assertMatches } from './ruleEnforcer';
 import { matchObjectVariants } from './objectEnforcer';
 import { matchTupleVariants } from './tupleEnforcer';
 import { SuccessMatchResponse, stepVariantsBackTo, VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
+import { matchArrayVariants } from './arrayEnforcer';
 
 export function matchVariants<RuleType extends Rule>(
   unflattenedVariantCollection: UnionVariantCollection,
@@ -15,8 +16,8 @@ export function matchVariants<RuleType extends Rule>(
   let remainingVariants = variantCollection.asFilteredView();
 
   const groupedVariants = variantCollection.groups(
-    v => v.category === 'object' || v.category === 'tuple' ? v.category : 'other',
-    { keys: ['object', 'tuple', 'other'] },
+    v => ['object', 'tuple', 'array'].includes(v.category) ? v.category : 'other',
+    { keys: ['object', 'tuple', 'array', 'other'] },
   );
 
   const matchOtherResponse = groupedVariants.other.matchEach(variant => {
@@ -38,6 +39,17 @@ export function matchVariants<RuleType extends Rule>(
     return matchObjectResponse as VariantMatchResponse<RuleType>;
   }
 
+  const matchArrayResponse = matchArrayVariants(
+    groupedVariants.array as UnionVariantCollection<ArrayRule>,
+    target,
+    interpolated,
+    lookupPath,
+  );
+  remainingVariants = remainingVariants.removeFailed(matchArrayResponse);
+  if (remainingVariants.isEmpty()) {
+    return matchArrayResponse as VariantMatchResponse<RuleType>;
+  }
+
   const matchTupleResponse = matchTupleVariants(
     groupedVariants.tuple as UnionVariantCollection<TupleRule>,
     target,
@@ -52,6 +64,7 @@ export function matchVariants<RuleType extends Rule>(
   const failedVariants = [
     ...matchOtherResponse.failedVariants(),
     ...matchObjectResponse.failedVariants(),
+    ...matchArrayResponse.failedVariants(),
     ...matchTupleResponse.failedVariants(),
   ];
 

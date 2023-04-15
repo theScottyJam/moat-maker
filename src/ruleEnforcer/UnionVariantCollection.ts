@@ -144,6 +144,10 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * If ValidatorAssertionErrors are thrown, they're be captured and recorded.
    * A VariantMatchResponse instance will be return, containing information about the failures that
    * occurred during the match.
+   *
+   * This should only be used if you need to perform assertions with each variant individually. Sometimes,
+   * what's needed instead is to make a derivative of the collection (with .map()), then match the derivative
+   * as if it were a union.
    */
   matchEach(
     doAssertion: (variant: RuleType) => void,

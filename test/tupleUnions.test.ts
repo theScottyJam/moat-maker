@@ -87,10 +87,9 @@ describe('union rules with tuples', () => {
     });
 
     // In addition to ignoring errors from sibling rules with invalid lengths,
-    // only the errors related to the right-most entry in the tuple are shown.
+    // only the errors related to the right-most failed entry in the tuple are shown.
     // (The exception being rest errors, which will only show if there are no non-rest errors)
     // This is similar behavior to object rules, where only errors for one object property ever get shown.
-    // However, it may not be ideal. Maybe at a future point, work can be done to improve the errors.
     test('sibling tuple rule errors with invalid lengths are ignored (test 1)', () => {
       const v = validator`[1] | [2] | [...5[]] | [1, 2]`;
       const act = (): any => v.assertMatches([3]);
