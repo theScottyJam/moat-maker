@@ -61,6 +61,25 @@ describe('tuple rules', () => {
     assert.throws(act, TypeError);
   });
 
+  test('rejects sparse arrays if the matcher does not allow for undefined entries (test 1)', () => {
+    const v = validator`[number]`;
+    const act = (): any => v.assertMatches([2,,]); // eslint-disable-line no-sparse-arrays
+    assert.throws(act, { message: 'Expected the <receivedValue> array to have 1 entry, but found 2.' });
+    assert.throws(act, TypeError);
+  });
+
+  test('rejects sparse arrays if the matcher does not allow for undefined entries (test 2)', () => {
+    const v = validator`[number]`;
+    const act = (): any => v.assertMatches([,]); // eslint-disable-line no-sparse-arrays
+    assert.throws(act, { message: 'Expected <receivedValue>[0] to be of type "number" but got type "undefined".' });
+    assert.throws(act, TypeError);
+  });
+
+  test('allows sparse arrays if the matcher allows undefined entries', () => {
+    const v = validator`[number | undefined]`;
+    v.assertMatches([,]); // eslint-disable-line no-sparse-arrays
+  });
+
   describe('optional entries', () => {
     test('can choose to supply some of the optional entries', () => {
       const v = validator`[string, number?, boolean?, bigint?]`;

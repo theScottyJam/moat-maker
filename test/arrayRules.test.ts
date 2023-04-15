@@ -48,6 +48,18 @@ describe('array rules', () => {
     assert.throws(act, TypeError);
   });
 
+  test('rejects sparse arrays if the matcher does not allow for undefined entries', () => {
+    const v = validator`number[]`;
+    const act = (): any => v.assertMatches([2,, 3]); // eslint-disable-line no-sparse-arrays
+    assert.throws(act, { message: 'Expected <receivedValue>[1] to be of type "number" but got type "undefined".' });
+    assert.throws(act, TypeError);
+  });
+
+  test('allows sparse arrays if the matcher allows undefined entries', () => {
+    const v = validator`(number | undefined)[]`;
+    v.assertMatches([2,, 3, undefined]); // eslint-disable-line no-sparse-arrays
+  });
+
   describe('multi-dimensional array patterns', () => {
     test('accepts a multi-dimensional array', () => {
       const v = validator`string[][]`;
