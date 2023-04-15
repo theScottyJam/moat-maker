@@ -13,6 +13,7 @@ import {
 import { ValidatableProtocolFnOpts, _validatableProtocolInternals } from './types/validatableProtocol';
 import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './types/packagePrivateAccess';
+import { DISABLE_PARAM_VALIDATION } from './config';
 
 const { createRulesetCheck } = _parsingRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
@@ -38,7 +39,7 @@ export const validator = function validator<T=unknown>(
   parts: TemplateStringsArray,
   ...interpolated: readonly unknown[]
 ): Validator<T> {
-  uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`
+  !DISABLE_PARAM_VALIDATION && uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`
     .assertArgs(validator.name, arguments);
 
   return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));
@@ -49,32 +50,32 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
     [isValidatorInstance]: true as const,
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
       // TODO: I'm not validating the return value of opts.errorFactory
-      uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
         .assertArgs('<validator instance>.assertMatches', arguments);
 
       return unwrappedValidator.assertMatches(value, opts);
     },
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
       // TODO: I'm not validating the return value of opts.errorFactory
-      uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
         .assertArgs('<validator instance>.assertionTypeGuard', arguments);
 
       return unwrappedValidator.assertionTypeGuard(value, opts);
     },
     assertArgs(whichFn: string, args: ArrayLike<unknown>) {
-      uncheckedValidator`[whichFn: string, args: ${isArrayLikeCheck}]`
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[whichFn: string, args: ${isArrayLikeCheck}]`
         .assertArgs('<validator instance>.assertArgs', arguments);
 
       return unwrappedValidator.assertArgs(whichFn, args);
     },
     matches(value: unknown): value is T {
-      uncheckedValidator`[value: unknown]`.assertArgs('<validator instance>.matches', arguments);
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`.assertArgs('<validator instance>.matches', arguments);
       return unwrappedValidator.matches(value);
     },
     ruleset: unwrappedValidator.ruleset,
     [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
       // TODO: I never validate the return value of opts.failure
-      uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
         .assertArgs('<validator instance>[validator.validatable]', arguments);
 
       return unwrappedValidator[validatable](value, opts);
@@ -84,14 +85,14 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
 
 const staticFields: ValidatorTemplateTagStaticFields = {
   fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
-    uncheckedValidator`[ruleset: ${rulesetCheck}]`
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[ruleset: ${rulesetCheck}]`
       .assertArgs('validator.fromRuleset', arguments);
 
     return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRuleset<T>(ruleset));
   },
 
   from(unknownValue: string | Validator): Validator {
-    uncheckedValidator`[stringOrValidator: string | ${isValidatorCheck}]`
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[stringOrValidator: string | ${isValidatorCheck}]`
       .assertArgs('validator.from', arguments);
 
     return typeof unknownValue === 'string'
@@ -105,13 +106,13 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     return {
       [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
         // TODO: I never validate the return value of opts.failure
-        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+        !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
           .assertArgs('<validator ref>[validator.validatable]', arguments);
 
         return ref[validatable](value, opts);
       },
       set(validator_: Validator) {
-        uncheckedValidator`[validator: ${isValidatorCheck}]`
+        !DISABLE_PARAM_VALIDATION && uncheckedValidator`[validator: ${isValidatorCheck}]`
           .assertArgs('<validator ref>.set', arguments);
 
         return ref.set(validator_);
@@ -120,12 +121,12 @@ const staticFields: ValidatorTemplateTagStaticFields = {
   },
 
   checker(doCheck_: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
-    uncheckedValidator`[doCheck: ${Function}, opts?: { to?: string }]`
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[doCheck: ${Function}, opts?: { to?: string }]`
       .assertArgs('validator.checker', arguments);
 
     const doCheck = (valueBeingMatched: unknown): boolean => {
       const result = doCheck_(valueBeingMatched);
-      uncheckedValidator`boolean`.assertMatches(result, {
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`boolean`.assertMatches(result, {
         errorPrefix: 'validator.checker() received a bad "doCheck" function:',
         at: '<doCheck return value>',
       });
@@ -135,7 +136,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     const checker = uncheckedValidator.checker(doCheck, opts);
     return {
       [validatable](value: unknown, opts: ValidatableProtocolFnOpts): void {
-        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+        !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
           .assertArgs('<validator checker>[validator.validatable]', arguments);
 
         return checker.protocolFn(value, opts);
@@ -146,7 +147,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
        * to copy it out and put it on a different object.
        */
       protocolFn(value: unknown, opts: ValidatableProtocolFnOpts): void {
-        uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
+        !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts: ${validatableProtocolFnOptsCheck}]`
           .assertArgs('<validator checker>.protocolFn', arguments);
 
         return checker.protocolFn(value, opts);

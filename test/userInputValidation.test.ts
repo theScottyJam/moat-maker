@@ -1,10 +1,11 @@
 import { strict as assert } from 'node:assert';
 import { Ruleset, validator } from '../src';
+import { DISABLE_PARAM_VALIDATION } from '../src/config';
 
 // These are not meant to be comprehensive tests, rather,
 // they're simple smoke tests to make sure the validation checks
 // aren't completely busted.
-describe('user input validation for validator API', () => {
+(DISABLE_PARAM_VALIDATION ? describe.skip : describe)('user input validation for validator API', () => {
   test('TypeErrors are thrown when bad input is given', () => {
     const act = (): any => validator(42 as any);
     assert.throws(act, TypeError);
