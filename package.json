@@ -15,7 +15,7 @@
   "main": "build/index.js",
   "scripts": {
     "prepublish": "npm run build",
-    "build": "rm -r ./build && npx tsc --build tsconfig.json",
+    "build": "rm -rf ./build && npx tsc --build tsconfig.json",
     "test": "npx jest -c jest.config.js --maxWorkers=1",
     "test:watch": "npx jest -c jest.config.js --maxWorkers=1 --watch",
     "lint": "eslint test/*.ts src/*.ts",
