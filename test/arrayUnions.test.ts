@@ -56,11 +56,6 @@ describe('union rules with arrays', () => {
     });
   });
 
-  test('able to match against a primitive, when a primitive and array is found in a union', () => {
-    const v = validator`2[] | 3`;
-    v.assertMatches(3);
-  });
-
   describe('ignores variants that are likely irrelevant', () => {
     test('if the input value is of type array, primitive sibling rule errors are ignored', () => {
       const v = validator`number | 2[] | 3[]`;

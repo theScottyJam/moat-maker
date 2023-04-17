@@ -76,11 +76,6 @@ describe('union rules with objects', () => {
     });
   });
 
-  test('able to match against a primitive, when a primitive and object is found in a union', () => {
-    const v = validator`{ x: 2 } | 3`;
-    v.assertMatches(3);
-  });
-
   describe('if all required keys are found for an object variant, sibling rule errors are omitted', () => {
     test('primitive sibling rule errors are ignored', () => {
       const v = validator`number | { x: 2 } | { x: 3 }`;

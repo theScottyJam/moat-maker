@@ -151,6 +151,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    */
   matchEach(
     doAssertion: (variant: RuleType) => void,
+    { deep }: { readonly deep: number },
   ): VariantMatchResponse<RuleType> {
     const variantToError = new Map<RuleType, ValidatorAssertionError>();
     for (const variant of this.variants) {
@@ -165,7 +166,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
       }
     }
 
-    return matchResponseFromErrorMap(variantToError, this);
+    return matchResponseFromErrorMap(variantToError, this, { deep });
   }
 
   asFilteredView(): UnionVariantCollectionFilteredView<RuleType> {
@@ -176,10 +177,14 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * A continence method for creating a failure response, that's
    * targeting this collection (i.e. all variants in this collection will be marked as failed).
    */
-  createFailResponse(message: string): FailedMatchResponse<RuleType> {
+  createFailResponse(
+    message: string,
+    { deep }: { readonly deep: number },
+  ): FailedMatchResponse<RuleType> {
     return new FailedMatchResponse(
       createValidatorAssertionError(message),
       this,
+      { deep },
     );
   }
 }

@@ -68,11 +68,6 @@ describe('union rules with tuples', () => {
     });
   });
 
-  test('able to match against a primitive, when a primitive and tuple is found in a union', () => {
-    const v = validator`[2] | 3`;
-    v.assertMatches(3);
-  });
-
   describe('if the tuple length check passes, sibling rule errors are omitted', () => {
     test('primitive sibling rule errors are ignored', () => {
       const v = validator`number | [0] | [1]`;

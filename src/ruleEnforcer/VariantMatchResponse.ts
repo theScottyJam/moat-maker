@@ -3,6 +3,7 @@ import { indentMultilineString } from '../util';
 import { createValidatorAssertionError, type ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/parsingRules';
 import type { UnionVariantCollection } from './UnionVariantCollection';
+import { buildUnionError } from './shared';
 
 /**
  * A VariantMatchResponse is returned by match functions, to provide
@@ -34,28 +35,6 @@ export interface VariantMatchResponse<RuleType extends Rule> {
   readonly throwIfFailed: () => void
 }
 
-/**
- * A helper for generating the correct response instance.
- *
- * Given a mapping of variants to their errors, along with the collection that holds those variants,
- * this will return either a success response (if only some of the variants failed but not all),
- * or a failed response (if all variants failed). If it's a failed response, the error message will
- * be correctly formatted to contain a union-style error with all of the errors from the map.
- */
-export function matchResponseFromErrorMap<RuleType extends Rule>(
-  variantToError: Map<RuleType, ValidatorAssertionError>,
-  targetCollection: UnionVariantCollection<RuleType>,
-): VariantMatchResponse<RuleType> {
-  if (variantToError.size === targetCollection.variants.length) {
-    const unionError = buildUnionError(
-      [...variantToError.values()]
-        .map(err => err.message),
-    );
-    return new FailedMatchResponse(unionError, targetCollection);
-  }
-  return new SuccessMatchResponse([...variantToError.keys()], targetCollection);
-}
-
 export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatchResponse<RuleType> {
   readonly #failedVariants: readonly RuleType[];
   readonly variantCollection: UnionVariantCollection<RuleType>;
@@ -63,6 +42,10 @@ export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatch
     failedVariants: readonly RuleType[],
     variantCollection: UnionVariantCollection<RuleType>,
   ) {
+    assert(
+      failedVariants.length !== variantCollection.variants.length || failedVariants.length === 0,
+      'Internal error: Attempted to construct a success response, when all variants in it had failed validation.',
+    );
     this.#failedVariants = failedVariants;
     this.variantCollection = variantCollection;
   }
@@ -86,14 +69,17 @@ export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatch
 }
 
 export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchResponse<RuleType> {
-  readonly #overallError: ValidatorAssertionError;
+  readonly error: ValidatorAssertionError;
   readonly variantCollection: UnionVariantCollection<RuleType>;
+  readonly deep: number;
   constructor(
     overallError: ValidatorAssertionError,
     variantCollection: UnionVariantCollection<RuleType>,
+    { deep }: { readonly deep: number },
   ) {
-    this.#overallError = overallError;
+    this.error = overallError;
     this.variantCollection = variantCollection;
+    this.deep = deep;
   }
 
   failedVariants(): readonly RuleType[] {
@@ -101,16 +87,100 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
   }
 
   throwIfFailed(): never {
-    throw this.#overallError;
+    throw this.error;
   }
 
   /**
    * You can use this to retarget an overall error from one variant collection to another.
    * One consequence of this is that all variants on the new target will be counted as having failed.
    */
-  asFailedResponseFor<T extends Rule>(variantCollection: UnionVariantCollection<T>): FailedMatchResponse<T> {
-    return new FailedMatchResponse<T>(this.#overallError, variantCollection);
+  asFailedResponseFor<T extends Rule>(
+    variantCollection: UnionVariantCollection<T>,
+  ): FailedMatchResponse<T> {
+    return new FailedMatchResponse<T>(this.error, variantCollection, { deep: this.deep });
   }
+}
+
+// ------------------------------------------ //
+// Utilities for working with match responses //
+// ------------------------------------------ //
+
+/**
+ * A helper for generating the correct response instance.
+ *
+ * Given a mapping of variants to their errors, along with the collection that holds those variants,
+ * this will return either a success response (if only some of the variants failed but not all),
+ * or a failed response (if all variants failed). If it's a failed response, the error message will
+ * be correctly formatted to contain a union-style error with all of the errors from the map.
+ */
+export function matchResponseFromErrorMap<RuleType extends Rule>(
+  variantToError: Map<RuleType, ValidatorAssertionError>,
+  targetCollection: UnionVariantCollection<RuleType>,
+  { deep }: { readonly deep: number },
+): VariantMatchResponse<RuleType> {
+  if (variantToError.size === targetCollection.variants.length) {
+    const unionError = buildUnionError(
+      [...variantToError.values()]
+        .map(err => err.message),
+    );
+    return new FailedMatchResponse(unionError, targetCollection, { deep });
+  }
+  return new SuccessMatchResponse([...variantToError.keys()], targetCollection);
+}
+
+/**
+ * Takes a list of responses, steps them back to a common ancestor,
+ * then merges them. Only supports building a success response,
+ * if a failed response would be built, an error is thrown instead.
+ */
+export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<VariantMatchResponse<Rule>>): VariantMatchResponse<Rule> {
+  assert(matchResponses.length > 0);
+
+  const getAncestorChain = (variantCollection: UnionVariantCollection): readonly UnionVariantCollection[] => {
+    const rest = variantCollection.backLinks !== undefined
+      ? getAncestorChain(variantCollection.backLinks.lastInstance)
+      : [];
+
+    return [variantCollection, ...rest];
+  };
+
+  const findCommonAncestor = (
+    ancestorChains: ReadonlyArray<readonly UnionVariantCollection[]>,
+  ): UnionVariantCollection => {
+    const [firstChain, ...otherChains] = ancestorChains;
+    assert(firstChain !== undefined);
+    assert(firstChain.length > 0);
+
+    const lastInvalidIndex = findLastIndex(firstChain, (collection, i) => {
+      return otherChains.every(chain => chain[i] !== collection);
+    });
+
+    const firstValidIndex = lastInvalidIndex === -1 ? 0 : lastInvalidIndex + 1;
+    assert(firstChain[firstValidIndex] !== undefined, 'Failed to find a common ancestor when merging results');
+    return firstChain[firstValidIndex] as UnionVariantCollection;
+  };
+
+  const commonCollection = findCommonAncestor(
+    matchResponses.map(response => getAncestorChain(response.variantCollection)),
+  );
+
+  const failedVariants = new Set<Rule>();
+  for (const response of matchResponses) {
+    const steppedBackVariants = stepVariantsBackTo(response.failedVariants(), {
+      from: response.variantCollection,
+      to: commonCollection,
+    });
+
+    for (const variant of steppedBackVariants) {
+      failedVariants.add(variant);
+    }
+  }
+
+  assert(
+    failedVariants.size !== commonCollection.variants.length,
+    'Internal error: Merging variants to create a failed response is not supported',
+  );
+  return new SuccessMatchResponse([...failedVariants], commonCollection);
 }
 
 /**
@@ -174,7 +244,7 @@ function stepVariantsBackwards(
   assert(
     backLinks !== undefined,
     'Attempted to step back further than able. ' +
-    'This error usually happens when you attempt to have a failure' +
+    'This error usually happens when you attempt to have a failure ' +
     'do side-steps or some other kind of jump. Only backward steps are supported.',
   );
   const forwardLinks = flipMap(backLinks.lastVariants);
@@ -206,25 +276,6 @@ function stepVariantsBackwards(
   return [...newFailedVariants];
 }
 
-/**
- * Turns a list of errors into a single union-style error.
- * Duplicate messages are automatically filtered out.
- */
-function buildUnionError(variantErrorMessages_: readonly string[]): ValidatorAssertionError {
-  const variantErrorMessages = unique(variantErrorMessages_);
-  if (variantErrorMessages.length === 1) {
-    assert(variantErrorMessages[0] !== undefined);
-    return createValidatorAssertionError(variantErrorMessages[0]);
-  }
-
-  return createValidatorAssertionError(
-    'Failed to match against any variant of a union.\n' +
-    variantErrorMessages
-      .map((message, i) => `  Variant ${i + 1}: ${indentMultilineString(message, 4).slice(4)}`)
-      .join('\n'),
-  );
-}
-
 // ------------------------------
 //   UTILITY FUNCTIONS
 // ------------------------------
@@ -237,6 +288,14 @@ function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
   return map.get(key) as any;
 }
 
-function unique<T>(array: readonly T[]): readonly T[] {
-  return [...new Set(array)];
+// This function was only recently added to the language.
+// Perhaps at a later point, I can drop this "polyfill" and use the native one instead.
+function findLastIndex<T>(array: readonly T[], predicate: (value: T, index: number) => boolean): number {
+  for (const [i, value] of [...array.entries()].reverse()) {
+    if (predicate(value, i)) {
+      return i;
+    }
+  }
+
+  return -1;
 }

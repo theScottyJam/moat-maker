@@ -3,7 +3,7 @@ import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
 import { validatable, assertConformsToValidatableProtocol, hasValidatableProperty } from '../validatableProtocol';
 import { matchVariants } from './unionEnforcer';
-import { getSimpleTypeOf } from './shared';
+import { DEEP_LEVELS, getSimpleTypeOf } from './shared';
 import { UnionVariantCollection } from './UnionVariantCollection';
 
 export function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
@@ -47,7 +47,7 @@ export function assertMatches<T>(
     }
   } else if (rule.category === 'union') {
     const variantCollection = new UnionVariantCollection(rule.variants);
-    matchVariants(variantCollection, target, interpolated, lookupPath).throwIfFailed();
+    matchVariants(variantCollection, target, interpolated, lookupPath, { deep: DEEP_LEVELS.irrelevant }).throwIfFailed();
   } else if (rule.category === 'intersection') {
     for (const variant of rule.variants) {
       assertMatches(variant, target, interpolated, lookupPath);
@@ -55,7 +55,7 @@ export function assertMatches<T>(
   } else if (rule.category === 'object' || rule.category === 'array' || rule.category === 'tuple') {
     // TODO Eventually, all the business logic from this function should probably be moved into unionEnforcer.ts (or vice verca).
     const variantCollection = new UnionVariantCollection([rule]);
-    matchVariants(variantCollection, target, interpolated, lookupPath).throwIfFailed();
+    matchVariants(variantCollection, target, interpolated, lookupPath, { deep: DEEP_LEVELS.irrelevant }).throwIfFailed();
   } else if (rule.category === 'iterator') {
     assertMatches(rule.iterableType, target, interpolated, lookupPath);
 

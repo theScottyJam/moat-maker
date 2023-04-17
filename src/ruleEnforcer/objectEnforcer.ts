@@ -4,7 +4,7 @@ import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
 import { assertMatches, doesMatch } from './ruleEnforcer';
-import { getSimpleTypeOf } from './shared';
+import { DEEP_LEVELS, getSimpleTypeOf } from './shared';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
@@ -36,6 +36,7 @@ export function matchObjectVariants(
   if (!isObject(target)) {
     return variantCollection.createFailResponse(
       `Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`,
+      { deep: DEEP_LEVELS.nonSpecificTypeCheck },
     );
   }
 
@@ -49,7 +50,7 @@ export function matchObjectVariants(
     if (variant.index !== null) {
       assertIndexSignatureIsSatisfied(variant.index, target, interpolated, lookupPath);
     }
-  });
+  }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(matchEachFailuires);
   if (curVariantCollection.isEmpty()) {
@@ -87,6 +88,7 @@ export function matchObjectVariants(
       (target as any)[key],
       interpolated,
       calcSubLookupPath(lookupPath, key),
+      { deep: DEEP_LEVELS.recurseInwardsCheck },
     );
 
     if (matchResponse instanceof FailedMatchResponse) {
@@ -103,6 +105,7 @@ export function matchObjectVariants(
     return variantCollection.createFailResponse(
       `${lookupPath}'s properties matches various union variants ` +
       'when it needs to pick a single variant to follow.',
+      { deep: DEEP_LEVELS.recurseInwardsCheck },
     );
   }
 

@@ -6,6 +6,7 @@ import { assertMatches } from './ruleEnforcer';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
+import { DEEP_LEVELS } from './shared';
 
 export function matchTupleVariants(
   variantCollection: UnionVariantCollection<TupleRule>,
@@ -21,12 +22,13 @@ export function matchTupleVariants(
   if (!Array.isArray(target)) {
     return curVariantCollection.createFailResponse(
       `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
+      { deep: DEEP_LEVELS.typeCheck },
     );
   }
 
   const matchSizeResponse = curVariantCollection.matchEach(variant => {
     assertValidTupleSize(variant, target, lookupPath);
-  });
+  }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(matchSizeResponse);
   if (curVariantCollection.isEmpty()) {
@@ -50,6 +52,7 @@ export function matchTupleVariants(
       subTarget,
       interpolated,
       `${lookupPath}[${subTargetIndex}]`,
+      { deep: DEEP_LEVELS.recurseInwardsCheck },
     );
     curVariantCollection = curVariantCollection.removeFailed(matchEntryResponse);
     if (curVariantCollection.isEmpty()) {
@@ -69,7 +72,7 @@ export function matchTupleVariants(
 
       const subPath = `${lookupPath}.slice(${startIndex})`;
       assertMatches(variant.rest, portionToTestAgainst, interpolated, subPath);
-    });
+    }, { deep: DEEP_LEVELS.recurseInwardsCheck });
 
   if (curVariantCollection.removeFailed(matchRestResponse).isEmpty()) {
     assert(matchRestResponse instanceof FailedMatchResponse);
