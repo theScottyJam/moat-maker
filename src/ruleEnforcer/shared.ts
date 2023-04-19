@@ -16,7 +16,6 @@ export function getSimpleTypeOf(value: unknown): string {
   }
 }
 
-// <-- Move to shared.ts?
 /**
  * Turns a list of errors into a single union-style error.
  * Duplicate messages are automatically filtered out.
@@ -49,7 +48,8 @@ export function buildUnionError(variantErrorMessages_: readonly string[]): Valid
  * variants can quickly grow to astronomical numbers.
  */
 export const DEEP_LEVELS = {
-  // Used by top-level checks, where the deepness level doesn't really matter.
+  // Used when the deepness level doesn't matter, because, e.g. this is a top-level assertion,
+  // or we're about to reassign the deepness level anyways, etc.
   irrelevant: -1,
   // TODO
   // The code isn't yet factored in a way where it's easy to assign deepness levels to all the different kinds of failures.

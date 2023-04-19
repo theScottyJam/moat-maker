@@ -6,6 +6,10 @@ import { packagePrivate } from './packagePrivateAccess';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
+const allSimpleTypes: SimpleTypeVariant[] = [
+  'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
+];
+
 export interface SimpleRule {
   readonly category: 'simple'
   readonly type: SimpleTypeVariant
@@ -88,6 +92,19 @@ export type Rule = (
   | IntersectionRule
   | InterpolationRule
 );
+
+const allCategories = [
+  'simple',
+  'primitiveLiteral',
+  'noop',
+  'object',
+  'array',
+  'tuple',
+  'iterator',
+  'union',
+  'intersection',
+  'interpolation',
+] as const;
 
 export interface Ruleset {
   readonly rootRule: Rule
@@ -196,5 +213,5 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 }
 
 export const _parsingRulesInternals = {
-  [packagePrivate]: { createRulesetCheck },
+  [packagePrivate]: { allCategories, allSimpleTypes, createRulesetCheck },
 };

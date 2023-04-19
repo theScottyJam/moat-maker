@@ -101,9 +101,9 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
   }
 }
 
-// ------------------------------------------ //
-// Utilities for working with match responses //
-// ------------------------------------------ //
+// ---------------------------------------
+//   MATCH RESPONSES UTILITIES
+// ---------------------------------------
 
 /**
  * A helper for generating the correct response instance.
@@ -136,12 +136,13 @@ export function matchResponseFromErrorMap<RuleType extends Rule>(
 export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<VariantMatchResponse<Rule>>): VariantMatchResponse<Rule> {
   assert(matchResponses.length > 0);
 
+  /** Returns ancestor chains, with the oldest ancestors first. */
   const getAncestorChain = (variantCollection: UnionVariantCollection): readonly UnionVariantCollection[] => {
     const rest = variantCollection.backLinks !== undefined
       ? getAncestorChain(variantCollection.backLinks.lastInstance)
       : [];
 
-    return [variantCollection, ...rest];
+    return [...rest, variantCollection];
   };
 
   const findCommonAncestor = (
@@ -151,13 +152,13 @@ export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<V
     assert(firstChain !== undefined);
     assert(firstChain.length > 0);
 
-    const lastInvalidIndex = findLastIndex(firstChain, (collection, i) => {
-      return otherChains.every(chain => chain[i] !== collection);
-    });
+    const firstInvalidIndex = firstChain.findIndex(
+      (collection, i) => otherChains.some(chain => collection !== chain[i]),
+    );
 
-    const firstValidIndex = lastInvalidIndex === -1 ? 0 : lastInvalidIndex + 1;
-    assert(firstChain[firstValidIndex] !== undefined, 'Failed to find a common ancestor when merging results');
-    return firstChain[firstValidIndex] as UnionVariantCollection;
+    assert(firstInvalidIndex !== 0, 'Failed to find a common ancestor when merging results');
+    const lastValidIndex = firstInvalidIndex === -1 ? firstChain.length - 1 : firstInvalidIndex - 1;
+    return firstChain[lastValidIndex] as UnionVariantCollection;
   };
 
   const commonCollection = findCommonAncestor(
@@ -286,16 +287,4 @@ function setDefaultAndGet<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
   }
 
   return map.get(key) as any;
-}
-
-// This function was only recently added to the language.
-// Perhaps at a later point, I can drop this "polyfill" and use the native one instead.
-function findLastIndex<T>(array: readonly T[], predicate: (value: T, index: number) => boolean): number {
-  for (const [i, value] of [...array.entries()].reverse()) {
-    if (predicate(value, i)) {
-      return i;
-    }
-  }
-
-  return -1;
 }

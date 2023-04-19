@@ -3,10 +3,9 @@ import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } f
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
-import { assertMatches, doesMatch } from './ruleEnforcer';
 import { DEEP_LEVELS, getSimpleTypeOf } from './shared';
-import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
-import type { UnionVariantCollection } from './UnionVariantCollection';
+import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse, mergeMatchResultsToSuccessResult } from './VariantMatchResponse';
+import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
 
 /**
@@ -42,20 +41,30 @@ export function matchObjectVariants(
 
   const objRuleToProcessedObjects = new Map<ObjectRule, ObjectRuleWithStaticKeys>();
 
-  const matchEachFailuires = curVariantCollection.matchEach(variant => {
+  const keyCheckResponse = curVariantCollection.matchEach(variant => {
     const ruleWithStaticKeys = validateAndApplyDynamicKeys(variant, interpolated);
     objRuleToProcessedObjects.set(variant, ruleWithStaticKeys);
     assertRequiredKeysArePresent(ruleWithStaticKeys, target, lookupPath);
+  }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
+  curVariantCollection = curVariantCollection.removeFailed(keyCheckResponse);
+  if (curVariantCollection.isEmpty()) {
+    assert(keyCheckResponse instanceof FailedMatchResponse);
+    return keyCheckResponse.asFailedResponseFor(variantCollection);
+  }
+
+  // TODO: Merge the responses from failed index checks and other failed property value checks.
+  // One shouldn't take precedence over the other.
+  const indexSignatureResponse = curVariantCollection.matchEach(variant => {
     if (variant.index !== null) {
       assertIndexSignatureIsSatisfied(variant.index, target, interpolated, lookupPath);
     }
   }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
-  curVariantCollection = curVariantCollection.removeFailed(matchEachFailuires);
+  curVariantCollection = curVariantCollection.removeFailed(indexSignatureResponse);
   if (curVariantCollection.isEmpty()) {
-    assert(matchEachFailuires instanceof FailedMatchResponse);
-    return matchEachFailuires.asFailedResponseFor(variantCollection);
+    assert(indexSignatureResponse instanceof FailedMatchResponse);
+    return indexSignatureResponse.asFailedResponseFor(variantCollection);
   }
 
   const keysFromAllRules = new Set<string | symbol>(
@@ -109,7 +118,7 @@ export function matchObjectVariants(
     );
   }
 
-  return matchEachFailuires;
+  return mergeMatchResultsToSuccessResult([keyCheckResponse, indexSignatureResponse]) as VariantMatchResponse<ObjectRule>;
 }
 
 /**
@@ -223,7 +232,13 @@ function assertIndexSignatureIsSatisfied(
 ): void {
   for (const [key, value] of allObjectEntries(target)) {
     if (doesIndexSignatureApplyToProperty(indexInfo, key, interpolated)) {
-      assertMatches(indexInfo.value, value, interpolated, calcSubLookupPath(lookupPath, key));
+      matchVariants(
+        new UnionVariantCollection([indexInfo.value]),
+        value,
+        interpolated,
+        calcSubLookupPath(lookupPath, key),
+        { deep: DEEP_LEVELS.unorganized },
+      ).throwIfFailed();
     }
   }
 }
@@ -240,6 +255,17 @@ function doesIndexSignatureApplyToProperty(
     // The key has to be turned into a number first, before the `number` rule will take it.
     (!isNaN(numericPropertyKey) && doesMatch(indexInfo.key, numericPropertyKey, interpolated))
   );
+}
+
+export function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
+  const variantCollection = new UnionVariantCollection([rule]);
+  return matchVariants(
+    variantCollection,
+    target,
+    interpolated,
+    '<receivedValue>',
+    { deep: DEEP_LEVELS.irrelevant },
+  ) instanceof SuccessMatchResponse;
 }
 
 /** Calculates the next lookup path, given the current lookup path and an object key. */

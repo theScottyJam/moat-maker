@@ -163,11 +163,16 @@ describe('union rules with tuples', () => {
     });
   });
 
-  test('if you correctly match a nested object from one union variant, you can not improperly match this object from another variant', () => {
+  test('you can not supply bad property values for a nested object, even if you properly match another variant', () => {
     const v = validator`[{ type: 'A', value: 1 }] | [{ type: 'B' }]`;
     const act = (): any => v.assertMatches([{ type: 'B', value: 2 }]);
     assert.throws(act, {
       message: 'Expected <receivedValue>[0].value to be 1 but got 2.',
     });
+  });
+
+  test('you can supply bad property values for an object in the rest params (including when you properly match another variant)', () => {
+    const v = validator`[...{ type: 'A', value: 1 }[]] | [...{ type: 'B' }[]]`;
+    v.assertMatches([{ type: 'B', value: 2 }]);
   });
 });

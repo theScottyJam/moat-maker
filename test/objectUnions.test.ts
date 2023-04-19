@@ -179,8 +179,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.a to be 0 but got 2.',
-        '  Variant 2: Expected <receivedValue>.a to be 1 but got 2.',
+        '  Variant 1: Expected <receivedValue>.a to be 1 but got 2.',
+        '  Variant 2: Expected <receivedValue>.a to be 0 but got 2.',
       ].join('\n'),
     });
   });
@@ -241,8 +241,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: <receivedValue>["0"] is missing the required properties: "y"',
-          '  Variant 2: Expected <receivedValue>["0"] to be of type "string" but got type "object".',
+          '  Variant 1: Expected <receivedValue>["0"] to be of type "string" but got type "object".',
+          '  Variant 2: <receivedValue>["0"] is missing the required properties: "y"',
         ].join('\n'),
       });
     });
@@ -253,6 +253,22 @@ describe('union rules with objects', () => {
       // TODO: Perhaps it's worth investigating why it's suggesting to change the type.
       assert.throws(act, {
         message: 'Expected <receivedValue>.type to be "B" but got "A".',
+      });
+    });
+
+    test('union with index failure and required key failure', () => {
+      const v = validator`{ [index: number]: 1 } | { a: 'b' }`;
+      const act = (): any => v.assertMatches({ 0: 2, b: 'b' });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>["0"] to be 1 but got 2.',
+      });
+    });
+
+    test('union with index failure and bad property value failure', () => {
+      const v = validator`{ [index: number]: 1 } | { a: 'b' }`;
+      const act = (): any => v.assertMatches({ 0: 2, a: 'a' });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.a to be "b" but got "a".',
       });
     });
   });

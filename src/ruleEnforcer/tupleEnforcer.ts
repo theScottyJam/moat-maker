@@ -2,9 +2,8 @@ import { strict as assert } from 'node:assert';
 import type { Rule, TupleRule } from '../types/parsingRules';
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError } from '../exceptions';
-import { assertMatches } from './ruleEnforcer';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
-import type { UnionVariantCollection } from './UnionVariantCollection';
+import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
 import { DEEP_LEVELS } from './shared';
 
@@ -71,7 +70,13 @@ export function matchTupleVariants(
       const portionToTestAgainst = target.slice(startIndex);
 
       const subPath = `${lookupPath}.slice(${startIndex})`;
-      assertMatches(variant.rest, portionToTestAgainst, interpolated, subPath);
+      matchVariants(
+        new UnionVariantCollection([variant.rest]),
+        portionToTestAgainst,
+        interpolated,
+        subPath,
+        { deep: DEEP_LEVELS.irrelevant },
+      ).throwIfFailed();
     }, { deep: DEEP_LEVELS.recurseInwardsCheck });
 
   if (curVariantCollection.removeFailed(matchRestResponse).isEmpty()) {

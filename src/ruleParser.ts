@@ -1,13 +1,18 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import type { Rule, ObjectRuleContentValue, SimpleTypeVariant, ObjectRuleIndexValue } from './types/parsingRules';
+import { packagePrivate } from './types/packagePrivateAccess';
+import {
+  type Rule,
+  type ObjectRuleContentValue,
+  type SimpleTypeVariant,
+  type ObjectRuleIndexValue,
+  _parsingRulesInternals,
+} from './types/parsingRules';
 import type { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
-const allSimpleTypes: SimpleTypeVariant[] = [
-  'string', 'number', 'bigint', 'boolean', 'symbol', 'object', 'null', 'undefined',
-];
+const { allSimpleTypes } = _parsingRulesInternals[packagePrivate];
 
 /** Returns a yet-to-be-frozen rule */
 export function parse(parts: readonly string[]): Rule {
