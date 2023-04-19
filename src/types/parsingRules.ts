@@ -1,4 +1,7 @@
-// Everything in here is publicly exported
+// Everything in here is publicly exported.
+// Each interface defined in here is also copy-pasted onto the doc website, to explain
+// what shape of data we expect to find in a ruleset.
+// See the doc page here: https://thescottyjam.gitbook.io/moat-maker/resources/syntax-reference
 
 import { FrozenMap } from '../util';
 import type { Validator, ValidatorTemplateTag } from './validator';

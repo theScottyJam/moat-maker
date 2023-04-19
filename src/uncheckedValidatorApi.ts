@@ -1,7 +1,7 @@
-// This module contains a minimal subset of the full validator API.
+// This module's API is the same as the publicly exported validator API.
 // The main difference is that it does not verify that its exported functions are receiving valid arguments at runtime.
-// This is done because the real validator API both builds on this to implement its functionality,
-// and it uses it to perform its user-input validation.
+// This is done because the real validator API is just a thin wrapper over this module, which uses this module,
+// both for its implementation and to validate the user-provided data.
 
 import { strict as assert } from 'node:assert';
 import { parse } from './ruleParser';
