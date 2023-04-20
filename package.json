@@ -12,6 +12,9 @@
     "check",
     "data"
   ],
+  "files": [
+    "/build"
+  ],
   "main": "build/index.js",
   "scripts": {
     "prepublish": "npm run build",
