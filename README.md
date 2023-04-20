@@ -1,6 +1,6 @@
 # Moat Maker
 
-**Beta Warning:** Most features are complete. The small handful of features that are still being worked on is marked in [the extended documentation](https://app.gitbook.com/s/YOh5ZUUyIWGqXAqSjtfW/). There is also some minor work that will happen around some edge-case behaviors. You can expect a fair amount of stability at this point, but no promises.
+**Beta Warning:** Most features are complete. The small handful of features that are still being worked on is marked in [the extended documentation](https://thescottyjam.gitbook.io/moat-maker/). There is also some minor work that will happen around some edge-case behaviors. You can expect a fair amount of stability at this point, but no promises.
 
 Validate your runtime JavaScript data with easy to pick up, TypeScript-inspired syntax. It's as easy as:
 
