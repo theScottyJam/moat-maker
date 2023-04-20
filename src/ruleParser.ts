@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
-import { packagePrivate } from './types/packagePrivateAccess';
+import { packagePrivate } from './packagePrivateAccess';
 import {
   type Rule,
   type ObjectRuleContentValue,

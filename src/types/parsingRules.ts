@@ -5,7 +5,7 @@
 
 import { FrozenMap } from '../util';
 import type { Validator, ValidatorTemplateTag } from './validator';
-import { packagePrivate } from './packagePrivateAccess';
+import { packagePrivate } from '../packagePrivateAccess';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -115,9 +115,8 @@ export interface Ruleset {
 }
 
 function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
-  const nonEmptyArrayCheck = validator.checker(
-    value => Array.isArray(value) && value.length > 0,
-    { to: 'be non-empty' },
+  const expectNonEmptyArray = validator.expectTo(
+    value => Array.isArray(value) && value.length > 0 ? null : 'be non-empty.',
   );
 
   const ruleRef = validator.createRef();
@@ -179,12 +178,12 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 
   const unionRuleCheck = validator`{
     category: 'union'
-    variants: ${ruleRef}[] & ${nonEmptyArrayCheck}
+    variants: ${ruleRef}[] & ${expectNonEmptyArray}
   }`;
 
   const intersectionRuleCheck = validator`{
     category: 'intersection'
-    variants: ${ruleRef}[] & ${nonEmptyArrayCheck}
+    variants: ${ruleRef}[] & ${expectNonEmptyArray}
   }`;
 
   const interpolationRuleCheck = validator`{

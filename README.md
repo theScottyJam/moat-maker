@@ -95,19 +95,20 @@ const pointValidator = validator`{ x: number, y: number }`;
 const lineValidator = validator`{ start: ${pointValidator}, end: ${pointValidator} }`;
 ```
 
-Finally, if you need a custom validation behavior that isn't supported by this library, the escape hatch provided is to create your own "checker" behavior using `validator.checker()`, then interpolating the resulting value wherever its needed.
+Finally, if you need a custom validation behavior that isn't supported by this library, the escape hatch is to create your own "expectations" using `validator.expectTo()`, then interpolating the resulting expectation instance wherever it is needed.
 
 ```javascript
-// The `{ to: ... }` argument provides context about what this is checking for,
-// and is used to build nicer error messages.
-const greaterThanZero = validator.checker(
-  value => typeof value === 'number' && value > 0,
-  { to: 'be a number greater than zero' },
+// If a string is returned, it'll be used as part of the error message.
+// The strings should complete the sentence: "Expected the value to ..."
+const expectGreaterThanZero = validator.expectTo(
+  value => typeof value === 'number' && value > 0
+    ? null
+    : 'be a number greater than zero.'
 );
 
 validatePositivePoint = validator`{
-  x: ${greaterThanZero}
-  y: ${greaterThanZero}
+  x: ${expectGreaterThanZero}
+  y: ${expectGreaterThanZero}
 }`;
 
 // ✕ - Expected <receivedValue>.y, which was -2, to be a number greater than zero.

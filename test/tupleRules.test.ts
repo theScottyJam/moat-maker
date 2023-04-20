@@ -171,11 +171,11 @@ describe('tuple rules', () => {
       assert.throws(act, TypeError);
     });
 
-    test("the rest entry's validatable protocol gets used, even when it receives an empty array", () => {
+    test('an expectation function interpolated into a rest patter will get called, even when it receives an empty array', () => {
       let calledWith: any = null;
-      const myChecker = validator.checker(value => {
+      const myChecker = validator.expectTo(value => {
         calledWith = value;
-        return true;
+        return null;
       });
       const v = validator`[string, number?, ...${myChecker}]`;
       v.assertMatches(['xyz']);

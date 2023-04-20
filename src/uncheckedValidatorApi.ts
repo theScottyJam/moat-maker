@@ -7,21 +7,18 @@ import { strict as assert } from 'node:assert';
 import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
-import { validatable } from './validatableProtocol';
 import { lookupCacheEntry } from './cacheControl';
 import type { Rule, Ruleset } from './types/parsingRules';
-import {
-  type AssertMatchesOpts,
-  isValidatorInstance,
-  type Validator,
-  type CustomChecker,
-  type ValidatorRef,
-  type ValidatorTemplateTag,
-  type ValidatorTemplateTagStaticFields,
+import type {
+  AssertMatchesOpts,
+  Validator,
+  ValidatorRef,
+  ValidatorTemplateTag,
+  ValidatorTemplateTagStaticFields,
+  Expectation,
 } from './types/validator';
-import type { ValidatableProtocolFnOpts } from './types/validatableProtocol';
 import { ValidatorAssertionError } from './exceptions';
-import { reprUnknownValue } from './util';
+import { packagePrivate } from './packagePrivateAccess';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray,
@@ -46,7 +43,7 @@ export const uncheckedValidator = function uncheckedValidator<T=unknown>(
 // ruleset should already be frozen before this is called.
 function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
   return Object.freeze({
-    [isValidatorInstance]: true as const,
+    [packagePrivate]: { type: 'validator' as const },
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
       if (opts?.errorPrefix?.endsWith(':') === false) {
         throw new TypeError('The assertMatches() errorPrefix string must end with a colon.');
@@ -119,16 +116,6 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
       return doesMatch(ruleset.rootRule, value, ruleset.interpolated);
     },
     ruleset,
-    [validatable](value: unknown, { failure, at }: ValidatableProtocolFnOpts) {
-      try {
-        assertMatches(ruleset.rootRule, value, ruleset.interpolated, at);
-      } catch (error) {
-        if (error instanceof ValidatorAssertionError) {
-          throw failure(...buildRethrowErrorArgs(error));
-        }
-        throw error;
-      }
-    },
   });
 }
 
@@ -149,11 +136,14 @@ const staticFields: ValidatorTemplateTagStaticFields = {
   createRef(): ValidatorRef {
     let validator: Validator | null = null;
     return {
-      [validatable](value: unknown, opts: ValidatableProtocolFnOpts) {
-        if (validator === null) {
-          throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
-        }
-        validator[validatable](value, opts);
+      [packagePrivate]: {
+        type: 'ref',
+        getValidator(): Validator {
+          if (validator === null) {
+            throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
+          }
+          return validator;
+        },
       },
       set(validator_: Validator) {
         if (validator !== null) {
@@ -164,21 +154,11 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     };
   },
 
-  checker(callback: (valueBeingMatched: unknown) => boolean, opts: { to?: string } = {}): CustomChecker {
-    const protocolFn = (value: unknown, { failure, at: lookupPath }: ValidatableProtocolFnOpts): void => {
-      if (!callback(value)) {
-        const endOfError = opts.to === undefined
-          ? 'to match a custom validity checker.'
-          : `to ${opts.to}.`;
-
-        throw failure(`Expected ${lookupPath}, which was ${reprUnknownValue(value)}, ${endOfError}`);
-      }
+  expectTo(testExpectation: (valueBeingMatched: unknown) => string | null): Expectation {
+    return {
+      [packagePrivate]: { type: 'expectation', testExpectation },
     };
-
-    return { protocolFn, [validatable]: protocolFn };
   },
-
-  validatable,
 };
 
 Object.assign(uncheckedValidator, staticFields);

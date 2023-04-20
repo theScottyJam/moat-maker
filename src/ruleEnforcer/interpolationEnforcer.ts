@@ -1,10 +1,12 @@
 import type { InterpolationRule } from '../types/parsingRules';
 import type { VariantMatchResponse } from './VariantMatchResponse';
-import type { UnionVariantCollection } from './UnionVariantCollection';
+import { UnionVariantCollection } from './UnionVariantCollection';
 import { DEEP_LEVELS } from './shared';
 import { createValidatorAssertionError } from '../exceptions';
 import { reprUnknownValue } from '../util';
-import { assertConformsToValidatableProtocol, hasValidatableProperty, validatable } from '../validatableProtocol';
+import type { ValidatorRef, Validator, Expectation } from '../types/validator';
+import { matchVariants } from './unionEnforcer';
+import { packagePrivate } from '../packagePrivateAccess';
 
 export function matchInterpolationVariants<T>(
   variants: UnionVariantCollection<InterpolationRule>,
@@ -15,13 +17,30 @@ export function matchInterpolationVariants<T>(
   return variants.matchEach(variant => {
     const valueToMatch = interpolated[variant.interpolationIndex];
 
-    if (hasValidatableProperty(valueToMatch)) {
-      assertConformsToValidatableProtocol(valueToMatch);
-
-      valueToMatch[validatable](target, {
-        failure: (...args) => createValidatorAssertionError(...args),
-        at: lookupPath,
-      });
+    if (isValidator(valueToMatch)) {
+      matchVariants(
+        new UnionVariantCollection([valueToMatch.ruleset.rootRule]),
+        target,
+        valueToMatch.ruleset.interpolated,
+        lookupPath,
+        { deep: DEEP_LEVELS.irrelevant },
+      ).throwIfFailed();
+    } else if (isRef(valueToMatch)) {
+      const validator = valueToMatch[packagePrivate].getValidator();
+      matchVariants(
+        new UnionVariantCollection([validator.ruleset.rootRule]),
+        target,
+        validator.ruleset.interpolated,
+        lookupPath,
+        { deep: DEEP_LEVELS.irrelevant },
+      ).throwIfFailed();
+    } else if (isExpectation(valueToMatch)) {
+      const maybeErrorMessage = valueToMatch[packagePrivate].testExpectation(target);
+      if (maybeErrorMessage !== null) {
+        throw createValidatorAssertionError(
+          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
+        );
+      }
     } else if (typeof valueToMatch === 'function') {
       if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
         throw createValidatorAssertionError(
@@ -45,7 +64,7 @@ export function matchInterpolationVariants<T>(
       // (There's already tests for this, so those tests can be updated as well).
       throw new TypeError(
         'Not allowed to interpolate a regular object into a validator. ' +
-        '(Exceptions include classes, objects that define the validatable protocol, etc)',
+        '(Exceptions include classes, validators, refs, etc)',
       );
     } else if (!sameValueZero(target, valueToMatch)) {
       throw createValidatorAssertionError(
@@ -53,6 +72,18 @@ export function matchInterpolationVariants<T>(
       );
     }
   }, { deep: DEEP_LEVELS.unorganized });
+}
+
+function isValidator(value: unknown): value is Validator {
+  return Object(value)[packagePrivate]?.type === 'validator';
+}
+
+function isRef(value: unknown): value is ValidatorRef {
+  return Object(value)[packagePrivate]?.type === 'ref';
+}
+
+function isExpectation(value: unknown): value is Expectation {
+  return Object(value)[packagePrivate]?.type === 'expectation';
 }
 
 // ------------------------------

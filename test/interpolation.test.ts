@@ -1,7 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { type ValidatableProtocolFnOpts, validator } from '../src';
+import { validator } from '../src';
 
 describe('interpolation', () => {
+  // The testing of interpolating ref and expectation instances is done elsewhere.
+
   describe('misc', () => {
     test('produces the correct rule', () => {
       const v = validator`${'xyz'} | ${23}`;
@@ -138,15 +140,15 @@ describe('interpolation', () => {
     });
   });
 
-  describe('object without validatable protocol interpolation', () => {
-    test('forbids non-validatable objects to be interpolated', () => {
+  describe('non-special object interpolation', () => {
+    test('forbids non-special objects (i.e. objects types that do not have special interpolation behaviors) to be interpolated', () => {
       const obj = { x: 2 };
       const act = (): any => validator`${obj}`.assertMatches(2);
       assert.throws(act,
         {
           message: (
             'Not allowed to interpolate a regular object into a validator. ' +
-            '(Exceptions include classes, objects that define the validatable protocol, etc)'
+            '(Exceptions include classes, validators, refs, etc)'
           ),
         },
       );
@@ -269,59 +271,6 @@ describe('interpolation', () => {
       regex.lastIndex = 3;
       v.assertMatches('abxxxabxxxab');
       expect(regex.lastIndex).toBe(3);
-    });
-  });
-
-  describe('userland protocol implementations', () => {
-    test('throws if the validatable property value is not a function', () => {
-      const v = validator`${{ [validator.validatable]: 'not a function' }}`;
-      const act = (): any => v.assertMatches(42);
-      assert.throws(act, {
-        message: (
-          'An invalid object was interpolated into a validator instance. ' +
-          "It had a validator.validatable key who's value was not of type function."
-        ),
-      });
-      assert.throws(act, TypeError);
-    });
-
-    test('accepts if validatable does not throw', () => {
-      const v = validator`${{ [validator.validatable]: () => {} }}`;
-      v.assertMatches(2);
-    });
-
-    test('rejects if validatable throws', () => {
-      const v = validator`${{
-        [validator.validatable]: (value: unknown, { failure }: ValidatableProtocolFnOpts) => {
-          throw failure('Whoops');
-        },
-      }}`;
-      const act = (): any => v.assertMatches(2);
-      assert.throws(act, { message: 'Whoops' });
-      assert.throws(act, TypeError);
-    });
-
-    test('protocol function receives value being matched', () => {
-      let receivedValue;
-      const v = validator`${{
-        [validator.validatable]: (receivedValue_: unknown) => {
-          receivedValue = receivedValue_;
-        },
-      }}`;
-      v.assertMatches(2);
-      expect(receivedValue).toBe(2);
-    });
-
-    test('protocol function receives a lookupPath for the value being matched', () => {
-      let lookupPath;
-      const validatable = {
-        [validator.validatable]: (_: unknown, { at }: ValidatableProtocolFnOpts) => {
-          lookupPath = at;
-        },
-      };
-      const v = validator`{ x: { y: ${validatable} } }`;
-      v.assertMatches({ x: { y: 0 } });
-      expect(lookupPath).toBe('<receivedValue>.x.y');
     });
   });
 

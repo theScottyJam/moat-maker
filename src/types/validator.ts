@@ -1,10 +1,11 @@
 import type { Ruleset } from './parsingRules';
-import type { ValidatableProtocol, ValidatableProtocolFn } from './validatableProtocol';
-import type { validatable } from '../validatableProtocol';
+import type { packagePrivate } from '../packagePrivateAccess';
 
-export const isValidatorInstance = Symbol('isValidatorInstance');
-
-export interface ValidatorRef extends ValidatableProtocol {
+export interface ValidatorRef {
+  readonly [packagePrivate]: {
+    readonly type: 'ref'
+    readonly getValidator: () => Validator
+  }
   readonly set: (validator: Validator) => void
 }
 
@@ -20,12 +21,15 @@ export const createAssertMatchesOptsCheck = (validator: ValidatorTemplateTag): V
   errorPrefix?: undefined | string
 }`;
 
-export interface CustomChecker extends ValidatableProtocol {
-  protocolFn: ValidatableProtocolFn
+export interface Expectation {
+  readonly [packagePrivate]: {
+    readonly type: 'expectation'
+    readonly testExpectation: (valueBeingMatched: unknown) => string | null
+  }
 }
 
-export interface Validator<T=unknown> extends ValidatableProtocol {
-  readonly [isValidatorInstance]: true
+export interface Validator<T=unknown> {
+  readonly [packagePrivate]: { readonly type: 'validator' }
   readonly matches: (value: unknown) => value is T
   readonly assertMatches: (value: unknown, opts?: AssertMatchesOpts) => T
   readonly assertionTypeGuard: (value: unknown, opts?: AssertMatchesOpts) => asserts value is T
@@ -37,8 +41,7 @@ export interface ValidatorTemplateTagStaticFields {
   fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
   from: (unknownValue: string | Validator) => Validator
   createRef: () => ValidatorRef
-  checker: (callback: (valueBeingMatched: unknown) => boolean, opts?: { to?: string }) => CustomChecker
-  validatable: typeof validatable
+  expectTo: (callback: (valueBeingMatched: unknown) => string | null) => Expectation
 }
 
 export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (

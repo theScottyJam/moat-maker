@@ -134,36 +134,36 @@ function derivePropertyRule(
   key: string | symbol,
   interpolated: readonly unknown[],
 ): null | Rule {
-  const expectations = [];
+  const intersectionRules = [];
 
   if (ruleWithStaticKeys.content.has(key)) {
-    expectations.push(...ruleWithStaticKeys.content.get(key) as ObjectRuleContentValue[]);
+    intersectionRules.push(...ruleWithStaticKeys.content.get(key) as ObjectRuleContentValue[]);
   }
 
   if (
     ruleWithStaticKeys.index !== null &&
     doesIndexSignatureApplyToProperty(ruleWithStaticKeys.index, key, interpolated)
   ) {
-    expectations.push({ optional: true, rule: ruleWithStaticKeys.index.value });
+    intersectionRules.push({ optional: true, rule: ruleWithStaticKeys.index.value });
   }
 
-  if (expectations.length === 0) {
+  if (intersectionRules.length === 0) {
     return null;
   }
 
-  return duplicateKeysToIntersection(expectations);
+  return duplicateKeysToIntersection(intersectionRules);
 }
 
 /** Helps to convert stuff like `{ x: A, ['x']: B }` to `{ x: A & B }` */
-function duplicateKeysToIntersection(expectations: readonly ObjectRuleContentValue[]): Rule {
+function duplicateKeysToIntersection(intersectionRules: readonly ObjectRuleContentValue[]): Rule {
   // The array should have at least one item in it.
-  assert(expectations[0] !== undefined);
+  assert(intersectionRules[0] !== undefined);
 
-  return expectations.length === 1
-    ? expectations[0].rule
+  return intersectionRules.length === 1
+    ? intersectionRules[0].rule
     : {
         category: 'intersection' as const,
-        variants: expectations.map(expectation => expectation.rule),
+        variants: intersectionRules.map(expectation => expectation.rule),
       };
 }
 

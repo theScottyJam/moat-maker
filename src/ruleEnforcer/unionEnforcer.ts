@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { packagePrivate } from '../types/packagePrivateAccess';
+import { packagePrivate } from '../packagePrivateAccess';
 import {
   type Rule,
   type ArrayRule,

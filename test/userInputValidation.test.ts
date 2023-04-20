@@ -73,22 +73,6 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  test('<validator instance>[validatable]()', () => {
-    const act = (): any => {
-      validator`string`[validator.validatable](
-        'myValue',
-        { at: '<somewhere>', failure: 'whoops' as any },
-      );
-    };
-    assert.throws(act, {
-      message: (
-        'Received invalid "opts" argument for <validator instance>[validator.validatable](): ' +
-        'Expected <argumentList>[1].failure, which was "whoops", to be an instance of `Function` ' +
-        '(and not an instance of a subclass).'
-      ),
-    });
-  });
-
   test('validator.fromRuleset', () => {
     const act = (): any => validator.fromRuleset({
       rootRule: {
@@ -196,22 +180,6 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  test('validator.createRef()[validatable]()', () => {
-    const act = (): any => {
-      validator.createRef()[validator.validatable](
-        'myValue',
-        { at: '<somewhere>', failure: 'whoops' as any },
-      );
-    };
-    assert.throws(act, {
-      message: (
-        'Received invalid "opts" argument for <validator ref>[validator.validatable](): ' +
-        'Expected <argumentList>[1].failure, which was "whoops", to be an instance of `Function` ' +
-        '(and not an instance of a subclass).'
-      ),
-    });
-  });
-
   test('validator.createRef().set()', () => {
     const act = (): any => validator.createRef().set(42 as any);
     assert.throws(act, {
@@ -222,50 +190,28 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  test('validator.checker()', () => {
-    const act = (): any => validator.checker(() => true, { to: 42 as any });
+  test('validator.expectTo()', () => {
+    const act = (): any => validator.expectTo(42 as any);
     assert.throws(act, {
       message: (
-        'Received invalid "opts" argument for validator.checker(): ' +
-        'Expected <argumentList>[1].to to be of type "string" but got type "number".'
+        'Received invalid "testExpectation" argument for validator.expectTo(): ' +
+        'Expected <argumentList>[0], which was 42, to be an instance of `Function` (and not an instance of a subclass).'
       ),
     });
   });
 
-  test('validator.checker() with bad doCheck callback', () => {
-    const badChecker = validator.checker(() => 2 as any);
+  test('validator.expectTo() with bad doCheck callback', () => {
+    const badChecker = validator.expectTo(() => 2 as any);
     const act = (): any => validator`${badChecker}`.matches(2);
     assert.throws(act, {
-      message: (
-        'validator.checker() received a bad "doCheck" function: ' +
-        'Expected <doCheck return value> to be of type "boolean" but got type "number".'
-      ),
-    });
-  });
-
-  test('validator.checker().protocolFn()', () => {
-    const checker = validator.checker(() => true);
-    const act = (): any => checker.protocolFn('theValue', { at: 'location', failure: 'wrongValue' as any });
-
-    assert.throws(act, {
-      message: (
-        'Received invalid "opts" argument for <validator checker>.protocolFn(): ' +
-        'Expected <argumentList>[1].failure, which was "wrongValue", to be an instance of `Function` ' +
-        '(and not an instance of a subclass).'
-      ),
-    });
-  });
-
-  test('validator.checker()[validator.validatable]()', () => {
-    const checker = validator.checker(() => true);
-    const act = (): any => checker[validator.validatable]('theValue', { at: 'location', failure: 'wrongValue' as any });
-
-    assert.throws(act, {
-      message: (
-        'Received invalid "opts" argument for <validator checker>[validator.validatable](): ' +
-        'Expected <argumentList>[1].failure, which was "wrongValue", to be an instance of `Function` ' +
-        '(and not an instance of a subclass).'
-      ),
+      message: [
+        (
+          'validator.expectTo() received a bad "testExpectation" function: ' +
+          'Failed to match against any variant of a union.'
+        ),
+        '  Variant 1: Expected <testExpectation return value> to be of type "string" but got type "number".',
+        '  Variant 2: Expected <testExpectation return value> to be of type "null" but got type "number".',
+      ].join('\n'),
     });
   });
 

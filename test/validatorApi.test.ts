@@ -395,14 +395,11 @@ describe('validator behavior', () => {
       assert.throws(act, { message: 'Can not use a pattern with a ref until ref.set(...) has been called.' });
     });
 
-    // This behavior is more of a side-effect of how the validator works.
-    // It certainly shouldn't be considered a stable behavior for people to rely on, as what
-    // gets short-circuited can change at any point in time.
-    // The test is mostly here to document that this is a thing, and to inform us if this behavior changes drastically.
     test('able to use a pattern with an unset ref if the ref gets short-circuited during validation', () => {
-      const consRef = validator.createRef();
-      const v = validator`{ next: ${consRef} }`;
-      // The consRef's validatable protocol never executes because this fails the is-this-an-object test first.
+      const emptyRef = validator.createRef();
+      const v = validator`{ next: ${emptyRef} }`;
+      // The emptyRef's check never happens because this fails the is-this-an-object test first.
+      // If emptyRef's check did run, we'd get an error about how we haven't set the ref to anything yet.
       v.matches(null);
     });
 
@@ -415,43 +412,31 @@ describe('validator behavior', () => {
       assert.throws(act, (err: Error) => err.constructor === Error);
       assert.throws(act, { message: 'Can not call ref.set(...) multiple times.' });
     });
+
+    test('ref instance is frozen', () => {
+      const ref = validator.createRef();
+      expect(Object.isFrozen(ref)).toBe(true);
+    });
   });
 
-  describe('validator.checker()', () => {
-    test('accepts a value that conforms to the custom validatable function', () => {
-      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0)}`;
+  describe('validator.expectTo()', () => {
+    test('accepts a value that conforms to the custom expectation', () => {
+      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? null : 'be positive.')}`;
       v.assertMatches(2);
     });
 
-    test('rejects a value that does not conform to the custom validatable function', () => {
-      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0)}`;
+    test('rejects a value that does not conform to the custom expectation', () => {
+      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? null : 'be positive.')}`;
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, {
-        message: (
-          'Expected <receivedValue>, which was -2, to match a custom validity checker.'
-        ),
+        message: 'Expected <receivedValue>, which was -2, to be positive.',
       });
       assert.throws(act, TypeError);
     });
 
-    test('you can give your validatable object a custom description for error messages to use', () => {
-      const v = validator`${validator.checker(x => typeof x === 'number' && x >= 0, { to: 'be positive' })}`;
-      const act = (): any => v.assertMatches('xyz');
-      assert.throws(act, { message: 'Expected <receivedValue>, which was "xyz", to be positive.' });
-      assert.throws(act, TypeError);
-    });
-
-    test('you can move the custom validatable protocol to your own class', () => {
-      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-      class MyValidatable {
-        static [validator.validatable] = validator.checker(x => typeof x === 'string').protocolFn;
-      }
-
-      const v = validator`${MyValidatable}`;
-      v.assertMatches('xyz');
-      const act = (): any => v.assertMatches(2);
-      assert.throws(act, { message: 'Expected <receivedValue>, which was 2, to match a custom validity checker.' });
-      assert.throws(act, TypeError);
+    test('expectation instance is frozen', () => {
+      const expectation = validator.expectTo(() => null);
+      expect(Object.isFrozen(expectation)).toBe(true);
     });
   });
 
