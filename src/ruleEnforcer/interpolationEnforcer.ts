@@ -3,7 +3,7 @@ import type { InterpolationRule, Rule } from '../types/validationRules';
 import type { VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { DEEP_LEVELS, isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
-import { createValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import { reprUnknownValue } from '../util';
 import { matchVariants } from './unionEnforcer';
 import { packagePrivate } from '../packagePrivateAccess';
@@ -57,25 +57,25 @@ export function matchInterpolationVariants(
     } else if (isExpectation(interpolatedTarget)) {
       const maybeErrorMessage = interpolatedTarget[packagePrivate].testExpectation(target);
       if (maybeErrorMessage !== null) {
-        throw createValidatorAssertionError(
+        throw new ValidatorAssertionError(
           `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
         );
       }
     } else if (typeof interpolatedTarget === 'function') {
       if (Object(target).constructor !== interpolatedTarget || !(Object(target) instanceof interpolatedTarget)) {
-        throw createValidatorAssertionError(
+        throw new ValidatorAssertionError(
           `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(interpolatedTarget)} ` +
           '(and not an instance of a subclass).',
         );
       }
     } else if (interpolatedTarget instanceof RegExp) {
       if (typeof target !== 'string') {
-        throw createValidatorAssertionError(
+        throw new ValidatorAssertionError(
           `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${interpolatedTarget.toString()}`,
         );
       }
       if (target.match(interpolatedTarget) === null) {
-        throw createValidatorAssertionError(
+        throw new ValidatorAssertionError(
           `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${interpolatedTarget.toString()}`,
         );
       }
@@ -87,7 +87,7 @@ export function matchInterpolationVariants(
         '(Exceptions include classes, validators, refs, etc)',
       );
     } else if (!sameValueZero(target, interpolatedTarget)) {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be the value ${reprUnknownValue(interpolatedTarget)} but got ${reprUnknownValue(target)}.`,
       );
     }

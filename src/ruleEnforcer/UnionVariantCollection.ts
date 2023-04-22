@@ -1,4 +1,4 @@
-import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/validationRules';
 import type { SpecificRuleset } from './shared';
 import { matchResponseFromErrorMap, FailedMatchResponse, stepVariantsBackTo, type VariantMatchResponse } from './VariantMatchResponse';
@@ -187,7 +187,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
     { deep }: { readonly deep: number },
   ): FailedMatchResponse<RuleType> {
     return new FailedMatchResponse(
-      createValidatorAssertionError(message),
+      new ValidatorAssertionError(message),
       this,
       { deep },
     );

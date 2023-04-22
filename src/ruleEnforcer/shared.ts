@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { createValidatorAssertionError, type ValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import { packagePrivate } from '../packagePrivateAccess';
 import type { Rule } from '../types/validationRules';
 import type { Expectation, Validator, ValidatorRef } from '../types/validator';
@@ -45,10 +45,10 @@ export function buildUnionError(variantErrorMessages_: readonly string[]): Valid
   const variantErrorMessages = unique(variantErrorMessages_);
   if (variantErrorMessages.length === 1) {
     assert(variantErrorMessages[0] !== undefined);
-    return createValidatorAssertionError(variantErrorMessages[0]);
+    return new ValidatorAssertionError(variantErrorMessages[0]);
   }
 
-  return createValidatorAssertionError(
+  return new ValidatorAssertionError(
     'Failed to match against any variant of a union.\n' +
     variantErrorMessages
       .map((message, i) => `  Variant ${i + 1}: ${indentMultilineString(message, 4).slice(4)}`)

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorAssertionError, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src';
 import { testableHelpers as cacheApi } from '../src/cacheControl';
 
 describe('validator behavior', () => {
@@ -438,12 +438,6 @@ describe('validator behavior', () => {
       const expectation = validator.expectTo(() => null);
       expect(Object.isFrozen(expectation)).toBe(true);
     });
-  });
-
-  test('forbids outside users from instantiating ValidatorAssertionError', () => {
-    const act = (): any => new (ValidatorAssertionError as any)('Whoops!');
-    assert.throws(act, (err: Error) => err.constructor === Error);
-    assert.throws(act, { message: 'The ValidatorAssertionError constructor is private.' });
   });
 
   test('forbids outside users from instantiating ValidatorSyntaxError', () => {

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import type { Rule, TupleRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
-import { createValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
@@ -92,16 +92,16 @@ function assertValidTupleSize(rule: TupleRule, target: unknown[], lookupPath: st
 
   if (target.length < minSize || target.length > maxSize) {
     if (minSize === maxSize) {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
       );
     } else if (maxSize !== Infinity) {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
         `but found ${target.length}.`,
       );
     } else {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
       );
     }

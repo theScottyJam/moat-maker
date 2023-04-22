@@ -23,7 +23,7 @@ import {
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchArrayVariants } from './arrayEnforcer';
 import { buildUnionError, DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
-import { createValidatorAssertionError } from '../exceptions';
+import { ValidatorAssertionError } from '../exceptions';
 import { reprUnknownValue } from '../util';
 import { matchInterpolationVariants, preprocessInterpolatedValue } from './interpolationEnforcer';
 
@@ -196,7 +196,7 @@ function matchSimpleVariants(
       } else if (target instanceof Function) {
         whatWasGot = 'a function';
       }
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be of type "${rootRule.type}" but got ${whatWasGot}.`,
       );
     }
@@ -210,7 +210,7 @@ function matchPrimitiveLiteralVariants(
 ): VariantMatchResponse<PrimitiveLiteralRule> {
   return variants.matchEach(({ rootRule }) => {
     if (target !== rootRule.value) {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be ${reprUnknownValue(rootRule.value)} but got ${reprUnknownValue(target)}.`,
       );
     }
@@ -238,7 +238,7 @@ function matchIteratorVariants(
     assertMatches({ rootRule: rootRule.iterableType, interpolated }, target, lookupPath);
 
     if (!isIterable(target)) {
-      throw createValidatorAssertionError(
+      throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
       );
     }

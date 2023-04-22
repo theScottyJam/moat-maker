@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
-import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
+import { ValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
 import { DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse, mergeMatchResultsToSuccessResult } from './VariantMatchResponse';
@@ -218,7 +218,7 @@ function assertRequiredKeysArePresent(
     .map(([key]) => key);
 
   if (missingKeys.length > 0) {
-    throw createValidatorAssertionError(
+    throw new ValidatorAssertionError(
       `${lookupPath} is missing the required properties: ` +
       missingKeys.map(key => reprUnknownValue(key)).join(', '),
     );

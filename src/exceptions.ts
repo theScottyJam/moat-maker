@@ -4,15 +4,13 @@ import { generateMessageWithPosition } from './errorFormatter';
 
 const ExceptionConstructionKey = Symbol('exception constructor key');
 
+/**
+ * Only used internally.
+ * This will be translated into another error type, like a TypeError,
+ * before API users see it.
+ */
 export class ValidatorAssertionError extends Error {
   name = 'ValidatorAssertionError';
-  constructor(key: typeof ExceptionConstructionKey, ...errorOpts: ConstructorParameters<typeof Error>) {
-    if (key !== ExceptionConstructionKey) {
-      throw new Error('The ValidatorAssertionError constructor is private.');
-    }
-
-    super(...errorOpts);
-  }
 }
 
 export class ValidatorSyntaxError extends Error {
@@ -34,10 +32,6 @@ export class ValidatorSyntaxError extends Error {
 
     super(fullMessage);
   }
-}
-
-export function createValidatorAssertionError(...args: ConstructorParameters<typeof Error>): ValidatorAssertionError {
-  return new ValidatorAssertionError(ExceptionConstructionKey, ...args);
 }
 
 export function createValidatorSyntaxError(message: string, rawText?: readonly string[], range?: TextRange): ValidatorSyntaxError {
