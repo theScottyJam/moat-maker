@@ -1,4 +1,3 @@
-import { strict as assert } from 'node:assert';
 import { packagePrivate } from '../packagePrivateAccess';
 import {
   type Rule,
@@ -24,7 +23,7 @@ import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchArrayVariants } from './arrayEnforcer';
 import { buildUnionError, DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
 import { ValidatorAssertionError } from '../exceptions';
-import { reprUnknownValue } from '../util';
+import { assert, reprUnknownValue } from '../util';
 import { matchInterpolationVariants, preprocessInterpolatedValue } from './interpolationEnforcer';
 
 const { allCategories } = _parsingRulesInternals[packagePrivate];

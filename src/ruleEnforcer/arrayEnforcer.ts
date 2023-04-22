@@ -1,6 +1,5 @@
-import { strict as assert } from 'node:assert';
 import type { ArrayRule } from '../types/validationRules';
-import { reprUnknownValue } from '../util';
+import { assert, reprUnknownValue } from '../util';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import type { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';

@@ -3,7 +3,7 @@
 // This is done because the real validator API is just a thin wrapper over this module, which uses this module,
 // both for its implementation and to validate the user-provided data.
 
-import { strict as assert } from 'node:assert';
+import { assert } from './util';
 import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';

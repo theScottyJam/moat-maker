@@ -1,4 +1,3 @@
-import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError } from './exceptions';
 import { createTokenStream } from './tokenStream';
 import { packagePrivate } from './packagePrivateAccess';
@@ -10,7 +9,7 @@ import {
   _parsingRulesInternals,
 } from './types/validationRules';
 import type { TokenStream } from './types/tokenizer';
-import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
+import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
 const { allSimpleTypes } = _parsingRulesInternals[packagePrivate];
 

@@ -1,6 +1,5 @@
-import { strict as assert } from 'node:assert';
 import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/validationRules';
-import { reprUnknownValue } from '../util';
+import { assert, reprUnknownValue } from '../util';
 import { ValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
 import { DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';

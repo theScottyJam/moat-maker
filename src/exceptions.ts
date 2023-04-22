@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { assert } from './util';
 import type { TextRange } from './TextPosition';
 import { generateMessageWithPosition } from './errorFormatter';
 

@@ -2,7 +2,7 @@
 // Between the list entries are where values are interpolated into the string.
 // In this module, this list of strings is referred to as "sections".
 
-import { strict as assert } from 'node:assert';
+import { assert } from './util';
 
 interface TextPositionData {
   readonly sectionIndex: number

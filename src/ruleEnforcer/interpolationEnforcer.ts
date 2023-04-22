@@ -1,10 +1,9 @@
-import { strict as assert } from 'node:assert';
 import type { InterpolationRule, Rule } from '../types/validationRules';
 import type { VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { DEEP_LEVELS, isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
 import { ValidatorAssertionError } from '../exceptions';
-import { reprUnknownValue } from '../util';
+import { assert, reprUnknownValue } from '../util';
 import { matchVariants } from './unionEnforcer';
 import { packagePrivate } from '../packagePrivateAccess';
 

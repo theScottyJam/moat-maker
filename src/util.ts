@@ -1,3 +1,9 @@
+export function assert(condition: boolean, message = 'Internal Error: Assertion Failed'): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 export class UnreachableCaseError extends Error {
   name = 'UnreachableCaseError';
   constructor(value: never) {

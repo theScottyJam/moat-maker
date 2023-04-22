@@ -1,8 +1,7 @@
-import { strict as assert } from 'node:assert';
 import { createValidatorSyntaxError, type ValidatorSyntaxError } from './exceptions';
 import { TextPosition, type TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
 import type { Token, TokenStream } from './types/tokenizer';
-import { UnreachableCaseError } from './util';
+import { assert, UnreachableCaseError } from './util';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
 // we need one.

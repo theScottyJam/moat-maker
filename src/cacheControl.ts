@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { assert } from './util';
 import type { CacheEntry } from './types/cacheControl';
 import type { Rule } from './types/validationRules';
 

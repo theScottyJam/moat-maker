@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { assert } from '../util';
 import type { ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/validationRules';
 import type { UnionVariantCollection } from './UnionVariantCollection';
