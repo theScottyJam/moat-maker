@@ -35,7 +35,7 @@ describe('order of operations', () => {
     expect(v.matches([{ y: 3 }])).toBe(false);
   });
 
-  test('iterator syntax has higher precedence than union syntax', () => {
+  test('iterable syntax has higher precedence than union syntax', () => {
     // Parsed as `${Set} | (${Array}@<string>), not (${Set} | ${Array})@<string>
     const v = validator`${Set} | ${Array}@<boolean>`;
     expect(v.matches([true])).toBe(true);
@@ -44,14 +44,14 @@ describe('order of operations', () => {
     expect(v.matches(new Set([2]))).toBe(true);
   });
 
-  test('able to put iterator syntax after array syntax', () => {
+  test('able to put iterable syntax after array syntax', () => {
     const v = validator`{ x: string }[]@<{ y: number }>`;
     expect(v.matches([{ x: 'x', y: 2 }])).toBe(true);
     expect(v.matches([{ x: 'x' }])).toBe(false);
     expect(v.matches([{ y: 2 }])).toBe(false);
   });
 
-  test('able to put array syntax after iterator syntax', () => {
+  test('able to put array syntax after iterable syntax', () => {
     const v = validator`${Array}@<{ x: string }>[]`;
     expect(v.matches([[{ x: 'x' }]])).toBe(true);
     expect(v.matches([[{ x: 2 }]])).toBe(false);

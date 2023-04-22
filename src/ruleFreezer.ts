@@ -64,7 +64,7 @@ function freezeRule(rule: Rule): Rule {
       rest: rule.rest === null ? null : freezeRule(rule.rest),
       entryLabels: rule.entryLabels === null ? null : f(rule.entryLabels),
     });
-  } else if (rule.category === 'iterator') {
+  } else if (rule.category === 'iterable') {
     return f({
       category: rule.category,
       iterableType: freezeRule(rule.iterableType),

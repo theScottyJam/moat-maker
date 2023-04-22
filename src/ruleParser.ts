@@ -70,7 +70,7 @@ function parseRuleAtPrecedence2(tokenStream: TokenStream): Rule {
 
       const entryType = parseRuleAtPrecedence1(tokenStream);
       rule = {
-        category: 'iterator' as const,
+        category: 'iterable' as const,
         iterableType: rule,
         entryType,
       };

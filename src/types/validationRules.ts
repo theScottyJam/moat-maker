@@ -62,8 +62,8 @@ export interface TupleRule {
   readonly entryLabels: readonly string[] | null
 }
 
-export interface IteratorRule {
-  readonly category: 'iterator'
+export interface IterableRule {
+  readonly category: 'iterable'
   readonly iterableType: Rule
   readonly entryType: Rule
 }
@@ -90,20 +90,20 @@ export type Rule = (
   | ObjectRule
   | ArrayRule
   | TupleRule
-  | IteratorRule
+  | IterableRule
   | UnionRule
   | IntersectionRule
   | InterpolationRule
 );
 
-const allCategories = [
+const allCategories: ReadonlyArray<Rule['category']> = [
   'simple',
   'primitiveLiteral',
   'noop',
   'object',
   'array',
   'tuple',
-  'iterator',
+  'iterable',
   'union',
   'intersection',
   'interpolation',
@@ -170,8 +170,8 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     entryLabels: string[] | null
   }`;
 
-  const iteratorRuleCheck = validator`{
-    category: 'iterator'
+  const iterableRuleCheck = validator`{
+    category: 'iterable'
     iterableType: ${ruleRef}
     entryType: ${ruleRef}
   }`;
@@ -198,7 +198,7 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     | ${objectRuleCheck}
     | ${arrayRuleCheck}
     | ${tupleRuleCheck}
-    | ${iteratorRuleCheck}
+    | ${iterableRuleCheck}
     | ${unionRuleCheck}
     | ${intersectionRuleCheck}
     | ${interpolationRuleCheck}

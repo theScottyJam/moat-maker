@@ -4,7 +4,7 @@ import {
   type ArrayRule,
   type InterpolationRule,
   type IntersectionRule,
-  type IteratorRule,
+  type IterableRule,
   type ObjectRule,
   type PrimitiveLiteralRule,
   type SimpleRule,
@@ -63,8 +63,8 @@ export function matchVariants<RuleType extends Rule>(
       target,
       lookupPath,
     ),
-    matchIteratorVariants(
-      groupedVariants.iterator as UnionVariantCollection<IteratorRule>,
+    matchIterableVariants(
+      groupedVariants.iterable as UnionVariantCollection<IterableRule>,
       target,
       lookupPath,
     ),
@@ -228,11 +228,11 @@ function matchIntersectionVariants(
   }, { deep: DEEP_LEVELS.unorganized });
 }
 
-function matchIteratorVariants(
-  variants: UnionVariantCollection<IteratorRule>,
+function matchIterableVariants(
+  variants: UnionVariantCollection<IterableRule>,
   target: unknown,
   lookupPath: string,
-): VariantMatchResponse<IteratorRule> {
+): VariantMatchResponse<IterableRule> {
   return variants.matchEach(({ rootRule, interpolated }) => {
     assertMatches({ rootRule: rootRule.iterableType, interpolated }, target, lookupPath);
 

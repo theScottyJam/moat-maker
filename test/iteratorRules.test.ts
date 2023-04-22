@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { validator, ValidatorSyntaxError } from '../src';
 
-describe('iterator rules', () => {
+describe('iterable rules', () => {
   test('accepts iterables with correct entry types an input', () => {
     const v = validator`${Array}@<number>`;
     v.assertMatches([2, 3, 4]);
@@ -35,8 +35,8 @@ describe('iterator rules', () => {
     assert.throws(act, TypeError);
   });
 
-  test('Using a non-iterator as the iterator type causes all inputs to be rejected', () => {
-    // number is not an iterator, but we put it before the @<...> anyways.
+  test('Using a non-iterable as the iterable type causes all inputs to be rejected', () => {
+    // number is not an iterable, but we put it before the @<...> anyways.
     const v = validator`number@<number>`;
     // Now you shouldn't be able to pass any valid inputs into it.
     const act = (): any => v.assertMatches(42);
@@ -48,7 +48,7 @@ describe('iterator rules', () => {
     const v = validator`unknown@<string>`;
     expect(v.ruleset).toMatchObject({
       rootRule: {
-        category: 'iterator',
+        category: 'iterable',
         iterableType: {
           category: 'noop',
         },
@@ -68,7 +68,7 @@ describe('iterator rules', () => {
     const v = validator`unknown @ < string >`;
     expect(v.ruleset).toMatchObject({
       rootRule: {
-        category: 'iterator',
+        category: 'iterable',
         iterableType: {
           category: 'noop',
         },
