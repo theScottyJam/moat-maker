@@ -14,9 +14,9 @@ describe('iterable rules', () => {
 
   test('rejects when input iterable is of the incorrect type', () => {
     const v = validator`${Array}@<number>`;
-    const act = (): any => v.assertMatches(2);
+    const act = (): any => v.assertMatches('abc');
     assert.throws(act, {
-      message: 'Expected <receivedValue>, which was 2, to be an instance of `Array` (and not an instance of a subclass).',
+      message: 'Expected <receivedValue>, which was "abc", to be an instance of `Array` (and not an instance of a subclass).',
     });
     assert.throws(act, TypeError);
   });

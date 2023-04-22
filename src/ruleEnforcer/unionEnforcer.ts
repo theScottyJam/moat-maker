@@ -25,6 +25,7 @@ import { buildUnionError, DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } f
 import { ValidatorAssertionError } from '../exceptions';
 import { assert, reprUnknownValue } from '../util';
 import { matchInterpolationVariants, preprocessInterpolatedValue } from './interpolationEnforcer';
+import { matchIterableVariants } from './iterableEnforcer';
 
 const { allCategories } = _parsingRulesInternals[packagePrivate];
 
@@ -137,21 +138,6 @@ function mergeFailedOrEmptyResponses<RuleType extends Rule>(
   return new FailedMatchResponse(buildUnionError(errorMessages), targetCollection, { deep }) as FailedMatchResponse<RuleType>;
 }
 
-/** Throws ValidatorAssertionError if the value does not match. */
-export function assertMatches<T>(
-  rule: SpecificRuleset<Rule>,
-  target: T,
-  lookupPath: string = '<receivedValue>',
-): asserts target is T {
-  const variantCollection = new UnionVariantCollection([rule]);
-  matchVariants(
-    variantCollection,
-    target,
-    lookupPath,
-    { deep: DEEP_LEVELS.irrelevant },
-  ).throwIfFailed();
-}
-
 /**
  * Flattens nested unions and pulls validators out from interpolation rules (via interpolated validators or refs)
  */
@@ -178,16 +164,31 @@ function normalizeVariants(variantCollection: UnionVariantCollection<Rule>): Uni
   return curCollection;
 }
 
+/** Throws ValidatorAssertionError if the value does not match. */
+function assertMatches<T>(
+  rule: SpecificRuleset<Rule>,
+  target: T,
+  lookupPath: string,
+): asserts target is T {
+  const variantCollection = new UnionVariantCollection([rule]);
+  matchVariants(
+    variantCollection,
+    target,
+    lookupPath,
+    { deep: DEEP_LEVELS.irrelevant },
+  ).throwIfFailed();
+}
+
 // --------------------------------------
 //   SMALLER VALIDATION UTILITIES
 // --------------------------------------
 
 function matchSimpleVariants(
-  variants: UnionVariantCollection<SimpleRule>,
+  variantCollection: UnionVariantCollection<SimpleRule>,
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<SimpleRule> {
-  return variants.matchEach(({ rootRule }) => {
+  return variantCollection.matchEach(({ rootRule }) => {
     if (getSimpleTypeOf(target) !== rootRule.type) {
       let whatWasGot = `type "${getSimpleTypeOf(target)}"`;
       if (Array.isArray(target)) {
@@ -203,11 +204,11 @@ function matchSimpleVariants(
 }
 
 function matchPrimitiveLiteralVariants(
-  variants: UnionVariantCollection<PrimitiveLiteralRule>,
+  variantCollection: UnionVariantCollection<PrimitiveLiteralRule>,
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<PrimitiveLiteralRule> {
-  return variants.matchEach(({ rootRule }) => {
+  return variantCollection.matchEach(({ rootRule }) => {
     if (target !== rootRule.value) {
       throw new ValidatorAssertionError(
         `Expected ${lookupPath} to be ${reprUnknownValue(rootRule.value)} but got ${reprUnknownValue(target)}.`,
@@ -217,43 +218,13 @@ function matchPrimitiveLiteralVariants(
 }
 
 function matchIntersectionVariants(
-  variants: UnionVariantCollection<IntersectionRule>,
+  variantCollection: UnionVariantCollection<IntersectionRule>,
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<IntersectionRule> {
-  return variants.matchEach(({ rootRule, interpolated }) => {
+  return variantCollection.matchEach(({ rootRule, interpolated }) => {
     for (const requirement of rootRule.variants) {
       assertMatches({ rootRule: requirement, interpolated }, target, lookupPath);
     }
   }, { deep: DEEP_LEVELS.unorganized });
 }
-
-function matchIterableVariants(
-  variants: UnionVariantCollection<IterableRule>,
-  target: unknown,
-  lookupPath: string,
-): VariantMatchResponse<IterableRule> {
-  return variants.matchEach(({ rootRule, interpolated }) => {
-    assertMatches({ rootRule: rootRule.iterableType, interpolated }, target, lookupPath);
-
-    if (!isIterable(target)) {
-      throw new ValidatorAssertionError(
-        `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
-      );
-    }
-
-    let i = 0;
-    for (const entry of target) {
-      assertMatches({ rootRule: rootRule.entryType, interpolated }, entry, `[...${lookupPath}][${i}]`);
-      ++i;
-    }
-  }, { deep: DEEP_LEVELS.unorganized });
-}
-
-// ------------------------------
-//   UTILITY FUNCTIONS
-// ------------------------------
-
-const isIterable = (value: unknown): value is { [Symbol.iterator]: () => Iterator<unknown> } => (
-  typeof Object(value)[Symbol.iterator] === 'function'
-);
