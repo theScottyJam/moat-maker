@@ -162,13 +162,22 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     content: ${ruleRef}
   }`;
 
+  const expectProperTupleRule = validator.expectTo(value_ => {
+    const value = value_ as TupleRule;
+    const allowedLabelCount = value.content.length + value.optionalContent.length + (value.rest !== null ? 1 : 0);
+    if (value.entryLabels !== null && value.entryLabels.length !== allowedLabelCount) {
+      return `have exactly ${allowedLabelCount} label(s) but found ${value.entryLabels.length}.`;
+    }
+    return null;
+  });
+
   const tupleRuleCheck = validator`{
     category: 'tuple'
     content: ${ruleRef}[]
     optionalContent: ${ruleRef}[]
     rest: ${ruleRef} | null
     entryLabels: string[] | null
-  }`;
+  } & ${expectProperTupleRule}`;
 
   const iterableRuleCheck = validator`{
     category: 'iterable'

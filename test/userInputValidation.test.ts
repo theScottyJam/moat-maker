@@ -209,5 +209,30 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         ),
       });
     });
+
+    test.skip('tuple rules can not have the wrong number of labels', () => {
+      const primitiveRule = { category: 'simple', type: 'string' } as const;
+      const ruleset: Ruleset = {
+        rootRule: {
+          category: 'tuple',
+          content: [primitiveRule],
+          optionalContent: [primitiveRule, primitiveRule],
+          rest: primitiveRule,
+          entryLabels: ['A', 'B', 'C'],
+        },
+        interpolated: [],
+      };
+
+      const act = (): any => validator.fromRuleset(ruleset);
+
+      // TODO: This is the error we should receive, but we're incorrectly scrubbing that error out and
+      // showing other union errors instead.
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <argumentList>[0].rootRule, which was [object Object], to have exactly 4 label(s) but found 5.'
+        ),
+      });
+    });
   });
 });
