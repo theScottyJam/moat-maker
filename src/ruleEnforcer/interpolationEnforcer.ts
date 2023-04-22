@@ -1,89 +1,97 @@
-import type { InterpolationRule } from '../types/parsingRules';
+import { strict as assert } from 'node:assert';
+import type { InterpolationRule, Rule } from '../types/validationRules';
 import type { VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
-import { DEEP_LEVELS } from './shared';
+import { DEEP_LEVELS, isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
 import { createValidatorAssertionError } from '../exceptions';
 import { reprUnknownValue } from '../util';
-import type { ValidatorRef, Validator, Expectation } from '../types/validator';
 import { matchVariants } from './unionEnforcer';
 import { packagePrivate } from '../packagePrivateAccess';
 
-export function matchInterpolationVariants<T>(
-  variants: UnionVariantCollection<InterpolationRule>,
-  target: T,
-  interpolated: readonly unknown[],
+export function preprocessInterpolatedValue(
+  ruleset: SpecificRuleset<InterpolationRule>,
+): { ruleset: SpecificRuleset<Rule>, updated: boolean } {
+  const { rootRule, interpolated } = ruleset;
+  const interpolatedValue = interpolated[rootRule.interpolationIndex];
+
+  if (isValidator(interpolatedValue)) {
+    return {
+      ruleset: interpolatedValue.ruleset,
+      updated: true,
+    };
+  } else if (isRef(interpolatedValue)) {
+    return {
+      ruleset: interpolatedValue[packagePrivate].getValidator().ruleset,
+      updated: true,
+    };
+  } else {
+    return { ruleset, updated: false };
+  }
+}
+
+export function matchInterpolationVariants(
+  variantCollection: UnionVariantCollection<InterpolationRule>,
+  target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<InterpolationRule> {
-  return variants.matchEach(variant => {
-    const valueToMatch = interpolated[variant.interpolationIndex];
+  return variantCollection.matchEach(({ rootRule, interpolated: allInterpolated }) => {
+    const interpolatedTarget = allInterpolated[rootRule.interpolationIndex];
+    assert(!isValidator(interpolatedTarget));
+    assert(!isRef(interpolatedTarget));
 
-    if (isValidator(valueToMatch)) {
+    if (isValidator(interpolatedTarget)) {
       matchVariants(
-        new UnionVariantCollection([valueToMatch.ruleset.rootRule]),
+        new UnionVariantCollection([interpolatedTarget.ruleset]),
         target,
-        valueToMatch.ruleset.interpolated,
         lookupPath,
         { deep: DEEP_LEVELS.irrelevant },
       ).throwIfFailed();
-    } else if (isRef(valueToMatch)) {
-      const validator = valueToMatch[packagePrivate].getValidator();
+    } else if (isRef(interpolatedTarget)) {
+      const validator = interpolatedTarget[packagePrivate].getValidator();
       matchVariants(
-        new UnionVariantCollection([validator.ruleset.rootRule]),
+        new UnionVariantCollection([validator.ruleset]),
         target,
-        validator.ruleset.interpolated,
         lookupPath,
         { deep: DEEP_LEVELS.irrelevant },
       ).throwIfFailed();
-    } else if (isExpectation(valueToMatch)) {
-      const maybeErrorMessage = valueToMatch[packagePrivate].testExpectation(target);
+    } else if (isExpectation(interpolatedTarget)) {
+      const maybeErrorMessage = interpolatedTarget[packagePrivate].testExpectation(target);
       if (maybeErrorMessage !== null) {
         throw createValidatorAssertionError(
           `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
         );
       }
-    } else if (typeof valueToMatch === 'function') {
-      if (Object(target).constructor !== valueToMatch || !(Object(target) instanceof valueToMatch)) {
+    } else if (typeof interpolatedTarget === 'function') {
+      if (Object(target).constructor !== interpolatedTarget || !(Object(target) instanceof interpolatedTarget)) {
         throw createValidatorAssertionError(
-          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(valueToMatch)} ` +
+          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(interpolatedTarget)} ` +
           '(and not an instance of a subclass).',
         );
       }
-    } else if (valueToMatch instanceof RegExp) {
+    } else if (interpolatedTarget instanceof RegExp) {
       if (typeof target !== 'string') {
         throw createValidatorAssertionError(
-          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${valueToMatch.toString()}`,
+          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${interpolatedTarget.toString()}`,
         );
       }
-      if (target.match(valueToMatch) === null) {
+      if (target.match(interpolatedTarget) === null) {
         throw createValidatorAssertionError(
-          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${valueToMatch.toString()}`,
+          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${interpolatedTarget.toString()}`,
         );
       }
-    } else if (isObject(valueToMatch)) {
+    } else if (isObject(interpolatedTarget)) {
       // TODO: It would be nice if we could do this check earlier, when the validator instance is first made
       // (There's already tests for this, so those tests can be updated as well).
       throw new TypeError(
         'Not allowed to interpolate a regular object into a validator. ' +
         '(Exceptions include classes, validators, refs, etc)',
       );
-    } else if (!sameValueZero(target, valueToMatch)) {
+    } else if (!sameValueZero(target, interpolatedTarget)) {
       throw createValidatorAssertionError(
-        `Expected ${lookupPath} to be the value ${reprUnknownValue(valueToMatch)} but got ${reprUnknownValue(target)}.`,
+        `Expected ${lookupPath} to be the value ${reprUnknownValue(interpolatedTarget)} but got ${reprUnknownValue(target)}.`,
       );
     }
   }, { deep: DEEP_LEVELS.unorganized });
-}
-
-function isValidator(value: unknown): value is Validator {
-  return Object(value)[packagePrivate]?.type === 'validator';
-}
-
-function isRef(value: unknown): value is ValidatorRef {
-  return Object(value)[packagePrivate]?.type === 'ref';
-}
-
-function isExpectation(value: unknown): value is Expectation {
-  return Object(value)[packagePrivate]?.type === 'expectation';
 }
 
 // ------------------------------

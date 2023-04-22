@@ -11,7 +11,7 @@ import {
   type SimpleRule,
   type TupleRule,
   _parsingRulesInternals,
-} from '../types/parsingRules';
+} from '../types/validationRules';
 import { matchObjectVariants } from './objectEnforcer';
 import { matchTupleVariants } from './tupleEnforcer';
 import {
@@ -22,10 +22,10 @@ import {
 } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchArrayVariants } from './arrayEnforcer';
-import { buildUnionError, DEEP_LEVELS, getSimpleTypeOf } from './shared';
+import { buildUnionError, DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
 import { createValidatorAssertionError } from '../exceptions';
 import { reprUnknownValue } from '../util';
-import { matchInterpolationVariants } from './interpolationEnforcer';
+import { matchInterpolationVariants, preprocessInterpolatedValue } from './interpolationEnforcer';
 
 const { allCategories } = _parsingRulesInternals[packagePrivate];
 
@@ -35,15 +35,14 @@ const { allCategories } = _parsingRulesInternals[packagePrivate];
 export function matchVariants<RuleType extends Rule>(
   unflattenedVariantCollection: UnionVariantCollection<RuleType>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
   { deep }: { deep: number },
 ): VariantMatchResponse<RuleType> {
   assert(unflattenedVariantCollection.variants.length > 0);
 
-  const variantCollection = unflattenedVariantCollection.flattenUnions();
+  const variantCollection = normalizeVariants(unflattenedVariantCollection);
 
-  const groupedVariants = variantCollection.groups(v => v.category, { keys: allCategories });
+  const groupedVariants = variantCollection.groups(v => v.rootRule.category, { keys: allCategories });
 
   // We pre-flattened all unions, so there shouldn't be any union rules in here.
   assert(groupedVariants.union.isEmpty());
@@ -63,37 +62,31 @@ export function matchVariants<RuleType extends Rule>(
     matchIntersectionVariants(
       groupedVariants.intersection as UnionVariantCollection<IntersectionRule>,
       target,
-      interpolated,
       lookupPath,
     ),
     matchIteratorVariants(
       groupedVariants.iterator as UnionVariantCollection<IteratorRule>,
       target,
-      interpolated,
       lookupPath,
     ),
     matchObjectVariants(
       groupedVariants.object as UnionVariantCollection<ObjectRule>,
       target,
-      interpolated,
       lookupPath,
     ),
     matchArrayVariants(
       groupedVariants.array as UnionVariantCollection<ArrayRule>,
       target,
-      interpolated,
       lookupPath,
     ),
     matchTupleVariants(
       groupedVariants.tuple as UnionVariantCollection<TupleRule>,
       target,
-      interpolated,
       lookupPath,
     ),
     matchInterpolationVariants(
       groupedVariants.interpolation as UnionVariantCollection<InterpolationRule>,
       target,
-      interpolated,
       lookupPath,
     ),
   ];
@@ -147,19 +140,43 @@ function mergeFailedOrEmptyResponses<RuleType extends Rule>(
 
 /** Throws ValidatorAssertionError if the value does not match. */
 export function assertMatches<T>(
-  rule: Rule,
+  rule: SpecificRuleset<Rule>,
   target: T,
-  interpolated: readonly unknown[],
   lookupPath: string = '<receivedValue>',
 ): asserts target is T {
   const variantCollection = new UnionVariantCollection([rule]);
   matchVariants(
     variantCollection,
     target,
-    interpolated,
     lookupPath,
     { deep: DEEP_LEVELS.irrelevant },
   ).throwIfFailed();
+}
+
+/**
+ * Flattens nested unions and pulls validators out from interpolation rules (via interpolated validators or refs)
+ */
+function normalizeVariants(variantCollection: UnionVariantCollection<Rule>): UnionVariantCollection<Rule> {
+  let curCollection = variantCollection.flattenUnions();
+  while (true) {
+    let somethingChanged = false;
+    const newCollection = curCollection.map(variant => {
+      if (variant.rootRule.category !== 'interpolation') {
+        return variant;
+      }
+
+      const { updated, ruleset } = preprocessInterpolatedValue(variant as SpecificRuleset<InterpolationRule>);
+      somethingChanged ||= updated;
+      return ruleset;
+    }).flattenUnions();
+
+    if (!somethingChanged) {
+      break;
+    }
+    curCollection = newCollection;
+  }
+
+  return curCollection;
 }
 
 // --------------------------------------
@@ -171,8 +188,8 @@ function matchSimpleVariants(
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<SimpleRule> {
-  return variants.matchEach(variant => {
-    if (getSimpleTypeOf(target) !== variant.type) {
+  return variants.matchEach(({ rootRule }) => {
+    if (getSimpleTypeOf(target) !== rootRule.type) {
       let whatWasGot = `type "${getSimpleTypeOf(target)}"`;
       if (Array.isArray(target)) {
         whatWasGot = 'an array';
@@ -180,7 +197,7 @@ function matchSimpleVariants(
         whatWasGot = 'a function';
       }
       throw createValidatorAssertionError(
-        `Expected ${lookupPath} to be of type "${variant.type}" but got ${whatWasGot}.`,
+        `Expected ${lookupPath} to be of type "${rootRule.type}" but got ${whatWasGot}.`,
       );
     }
   }, { deep: DEEP_LEVELS.unorganized });
@@ -191,10 +208,10 @@ function matchPrimitiveLiteralVariants(
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<PrimitiveLiteralRule> {
-  return variants.matchEach(variant => {
-    if (target !== variant.value) {
+  return variants.matchEach(({ rootRule }) => {
+    if (target !== rootRule.value) {
       throw createValidatorAssertionError(
-        `Expected ${lookupPath} to be ${reprUnknownValue(variant.value)} but got ${reprUnknownValue(target)}.`,
+        `Expected ${lookupPath} to be ${reprUnknownValue(rootRule.value)} but got ${reprUnknownValue(target)}.`,
       );
     }
   }, { deep: DEEP_LEVELS.unorganized });
@@ -203,12 +220,11 @@ function matchPrimitiveLiteralVariants(
 function matchIntersectionVariants(
   variants: UnionVariantCollection<IntersectionRule>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
 ): VariantMatchResponse<IntersectionRule> {
-  return variants.matchEach(variant => {
-    for (const requirement of variant.variants) {
-      assertMatches(requirement, target, interpolated, lookupPath);
+  return variants.matchEach(({ rootRule, interpolated }) => {
+    for (const requirement of rootRule.variants) {
+      assertMatches({ rootRule: requirement, interpolated }, target, lookupPath);
     }
   }, { deep: DEEP_LEVELS.unorganized });
 }
@@ -216,11 +232,10 @@ function matchIntersectionVariants(
 function matchIteratorVariants(
   variants: UnionVariantCollection<IteratorRule>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
 ): VariantMatchResponse<IteratorRule> {
-  return variants.matchEach(variant => {
-    assertMatches(variant.iterableType, target, interpolated, lookupPath);
+  return variants.matchEach(({ rootRule, interpolated }) => {
+    assertMatches({ rootRule: rootRule.iterableType, interpolated }, target, lookupPath);
 
     if (!isIterable(target)) {
       throw createValidatorAssertionError(
@@ -230,7 +245,7 @@ function matchIteratorVariants(
 
     let i = 0;
     for (const entry of target) {
-      assertMatches(variant.entryType, entry, interpolated, `[...${lookupPath}][${i}]`);
+      assertMatches({ rootRule: rootRule.entryType, interpolated }, entry, `[...${lookupPath}][${i}]`);
       ++i;
     }
   }, { deep: DEEP_LEVELS.unorganized });

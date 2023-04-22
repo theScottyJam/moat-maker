@@ -1,16 +1,15 @@
 import { strict as assert } from 'node:assert';
-import type { Rule, TupleRule } from '../types/parsingRules';
+import type { Rule, TupleRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError } from '../exceptions';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
-import { DEEP_LEVELS } from './shared';
+import { DEEP_LEVELS, type SpecificRuleset } from './shared';
 
 export function matchTupleVariants(
   variantCollection: UnionVariantCollection<TupleRule>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
 ): VariantMatchResponse<TupleRule> {
   let curVariantCollection = variantCollection;
@@ -25,8 +24,8 @@ export function matchTupleVariants(
     );
   }
 
-  const matchSizeResponse = curVariantCollection.matchEach(variant => {
-    assertValidTupleSize(variant, target, lookupPath);
+  const matchSizeResponse = curVariantCollection.matchEach(({ rootRule }) => {
+    assertValidTupleSize(rootRule, target, lookupPath);
   }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(matchSizeResponse);
@@ -38,7 +37,7 @@ export function matchTupleVariants(
   for (const [subTargetIndex, subTarget] of target.entries()) {
     // I don't have to worry about required/optional here. Length checks were already done above.
     const derivedCollection = curVariantCollection
-      .map(variant => deriveEntryRule(variant, subTargetIndex));
+      .map(variant => deriveEntryRuleset(variant, subTargetIndex));
 
     if (derivedCollection.isEmpty()) {
       // This means each variant is validating via "rest".
@@ -49,7 +48,6 @@ export function matchTupleVariants(
     const matchEntryResponse = matchVariants(
       derivedCollection,
       subTarget,
-      interpolated,
       `${lookupPath}[${subTargetIndex}]`,
       { deep: DEEP_LEVELS.recurseInwardsCheck },
     );
@@ -62,18 +60,17 @@ export function matchTupleVariants(
 
   // Validate "rest" rules
   const matchRestResponse = curVariantCollection
-    .filter(variant => variant.rest !== null)
-    .matchEach(variant => {
-      assert(variant.rest !== null);
+    .filter(({ rootRule }) => rootRule.rest !== null)
+    .matchEach(({ rootRule, interpolated }) => {
+      assert(rootRule.rest !== null);
 
-      const startIndex = variant.content.length + variant.optionalContent.length;
+      const startIndex = rootRule.content.length + rootRule.optionalContent.length;
       const portionToTestAgainst = target.slice(startIndex);
 
       const subPath = `${lookupPath}.slice(${startIndex})`;
       matchVariants(
-        new UnionVariantCollection([variant.rest]),
+        new UnionVariantCollection([{ rootRule: rootRule.rest, interpolated }]),
         portionToTestAgainst,
-        interpolated,
         subPath,
         { deep: DEEP_LEVELS.irrelevant },
       ).throwIfFailed();
@@ -114,17 +111,20 @@ function assertValidTupleSize(rule: TupleRule, target: unknown[], lookupPath: st
 /**
  * Provides a rule for matching a single tuple entry, given the tuple rule and an index.
  */
-function deriveEntryRule(variant: TupleRule, index: number): null | Rule {
-  const maybeRequiredEntry = variant.content[index];
+function deriveEntryRuleset(
+  { rootRule, interpolated }: SpecificRuleset<TupleRule>,
+  index: number,
+): null | SpecificRuleset<Rule> {
+  const maybeRequiredEntry = rootRule.content[index];
   if (maybeRequiredEntry !== undefined) {
-    return maybeRequiredEntry;
+    return { rootRule: maybeRequiredEntry, interpolated };
   }
 
-  const maybeOptionalEntry = variant.optionalContent[index - variant.content.length];
+  const maybeOptionalEntry = rootRule.optionalContent[index - rootRule.content.length];
   if (maybeOptionalEntry !== undefined) {
-    return maybeOptionalEntry;
+    return { rootRule: maybeOptionalEntry, interpolated };
   }
 
-  assert(variant.rest !== null);
+  assert(rootRule.rest !== null);
   return null;
 }

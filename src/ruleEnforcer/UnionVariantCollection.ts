@@ -1,10 +1,11 @@
 import { createValidatorAssertionError, ValidatorAssertionError } from '../exceptions';
-import type { Rule } from '../types/parsingRules';
+import type { Rule } from '../types/validationRules';
+import type { SpecificRuleset } from './shared';
 import { matchResponseFromErrorMap, FailedMatchResponse, stepVariantsBackTo, type VariantMatchResponse } from './VariantMatchResponse';
 
 interface BackLinks<NewRuleType extends Rule, OldRuleType extends Rule> {
   readonly lastInstance: UnionVariantCollection<OldRuleType>
-  readonly lastVariants: Map<NewRuleType, OldRuleType>
+  readonly lastVariants: Map<SpecificRuleset<NewRuleType>, SpecificRuleset<OldRuleType>>
 }
 
 /**
@@ -15,7 +16,7 @@ interface BackLinks<NewRuleType extends Rule, OldRuleType extends Rule> {
  * figure out which of the variants from the original collection have also failed because of it.
  */
 export class UnionVariantCollection<RuleType extends Rule = Rule> {
-  readonly variants: readonly RuleType[];
+  readonly variants: ReadonlyArray<SpecificRuleset<RuleType>>;
   /**
    * Information on how to link variants from a derived instance back to its source.
    * If you, e.g., do myCollection.map(...), the returned collection will have a backLinks property,
@@ -24,7 +25,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    */
   readonly backLinks: BackLinks<RuleType, Rule> | undefined;
 
-  constructor(variants: readonly RuleType[], backLinks?: BackLinks<RuleType, Rule> | undefined) {
+  constructor(variants: ReadonlyArray<SpecificRuleset<RuleType>>, backLinks?: BackLinks<RuleType, Rule> | undefined) {
     this.variants = variants;
     this.backLinks = backLinks;
   }
@@ -33,9 +34,9 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
     return this.variants.length === 0;
   }
 
-  filter(filterFn: (rule: RuleType) => boolean): UnionVariantCollection<RuleType> {
-    const links = new Map<RuleType, Rule>();
-    const newVariants: RuleType[] = [];
+  filter(filterFn: (rule: SpecificRuleset<RuleType>) => boolean): UnionVariantCollection<RuleType> {
+    const links: BackLinks<RuleType, RuleType>['lastVariants'] = new Map();
+    const newVariants: Array<SpecificRuleset<RuleType>> = [];
     for (const variant of this.variants) {
       if (filterFn(variant)) {
         newVariants.push(variant);
@@ -51,10 +52,10 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * If `null` is returned, that specific result will be filtered out.
    */
   map<NewRuleType extends Rule>(
-    mapFn: (rule: RuleType) => NewRuleType | null,
+    mapFn: (rule: SpecificRuleset<RuleType>) => SpecificRuleset<NewRuleType> | null,
   ): UnionVariantCollection<NewRuleType> {
-    const links = new Map<NewRuleType, RuleType>();
-    const newVariants: NewRuleType[] = [];
+    const links: BackLinks<NewRuleType, RuleType>['lastVariants'] = new Map();
+    const newVariants: Array<SpecificRuleset<NewRuleType>> = [];
     for (const variant of this.variants) {
       const newVariant = mapFn(variant);
       if (newVariant === null) {
@@ -71,12 +72,12 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * Behaves the same as JavaScript's array.groups() (which, at the time of writing is a stage 3 proposal).
    */
   groups<K extends string>(
-    grouper: (x: RuleType) => K,
+    grouper: (x: SpecificRuleset<RuleType>) => K,
     { keys }: { keys: readonly K[] },
   ): { [index in K]: UnionVariantCollection<RuleType> } {
     const rawResult = Object.fromEntries(
-      keys.map(k => [k, [] as RuleType[]]),
-    ) as { [index in K]: RuleType[] };
+      keys.map(k => [k, [] as Array<SpecificRuleset<RuleType>>]),
+    ) as { [index in K]: Array<SpecificRuleset<RuleType>> };
 
     for (const variant of this.variants) {
       const groupName = grouper(variant);
@@ -86,8 +87,8 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
     return Object.fromEntries(
       Object.entries(rawResult)
         .map(([key, variants_]) => {
-          const variants = variants_ as RuleType[];
-          const links = new Map<RuleType, RuleType>();
+          const variants = variants_ as Array<SpecificRuleset<RuleType>>;
+          const links: BackLinks<RuleType, RuleType>['lastVariants'] = new Map();
           for (const variant of variants) {
             links.set(variant, variant);
           }
@@ -117,11 +118,15 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * e.g. (a | b) | c -> a | b | c
    */
   flattenUnions(): UnionVariantCollection {
-    const flattenedVariantToUnflattenedVariant = new Map<Rule, RuleType>();
+    const flattenedVariantToUnflattenedVariant: BackLinks<Rule, RuleType>['lastVariants'] = new Map();
 
     for (const variant of this.variants) {
-      for (const flattenedVariant of this.#flattenVariants([variant])) {
-        flattenedVariantToUnflattenedVariant.set(flattenedVariant, variant);
+      for (const flattenedVariantRule of this.#flattenVariants([variant.rootRule])) {
+        const flattenedVariantRuleset = {
+          rootRule: flattenedVariantRule,
+          interpolated: variant.interpolated,
+        };
+        flattenedVariantToUnflattenedVariant.set(flattenedVariantRuleset, variant);
       }
     }
 
@@ -150,10 +155,10 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    * as if it were a union.
    */
   matchEach(
-    doAssertion: (variant: RuleType) => void,
+    doAssertion: (variant: SpecificRuleset<RuleType>) => void,
     { deep }: { readonly deep: number },
   ): VariantMatchResponse<RuleType> {
-    const variantToError = new Map<RuleType, ValidatorAssertionError>();
+    const variantToError = new Map<SpecificRuleset<RuleType>, ValidatorAssertionError>();
     for (const variant of this.variants) {
       try {
         doAssertion(variant);
@@ -198,8 +203,11 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
  */
 export class UnionVariantCollectionFilteredView<RuleType extends Rule> {
   #variantCollection: UnionVariantCollection<RuleType>;
-  #remainingVariants: Set<RuleType>;
-  constructor(variantCollection: UnionVariantCollection<RuleType>, opts?: { _remainingVariants: Set<RuleType> }) {
+  #remainingVariants: Set<SpecificRuleset<RuleType>>;
+  constructor(
+    variantCollection: UnionVariantCollection<RuleType>,
+    opts?: { _remainingVariants: Set<SpecificRuleset<RuleType>> },
+  ) {
     this.#variantCollection = variantCollection;
     this.#remainingVariants = opts?._remainingVariants ?? new Set(variantCollection.variants);
   }

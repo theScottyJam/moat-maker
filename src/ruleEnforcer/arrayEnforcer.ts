@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import type { ArrayRule } from '../types/parsingRules';
+import type { ArrayRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import type { UnionVariantCollection } from './UnionVariantCollection';
@@ -9,7 +9,6 @@ import { DEEP_LEVELS } from './shared';
 export function matchArrayVariants(
   variantCollection: UnionVariantCollection<ArrayRule>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
 ): VariantMatchResponse<ArrayRule> {
   if (variantCollection.isEmpty()) {
@@ -25,11 +24,12 @@ export function matchArrayVariants(
 
   let curVariantCollection = variantCollection;
   for (const [i, element] of target.entries()) {
-    const derivedCollection = curVariantCollection.map(variant => variant.content);
+    const derivedCollection = curVariantCollection.map(
+      ({ rootRule, interpolated }) => ({ rootRule: rootRule.content, interpolated }),
+    );
     const matchResult = matchVariants(
       derivedCollection,
       element,
-      interpolated,
       `${lookupPath}[${i}]`,
       { deep: DEEP_LEVELS.recurseInwardsCheck },
     );

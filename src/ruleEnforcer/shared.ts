@@ -1,6 +1,27 @@
 import { strict as assert } from 'node:assert';
 import { createValidatorAssertionError, type ValidatorAssertionError } from '../exceptions';
+import { packagePrivate } from '../packagePrivateAccess';
+import type { Rule } from '../types/validationRules';
+import type { Expectation, Validator, ValidatorRef } from '../types/validator';
 import { indentMultilineString } from '../util';
+
+/** Like the "RuleSet" interface, except you can specify the specific type of root rule it has. */
+export interface SpecificRuleset<RuleType extends Rule> {
+  readonly rootRule: RuleType
+  readonly interpolated: readonly unknown[]
+}
+
+export function isValidator(value: unknown): value is Validator {
+  return Object(value)[packagePrivate]?.type === 'validator';
+}
+
+export function isRef(value: unknown): value is ValidatorRef {
+  return Object(value)[packagePrivate]?.type === 'ref';
+}
+
+export function isExpectation(value: unknown): value is Expectation {
+  return Object(value)[packagePrivate]?.type === 'expectation';
+}
 
 /**
  * Similar to `typeof`, but it correctly handles `null`, and it treats functions as objects.

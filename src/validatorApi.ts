@@ -1,4 +1,4 @@
-import { type Ruleset, _parsingRulesInternals } from './types/parsingRules';
+import { type Ruleset, _parsingRulesInternals } from './types/validationRules';
 import {
   type AssertMatchesOpts,
   createAssertMatchesOptsCheck,

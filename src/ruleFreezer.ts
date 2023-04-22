@@ -1,4 +1,4 @@
-import type { ObjectRuleContentValue, ObjectRuleIndexValue, Rule, Ruleset } from './types/parsingRules';
+import type { ObjectRuleContentValue, ObjectRuleIndexValue, Rule, Ruleset } from './types/validationRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
 interface FreezeRuleSetOpts {

@@ -8,7 +8,7 @@ import {
   type SimpleTypeVariant,
   type ObjectRuleIndexValue,
   _parsingRulesInternals,
-} from './types/parsingRules';
+} from './types/validationRules';
 import type { TokenStream } from './types/tokenizer';
 import { UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 

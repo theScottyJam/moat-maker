@@ -1,9 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { indentMultilineString } from '../util';
-import { createValidatorAssertionError, type ValidatorAssertionError } from '../exceptions';
-import type { Rule } from '../types/parsingRules';
+import type { ValidatorAssertionError } from '../exceptions';
+import type { Rule } from '../types/validationRules';
 import type { UnionVariantCollection } from './UnionVariantCollection';
-import { buildUnionError } from './shared';
+import { buildUnionError, type SpecificRuleset } from './shared';
 
 /**
  * A VariantMatchResponse is returned by match functions, to provide
@@ -21,13 +20,13 @@ export interface VariantMatchResponse<RuleType extends Rule> {
    * The match response contains information about which variants from that collection failed.
    * The collection that was used is recorded here in the response.
    */
-  readonly variantCollection: UnionVariantCollection<RuleType>
+  readonly variantCollection: UnionVariantCollection<Rule>
 
   /**
    * If the response was successful, this will return the variants that failed.
    * If the response was not successful, this will return all variants from the target variant collection.
    */
-  readonly failedVariants: () => readonly RuleType[]
+  readonly failedVariants: () => ReadonlyArray<SpecificRuleset<RuleType>>
 
   /**
    * If this is a failed response, throws the contained error.
@@ -36,10 +35,10 @@ export interface VariantMatchResponse<RuleType extends Rule> {
 }
 
 export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatchResponse<RuleType> {
-  readonly #failedVariants: readonly RuleType[];
+  readonly #failedVariants: ReadonlyArray<SpecificRuleset<RuleType>>;
   readonly variantCollection: UnionVariantCollection<RuleType>;
   constructor(
-    failedVariants: readonly RuleType[],
+    failedVariants: ReadonlyArray<SpecificRuleset<RuleType>>,
     variantCollection: UnionVariantCollection<RuleType>,
   ) {
     assert(
@@ -59,7 +58,7 @@ export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatch
     return new SuccessMatchResponse([], variantCollection);
   }
 
-  failedVariants(): readonly RuleType[] {
+  failedVariants(): ReadonlyArray<SpecificRuleset<RuleType>> {
     return this.#failedVariants;
   }
 
@@ -82,7 +81,7 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
     this.deep = deep;
   }
 
-  failedVariants(): readonly RuleType[] {
+  failedVariants(): ReadonlyArray<SpecificRuleset<RuleType>> {
     return this.variantCollection.variants;
   }
 
@@ -114,7 +113,7 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
  * be correctly formatted to contain a union-style error with all of the errors from the map.
  */
 export function matchResponseFromErrorMap<RuleType extends Rule>(
-  variantToError: Map<RuleType, ValidatorAssertionError>,
+  variantToError: Map<SpecificRuleset<RuleType>, ValidatorAssertionError>,
   targetCollection: UnionVariantCollection<RuleType>,
   { deep }: { readonly deep: number },
 ): VariantMatchResponse<RuleType> {
@@ -165,7 +164,7 @@ export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<V
     matchResponses.map(response => getAncestorChain(response.variantCollection)),
   );
 
-  const failedVariants = new Set<Rule>();
+  const failedVariants = new Set<SpecificRuleset<Rule>>();
   for (const response of matchResponses) {
     const steppedBackVariants = stepVariantsBackTo(response.failedVariants(), {
       from: response.variantCollection,
@@ -190,12 +189,12 @@ export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<V
  * in the opts.to collection.
  */
 export function stepVariantsBackTo<RuleType extends Rule>(
-  variants: readonly Rule[],
+  variants: ReadonlyArray<SpecificRuleset<Rule>>,
   opts: {
     readonly from: UnionVariantCollection<Rule>
     readonly to: UnionVariantCollection<RuleType>
   },
-): readonly RuleType[] {
+): ReadonlyArray<SpecificRuleset<RuleType>> {
   const { from: startCollection, to: targetCollection } = opts;
 
   let curVariants = variants;
@@ -213,7 +212,7 @@ export function stepVariantsBackTo<RuleType extends Rule>(
     curCollection = curCollection.backLinks.lastInstance;
   }
 
-  return curVariants as RuleType[];
+  return curVariants as ReadonlyArray<SpecificRuleset<RuleType>>;
 }
 
 /**
@@ -221,9 +220,9 @@ export function stepVariantsBackTo<RuleType extends Rule>(
  * steps them backwards by one step, to find the corresponding variants in the previous collection.
  */
 function stepVariantsBackwards(
-  failedVariants: readonly Rule[],
+  failedVariants: ReadonlyArray<SpecificRuleset<Rule>>,
   variantCollection: UnionVariantCollection<Rule>,
-): readonly Rule[] {
+): ReadonlyArray<SpecificRuleset<Rule>> {
   const flipMapCache = new Map<Map<unknown, unknown>, Map<unknown, unknown[]>>();
   function flipMap<K, V>(source: Map<K, V>): Map<V, K[]> {
     const cachedTarget = flipMapCache.get(source);
@@ -240,7 +239,7 @@ function stepVariantsBackwards(
     return target;
   }
 
-  const blockersToFulfillers = new Map<Rule[], Set<Rule>>();
+  const blockersToFulfillers = new Map<Array<SpecificRuleset<Rule>>, Set<SpecificRuleset<Rule>>>();
   const backLinks = variantCollection.backLinks;
   assert(
     backLinks !== undefined,
@@ -250,7 +249,7 @@ function stepVariantsBackwards(
   );
   const forwardLinks = flipMap(backLinks.lastVariants);
 
-  const newFailedVariants = new Set<Rule>();
+  const newFailedVariants = new Set<SpecificRuleset<Rule>>();
   for (const variant of failedVariants) {
     const lastVariant = backLinks.lastVariants.get(variant);
     assert(lastVariant !== undefined);

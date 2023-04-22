@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
-import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/parsingRules';
+import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { createValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
-import { DEEP_LEVELS, getSimpleTypeOf } from './shared';
+import { DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse, mergeMatchResultsToSuccessResult } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
@@ -24,7 +24,6 @@ export interface ObjectRuleWithStaticKeys {
 export function matchObjectVariants(
   variantCollection: UnionVariantCollection<ObjectRule>,
   target: unknown,
-  interpolated: readonly unknown[],
   lookupPath: string,
 ): VariantMatchResponse<ObjectRule> {
   let curVariantCollection = variantCollection;
@@ -39,11 +38,11 @@ export function matchObjectVariants(
     );
   }
 
-  const objRuleToProcessedObjects = new Map<ObjectRule, ObjectRuleWithStaticKeys>();
+  const objRulesetToProcessedObjects = new Map<SpecificRuleset<ObjectRule>, ObjectRuleWithStaticKeys>();
 
   const keyCheckResponse = curVariantCollection.matchEach(variant => {
-    const ruleWithStaticKeys = validateAndApplyDynamicKeys(variant, interpolated);
-    objRuleToProcessedObjects.set(variant, ruleWithStaticKeys);
+    const ruleWithStaticKeys = validateAndApplyDynamicKeys(variant);
+    objRulesetToProcessedObjects.set(variant, ruleWithStaticKeys);
     assertRequiredKeysArePresent(ruleWithStaticKeys, target, lookupPath);
   }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
@@ -55,9 +54,9 @@ export function matchObjectVariants(
 
   // TODO: Merge the responses from failed index checks and other failed property value checks.
   // One shouldn't take precedence over the other.
-  const indexSignatureResponse = curVariantCollection.matchEach(variant => {
-    if (variant.index !== null) {
-      assertIndexSignatureIsSatisfied(variant.index, target, interpolated, lookupPath);
+  const indexSignatureResponse = curVariantCollection.matchEach(({ rootRule, interpolated }) => {
+    if (rootRule.index !== null) {
+      assertIndexSignatureIsSatisfied(rootRule.index, target, interpolated, lookupPath);
     }
   }, { deep: DEEP_LEVELS.immediateInfoCheck });
 
@@ -70,7 +69,7 @@ export function matchObjectVariants(
   const keysFromAllRules = new Set<string | symbol>(
     curVariantCollection.variants
       .flatMap(variant => {
-        const objectRuleWithStaticKeys = objRuleToProcessedObjects.get(variant);
+        const objectRuleWithStaticKeys = objRulesetToProcessedObjects.get(variant);
         assert(objectRuleWithStaticKeys !== undefined);
         return [...objectRuleWithStaticKeys.content.keys()];
       }),
@@ -86,16 +85,15 @@ export function matchObjectVariants(
     }
 
     const derivedCollection = curVariantCollection.map(variant => {
-      const objectRuleWithStaticKeys = objRuleToProcessedObjects.get(variant);
+      const objectRuleWithStaticKeys = objRulesetToProcessedObjects.get(variant);
       assert(objectRuleWithStaticKeys !== undefined);
-      return derivePropertyRule(objectRuleWithStaticKeys, key, interpolated);
+      return derivePropertyRule(objectRuleWithStaticKeys, key, variant.interpolated);
     });
     assert(derivedCollection.variants.length > 0);
 
     const matchResponse = matchVariants(
       derivedCollection,
       (target as any)[key],
-      interpolated,
       calcSubLookupPath(lookupPath, key),
       { deep: DEEP_LEVELS.recurseInwardsCheck },
     );
@@ -133,7 +131,7 @@ function derivePropertyRule(
   ruleWithStaticKeys: ObjectRuleWithStaticKeys,
   key: string | symbol,
   interpolated: readonly unknown[],
-): null | Rule {
+): null | SpecificRuleset<Rule> {
   const intersectionRules = [];
 
   if (ruleWithStaticKeys.content.has(key)) {
@@ -151,7 +149,10 @@ function derivePropertyRule(
     return null;
   }
 
-  return duplicateKeysToIntersection(intersectionRules);
+  return {
+    rootRule: duplicateKeysToIntersection(intersectionRules),
+    interpolated,
+  };
 }
 
 /** Helps to convert stuff like `{ x: A, ['x']: B }` to `{ x: A & B }` */
@@ -171,14 +172,14 @@ function duplicateKeysToIntersection(intersectionRules: readonly ObjectRuleConte
  * Ensures the interpolated dynamic keys are of correct types (strings or symbols),
  * then transforms the data into a more accessible form.
  */
-function validateAndApplyDynamicKeys(rule: ObjectRule, interpolated: readonly unknown[]): ObjectRuleWithStaticKeys {
+function validateAndApplyDynamicKeys({ rootRule, interpolated }: SpecificRuleset<ObjectRule>): ObjectRuleWithStaticKeys {
   const content = new Map<string | symbol, ObjectRuleContentValue[]>(
-    [...rule.content.entries()]
+    [...rootRule.content.entries()]
       .map(([key, value]) => [key, [value]]),
   );
 
   // Add dynamic key entries to the content map.
-  for (const [interpolationIndex, value] of rule.dynamicContent) {
+  for (const [interpolationIndex, value] of rootRule.dynamicContent) {
     let key = interpolated[interpolationIndex];
     if (typeof key === 'number') {
       key = String(key);
@@ -202,7 +203,7 @@ function validateAndApplyDynamicKeys(rule: ObjectRule, interpolated: readonly un
 
   return {
     content,
-    index: rule.index,
+    index: rootRule.index,
   };
 }
 
@@ -233,9 +234,8 @@ function assertIndexSignatureIsSatisfied(
   for (const [key, value] of allObjectEntries(target)) {
     if (doesIndexSignatureApplyToProperty(indexInfo, key, interpolated)) {
       matchVariants(
-        new UnionVariantCollection([indexInfo.value]),
+        new UnionVariantCollection([{ rootRule: indexInfo.value, interpolated }]),
         value,
-        interpolated,
         calcSubLookupPath(lookupPath, key),
         { deep: DEEP_LEVELS.unorganized },
       ).throwIfFailed();
@@ -249,20 +249,20 @@ function doesIndexSignatureApplyToProperty(
   interpolated: readonly unknown[],
 ): boolean {
   const numericPropertyKey = typeof propertyKey === 'string' ? Number(propertyKey) : NaN;
+  const keyRuleset = { rootRule: indexInfo.key, interpolated };
   return (
-    doesMatch(indexInfo.key, propertyKey, interpolated) ||
+    doesMatch(keyRuleset, propertyKey) ||
     // Handles the case where we're matching the key against the `number` rule.
     // The key has to be turned into a number first, before the `number` rule will take it.
-    (!isNaN(numericPropertyKey) && doesMatch(indexInfo.key, numericPropertyKey, interpolated))
+    (!isNaN(numericPropertyKey) && doesMatch(keyRuleset, numericPropertyKey))
   );
 }
 
-export function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
-  const variantCollection = new UnionVariantCollection([rule]);
+export function doesMatch(ruleset: SpecificRuleset<Rule>, target: unknown): boolean {
+  const variantCollection = new UnionVariantCollection([ruleset]);
   return matchVariants(
     variantCollection,
     target,
-    interpolated,
     '<receivedValue>',
     { deep: DEEP_LEVELS.irrelevant },
   ) instanceof SuccessMatchResponse;

@@ -1,4 +1,4 @@
-import type { Ruleset } from './parsingRules';
+import type { Ruleset } from './validationRules';
 import type { packagePrivate } from '../packagePrivateAccess';
 
 export interface ValidatorRef {

@@ -1,4 +1,4 @@
-import type { Rule } from './parsingRules';
+import type { Rule } from './validationRules';
 
 export interface CacheEntry {
   readonly exists: () => boolean

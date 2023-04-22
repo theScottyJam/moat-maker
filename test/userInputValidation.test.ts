@@ -95,56 +95,11 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       interpolated: ['xyz'],
     });
 
-    // TODO: Oh wow. This is an awful error. Lets figure out something we can do about this.
     assert.throws(act, {
-      message: [
-        'Received invalid "ruleset" argument for validator.fromRuleset(): Failed to match against any variant of a union.',
-        '  Variant 1: <argumentList>[0].rootRule is missing the required properties: "type"',
-        '  Variant 2: <argumentList>[0].rootRule is missing the required properties: "value"',
-        '  Variant 3: Expected <argumentList>[0].rootRule.category to be "noop" but got "union".',
-        '  Variant 4: <argumentList>[0].rootRule is missing the required properties: "content", "dynamicContent", "index"',
-        '  Variant 5: <argumentList>[0].rootRule is missing the required properties: "content"',
-        '  Variant 6: <argumentList>[0].rootRule is missing the required properties: "content", "optionalContent", "rest", "entryLabels"',
-        '  Variant 7: <argumentList>[0].rootRule is missing the required properties: "iterableType", "entryType"',
-        '  Variant 8: Failed to match against any variant of a union.',
-        '      Variant 1: <argumentList>[0].rootRule.variants[0] is missing the required properties: "type"',
-        '      Variant 2: <argumentList>[0].rootRule.variants[0] is missing the required properties: "value"',
-        '      Variant 3: Expected <argumentList>[0].rootRule.variants[0].category to be "noop" but got "array".',
-        '      Variant 4: <argumentList>[0].rootRule.variants[0] is missing the required properties: "dynamicContent", "index"',
-        '      Variant 5: Failed to match against any variant of a union.',
-        '          Variant 1: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "type"',
-        '          Variant 2: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "value"',
-        '          Variant 3: Expected <argumentList>[0].rootRule.variants[0].content.category to be "noop" but got "intersection".',
-        '          Variant 4: <argumentList>[0].rootRule.variants[0].content is missing the required properties: ' +
-          '"content", "dynamicContent", "index"',
-        '          Variant 5: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "content"',
-        '          Variant 6: <argumentList>[0].rootRule.variants[0].content is missing the required properties: ' +
-          '"content", "optionalContent", "rest", "entryLabels"',
-        '          Variant 7: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "iterableType", "entryType"',
-        '          Variant 8: Expected <argumentList>[0].rootRule.variants[0].content.category to be "union" but got "intersection".',
-        '          Variant 9: Failed to match against any variant of a union.',
-        '              Variant 1: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "type"',
-        '              Variant 2: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "value"',
-        '              Variant 3: Expected <argumentList>[0].rootRule.variants[0].content.variants[1].category to be ' +
-          '"noop" but got "nonsenseCategory".',
-        '              Variant 4: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
-          '"content", "dynamicContent", "index"',
-        '              Variant 5: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "content"',
-        '              Variant 6: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
-          '"content", "optionalContent", "rest", "entryLabels"',
-        '              Variant 7: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
-          '"iterableType", "entryType"',
-        '              Variant 8: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: "variants"',
-        '              Variant 9: <argumentList>[0].rootRule.variants[0].content.variants[1] is missing the required properties: ' +
-          '"interpolationIndex"',
-        '          Variant 10: <argumentList>[0].rootRule.variants[0].content is missing the required properties: "interpolationIndex"',
-        '      Variant 6: <argumentList>[0].rootRule.variants[0] is missing the required properties: "optionalContent", "rest", "entryLabels"',
-        '      Variant 7: <argumentList>[0].rootRule.variants[0] is missing the required properties: "iterableType", "entryType"',
-        '      Variant 8: <argumentList>[0].rootRule.variants[0] is missing the required properties: "variants"',
-        '      Variant 9: <argumentList>[0].rootRule.variants[0] is missing the required properties: "interpolationIndex"',
-        '  Variant 9: Expected <argumentList>[0].rootRule.category to be "intersection" but got "union".',
-        '  Variant 10: <argumentList>[0].rootRule is missing the required properties: "interpolationIndex"',
-      ].join('\n'),
+      message: (
+        'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+        'Expected <argumentList>[0].rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".'
+      ),
     });
   });
 
@@ -215,9 +170,8 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  // TODO: Fix existing tests and add more tests, once the large union error problem is fixed
-  // (so the error messages aren't super long).
-  xdescribe('custom validation requirements for rulesets', () => {
+  // TODO: Add more tests here, now that the super-long-union-error bug is fixed
+  describe('custom validation requirements for rulesets', () => {
     test('union rules can not have zero variants', () => {
       const ruleset: Ruleset = {
         rootRule: {
@@ -230,7 +184,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: '<Something really long>',
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <argumentList>[0].rootRule.variants, which was [object Array], to be non-empty.'
+        ),
       });
     });
 
@@ -246,7 +203,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: '<Something really long>',
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <argumentList>[0].rootRule.variants, which was [object Array], to be non-empty.'
+        ),
       });
     });
   });

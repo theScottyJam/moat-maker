@@ -8,7 +8,7 @@ import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
 import { assertMatches, doesMatch } from './ruleEnforcer';
 import { lookupCacheEntry } from './cacheControl';
-import type { Rule, Ruleset } from './types/parsingRules';
+import type { Rule, Ruleset } from './types/validationRules';
 import type {
   AssertMatchesOpts,
   Validator,

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import type { CacheEntry } from './types/cacheControl';
-import type { Rule } from './types/parsingRules';
+import type { Rule } from './types/validationRules';
 
 interface CacheRecord {
   value: Rule | null

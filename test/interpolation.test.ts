@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { validator, type Validator, type ValidatorRef } from '../src';
 
 describe('interpolation', () => {
-  // The testing of interpolating ref and expectation instances is done elsewhere.
+  // The main testing for interpolating ref and expectation instances is done elsewhere
 
   describe('misc', () => {
     test('produces the correct rule', () => {
@@ -302,6 +302,119 @@ describe('interpolation', () => {
       }`;
       expect(v.matches({ x: 2, y: 4 })).toBe(true);
       expect(v.matches({ x: 2, y: 3 })).toBe(false);
+    });
+  });
+
+  // The "special object behaviors" is the fact that even if you fully match one variant of a union,
+  // validation will still fail if your passed-in object has any extra keys that happen to match up
+  // with other variants, and who's values don't line up as well.
+  describe('special object behaviors in unions work, even through interpolation', () => {
+    test('works when interpolating validator objects', () => {
+      const v = validator`{ x: 2 } | ${
+        validator`{ y: 3 }`
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
+    });
+
+    test('works when interpolating nested validator objects', () => {
+      const v = validator`{ x: 2 } | ${
+        validator`${
+          validator`${
+            validator`{ y: 3 }`
+          }`
+        }`
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
+    });
+
+    test('works even with unflattened unions in the middle of nested validator objects', () => {
+      const createUnflattenedUnion = (oneVariant: Validator): Validator => {
+        return validator.fromRuleset({
+          rootRule: {
+            category: 'union',
+            variants: [
+              oneVariant.ruleset.rootRule,
+              { category: 'primitiveLiteral', value: 'XXX' },
+            ],
+          },
+          interpolated: oneVariant.ruleset.interpolated,
+        });
+      };
+
+      const v = validator`{ x: 2 } | ${
+        createUnflattenedUnion(validator`${
+          validator`${
+            createUnflattenedUnion(createUnflattenedUnion(validator`{ y: 3 }`))
+          }`
+        }`)
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
+    });
+
+    const asRef = (v: Validator): ValidatorRef => {
+      const ref = validator.createRef();
+      ref.set(v);
+      return ref;
+    };
+
+    test('works when interpolating refs', () => {
+      const v = validator`{ x: 2 } | ${
+        asRef(validator`{ y: 3 }`)
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
+    });
+
+    test('works when interpolating nested validator objects', () => {
+      const v = validator`{ x: 2 } | ${
+        asRef(validator`${
+          asRef(validator`${
+            asRef(validator`{ y: 3 }`)
+          }`)
+        }`)
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
+    });
+
+    test('works even with unflattened unions in the middle of nested validator objects', () => {
+      const createUnflattenedUnion = (oneVariant: Validator): Validator => {
+        return validator.fromRuleset({
+          rootRule: {
+            category: 'union',
+            variants: [
+              oneVariant.ruleset.rootRule,
+              { category: 'primitiveLiteral', value: 'XXX' },
+            ],
+          },
+          interpolated: oneVariant.ruleset.interpolated,
+        });
+      };
+
+      const v = validator`{ x: 2 } | ${
+        asRef(createUnflattenedUnion(validator`${
+          asRef(validator`${
+            asRef(createUnflattenedUnion(createUnflattenedUnion(validator`{ y: 3 }`)))
+          }`)
+        }`))
+      }`;
+      const act = (): any => v.assertMatches({ x: 2, y: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>.y to be 3 but got 2.',
+      });
     });
   });
 });
