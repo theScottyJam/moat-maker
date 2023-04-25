@@ -1,6 +1,7 @@
 import { ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/validationRules';
 import type { SpecificRuleset } from './shared';
+import type { DeepRange } from './deepnessTools';
 import { matchResponseFromErrorMap, FailedMatchResponse, stepVariantsBackTo, type VariantMatchResponse } from './VariantMatchResponse';
 
 interface BackLinks<NewRuleType extends Rule, OldRuleType extends Rule> {
@@ -73,15 +74,11 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    */
   groups<K extends string>(
     grouper: (x: SpecificRuleset<RuleType>) => K,
-    { keys }: { keys: readonly K[] },
-  ): { [index in K]: UnionVariantCollection<RuleType> } {
-    const rawResult = Object.fromEntries(
-      keys.map(k => [k, [] as Array<SpecificRuleset<RuleType>>]),
-    ) as { [index in K]: Array<SpecificRuleset<RuleType>> };
-
+  ): { [index in K]?: UnionVariantCollection<RuleType> } {
+    const rawResult: Partial<{ [index in K]: Array<SpecificRuleset<RuleType>> }> = {} as any;
     for (const variant of this.variants) {
       const groupName = grouper(variant);
-      rawResult[groupName].push(variant);
+      (rawResult[groupName] ??= []).push(variant);
     }
 
     return Object.fromEntries(
@@ -96,6 +93,16 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
           return [key, new UnionVariantCollection(variants, { lastInstance: this, lastVariants: links })];
         }),
     ) as { [index in K]: UnionVariantCollection<RuleType>; };
+  }
+
+  * [Symbol.iterator](): Iterator<UnionVariantCollection<RuleType>> {
+    for (const variant of this.variants) {
+      const backLinks = {
+        lastInstance: this,
+        lastVariants: new Map([[variant, variant]]),
+      };
+      yield new UnionVariantCollection([variant], backLinks);
+    }
   }
 
   /**
@@ -156,7 +163,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    */
   matchEach(
     doAssertion: (variant: SpecificRuleset<RuleType>) => void,
-    { deep }: { readonly deep: number },
+    { deep }: { readonly deep: DeepRange },
   ): VariantMatchResponse<RuleType> {
     const variantToError = new Map<SpecificRuleset<RuleType>, ValidatorAssertionError>();
     for (const variant of this.variants) {
@@ -184,7 +191,7 @@ export class UnionVariantCollection<RuleType extends Rule = Rule> {
    */
   createFailResponse(
     message: string,
-    { deep }: { readonly deep: number },
+    { deep }: { readonly deep: DeepRange },
   ): FailedMatchResponse<RuleType> {
     return new FailedMatchResponse(
       new ValidatorAssertionError(message),

@@ -2,10 +2,20 @@ import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } f
 import { assert, reprUnknownValue } from '../util';
 import { ValidatorAssertionError, createValidatorSyntaxError } from '../exceptions';
 import { isIdentifier } from '../tokenStream';
-import { DEEP_LEVELS, getSimpleTypeOf, type SpecificRuleset } from './shared';
+import { getSimpleTypeOf, type SpecificRuleset } from './shared';
+import { DEEP_LEVELS } from './deepnessTools';
 import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse, mergeMatchResultsToSuccessResult } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
+
+// The deep levels used in this module
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const availableDeepLevels = () => ({
+  irrelevant: DEEP_LEVELS.irrelevant,
+  nonSpecificTypeCheck: DEEP_LEVELS.nonSpecificTypeCheck,
+  immediateInfoCheck: DEEP_LEVELS.immediateInfoCheck,
+  recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
+});
 
 /**
  * Not a real rule,
@@ -25,15 +35,13 @@ export function matchObjectVariants(
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<ObjectRule> {
+  assert(!variantCollection.isEmpty());
   let curVariantCollection = variantCollection;
-  if (curVariantCollection.isEmpty()) {
-    return SuccessMatchResponse.createEmpty(curVariantCollection);
-  }
 
   if (!isObject(target)) {
     return variantCollection.createFailResponse(
       `Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`,
-      { deep: DEEP_LEVELS.nonSpecificTypeCheck },
+      { deep: availableDeepLevels().nonSpecificTypeCheck },
     );
   }
 
@@ -43,7 +51,7 @@ export function matchObjectVariants(
     const ruleWithStaticKeys = validateAndApplyDynamicKeys(variant);
     objRulesetToProcessedObjects.set(variant, ruleWithStaticKeys);
     assertRequiredKeysArePresent(ruleWithStaticKeys, target, lookupPath);
-  }, { deep: DEEP_LEVELS.immediateInfoCheck });
+  }, { deep: availableDeepLevels().immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(keyCheckResponse);
   if (curVariantCollection.isEmpty()) {
@@ -57,7 +65,7 @@ export function matchObjectVariants(
     if (rootRule.index !== null) {
       assertIndexSignatureIsSatisfied(rootRule.index, target, interpolated, lookupPath);
     }
-  }, { deep: DEEP_LEVELS.immediateInfoCheck });
+  }, { deep: availableDeepLevels().immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(indexSignatureResponse);
   if (curVariantCollection.isEmpty()) {
@@ -94,7 +102,7 @@ export function matchObjectVariants(
       derivedCollection,
       (target as any)[key],
       calcSubLookupPath(lookupPath, key),
-      { deep: DEEP_LEVELS.recurseInwardsCheck },
+      { deep: availableDeepLevels().recurseInwardsCheck },
     );
 
     if (matchResponse instanceof FailedMatchResponse) {
@@ -111,11 +119,13 @@ export function matchObjectVariants(
     return variantCollection.createFailResponse(
       `${lookupPath}'s properties matches various union variants ` +
       'when it needs to pick a single variant to follow.',
-      { deep: DEEP_LEVELS.recurseInwardsCheck },
+      { deep: availableDeepLevels().recurseInwardsCheck },
     );
   }
 
-  return mergeMatchResultsToSuccessResult([keyCheckResponse, indexSignatureResponse]) as VariantMatchResponse<ObjectRule>;
+  return (
+    mergeMatchResultsToSuccessResult([keyCheckResponse, indexSignatureResponse])
+  ) as VariantMatchResponse<ObjectRule>;
 }
 
 /**
@@ -236,7 +246,7 @@ function assertIndexSignatureIsSatisfied(
         new UnionVariantCollection([{ rootRule: indexInfo.value, interpolated }]),
         value,
         calcSubLookupPath(lookupPath, key),
-        { deep: DEEP_LEVELS.unorganized },
+        { deep: availableDeepLevels().irrelevant },
       ).throwIfFailed();
     }
   }
@@ -263,7 +273,7 @@ export function doesMatch(ruleset: SpecificRuleset<Rule>, target: unknown): bool
     variantCollection,
     target,
     '<receivedValue>',
-    { deep: DEEP_LEVELS.irrelevant },
+    { deep: availableDeepLevels().irrelevant },
   ) instanceof SuccessMatchResponse;
 }
 

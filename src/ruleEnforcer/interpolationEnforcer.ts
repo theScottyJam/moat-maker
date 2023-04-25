@@ -1,11 +1,17 @@
 import type { InterpolationRule, Rule } from '../types/validationRules';
 import type { VariantMatchResponse } from './VariantMatchResponse';
-import { UnionVariantCollection } from './UnionVariantCollection';
-import { DEEP_LEVELS, isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
+import { type UnionVariantCollection } from './UnionVariantCollection';
+import { isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
+import { DEEP_LEVELS } from './deepnessTools';
 import { ValidatorAssertionError } from '../exceptions';
 import { assert, reprUnknownValue } from '../util';
-import { matchVariants } from './unionEnforcer';
 import { packagePrivate } from '../packagePrivateAccess';
+
+// The deep levels used in this module
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const availableDeepLevels = () => ({
+  nonRecursiveCheck: DEEP_LEVELS.nonRecursiveCheck,
+});
 
 export function preprocessInterpolatedValue(
   ruleset: SpecificRuleset<InterpolationRule>,
@@ -33,27 +39,13 @@ export function matchInterpolationVariants(
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<InterpolationRule> {
+  assert(!variantCollection.isEmpty());
   return variantCollection.matchEach(({ rootRule, interpolated: allInterpolated }) => {
     const interpolatedTarget = allInterpolated[rootRule.interpolationIndex];
     assert(!isValidator(interpolatedTarget));
     assert(!isRef(interpolatedTarget));
 
-    if (isValidator(interpolatedTarget)) {
-      matchVariants(
-        new UnionVariantCollection([interpolatedTarget.ruleset]),
-        target,
-        lookupPath,
-        { deep: DEEP_LEVELS.irrelevant },
-      ).throwIfFailed();
-    } else if (isRef(interpolatedTarget)) {
-      const validator = interpolatedTarget[packagePrivate].getValidator();
-      matchVariants(
-        new UnionVariantCollection([validator.ruleset]),
-        target,
-        lookupPath,
-        { deep: DEEP_LEVELS.irrelevant },
-      ).throwIfFailed();
-    } else if (isExpectation(interpolatedTarget)) {
+    if (isExpectation(interpolatedTarget)) {
       const maybeErrorMessage = interpolatedTarget[packagePrivate].testExpectation(target);
       if (maybeErrorMessage !== null) {
         throw new ValidatorAssertionError(
@@ -90,7 +82,7 @@ export function matchInterpolationVariants(
         `Expected ${lookupPath} to be the value ${reprUnknownValue(interpolatedTarget)} but got ${reprUnknownValue(target)}.`,
       );
     }
-  }, { deep: DEEP_LEVELS.unorganized });
+  }, { deep: availableDeepLevels().nonRecursiveCheck });
 }
 
 // ------------------------------

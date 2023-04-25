@@ -75,11 +75,7 @@ describe('unions of different types', () => {
     const v = validator`[2] | 3`;
     const act = (): any => v.assertMatches(4);
     assert.throws(act, {
-      message: [
-        'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be 3 but got 4.',
-        '  Variant 2: Expected <receivedValue> to be an array but got 4.',
-      ].join('\n'),
+      message: 'Expected <receivedValue> to be 3 but got 4.',
     });
   });
 
@@ -101,11 +97,7 @@ describe('unions of different types', () => {
     const v = validator`2[] | 3`;
     const act = (): any => v.assertMatches(4);
     assert.throws(act, {
-      message: [
-        'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be 3 but got 4.',
-        '  Variant 2: Expected <receivedValue> to be an array but got 4.',
-      ].join('\n'),
+      message: 'Expected <receivedValue> to be 3 but got 4.',
     });
   });
 
@@ -127,11 +119,7 @@ describe('unions of different types', () => {
     const v = validator`{ x: 2 } | 3`;
     const act = (): any => v.assertMatches(4);
     assert.throws(act, {
-      message: [
-        'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be 3 but got 4.',
-        '  Variant 2: Expected <receivedValue> to be an object but got 4.',
-      ].join('\n'),
+      message: 'Expected <receivedValue> to be 3 but got 4.',
     });
   });
 
@@ -174,7 +162,6 @@ describe('unions of different types', () => {
   test('union of array and object (and primitive literal) (test 3)', () => {
     const v = validator`{ x: 2, y: 3 } | 4[] | 9`;
     const act = (): any => v.assertMatches({ x: 2 });
-    // TODO: Not an ideal error. Ideally, we'd only show the error involving the object.
     assert.throws(act, {
       message: '<receivedValue> is missing the required properties: "y"',
     });
@@ -183,7 +170,11 @@ describe('unions of different types', () => {
   test('union of array and object (and primitive literal) (test 4)', () => {
     const v = validator`{ x: 2, y: 3 } | 4[] | 9`;
     const act = (): any => v.assertMatches(Object.assign([0], { x: 2 }));
-    // TODO: Not an ideal error. Ideally, we would show the object error.
+    // TODO: Ideally we would show the object variant error if we detect that the array has extra properties on it,
+    // i.e. it's trying to behave like both an array and a normal object. The other reason why we might want to
+    // show the object error is if the object pattern has numeric keys.
+    // This is mostly an edge case (people usually don't stick properties on objects, or use numeric keys on objects to match array),
+    // so it's not that important, but if you do run into the edge case, the current behavior would be fairly annoying.
     assert.throws(act, {
       message: 'Expected <receivedValue>[0] to be 4 but got 0.',
     });
@@ -221,5 +212,91 @@ describe('unions of different types', () => {
         '  Variant 2: Expected the <receivedValue> array to have 1 entry, but found 2.',
       ].join('\n'),
     });
+  });
+
+  // With `A & B`, if `A` passed and `B` fails, the "deepness" of the failure will either be the original
+  // failure's deepness level, or the maximum possible deepness error of A, whichever is greater.
+  describe('intersection chain, where second link fails', () => {
+    test('all primitive literals', () => {
+      const v = validator`(number & 1) | 2`;
+      const act = (): any => v.assertMatches(3);
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue> to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue> to be 1 but got 3.',
+        ].join('\n'),
+      });
+    });
+
+    test('simple and primitive literal patterns', () => {
+      const v = validator`(1 & string) | 2`;
+      const act = (): any => v.assertMatches(1);
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue> to be 2 but got 1.',
+          '  Variant 2: Expected <receivedValue> to be of type "string" but got type "number".',
+        ].join('\n'),
+      });
+    });
+
+    // The highest possible deepness level of the left-hand side of "&" is higher than other union variants,
+    // so only the error for the RHS of "&" should show.
+    test('tuples and an array subclass', () => {
+      class MyArray extends Array {}
+      const v = validator`[1, 2, 3] & ${MyArray} | [1, 2]`;
+      const act = (): any => v.assertMatches([1, 2, 3]);
+      assert.throws(act, {
+        message: (
+          'Expected <receivedValue>, which was [object Array], to be an instance of `MyArray` ' +
+          '(and not an instance of a subclass).'
+        ),
+      });
+    });
+
+    // The highest possible deepness level of the left-hand side of "&" is equal to other union variants,
+    // so errors from the other variants show, instead of the failed RHS of "&".
+    test('tuples and an array subclass', () => {
+      const v = validator`number & ${validator`1`} | 2`;
+      const act = (): any => v.assertMatches(3);
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue> to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue> to be 1 but got 3.',
+        ].join('\n'),
+      });
+    });
+
+    test('interpolation (test 1)', () => {
+      class MyClass {} // eslint-disable-line @typescript-eslint/no-extraneous-class
+      const expectEmptyObject = validator.expectTo((x: any) => Object.keys(x).length === 0 ? 'be empty.' : null);
+      const v = validator`${expectEmptyObject} & ${MyClass} | { x: 2 }`;
+      const act = (): any => v.assertMatches({});
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>, which was [object Object], to be empty.',
+          '  Variant 2: <receivedValue> is missing the required properties: "x"',
+        ].join('\n'),
+      });
+    });
+
+    test('interpolation (test 2)', () => {
+      class MyClass {} // eslint-disable-line @typescript-eslint/no-extraneous-class
+      const expectObject = validator.expectTo((x: any) => Object(x) === x ? null : 'be an object.');
+      const v = validator`${expectObject} & ${MyClass} | number`;
+      const act = (): any => v.assertMatches({});
+      assert.throws(act, {
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue> to be of type "number" but got type "object".',
+          '  Variant 2: Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
+        ].join('\n'),
+      });
+    });
+
+    // TODO: Writes tests for a three-long intersection chain
   });
 });

@@ -3,6 +3,7 @@ import type { ValidatorAssertionError } from '../exceptions';
 import type { Rule } from '../types/validationRules';
 import type { UnionVariantCollection } from './UnionVariantCollection';
 import { buildUnionError, type SpecificRuleset } from './shared';
+import { maxDeepRange, type DeepRange } from './deepnessTools';
 
 /**
  * A VariantMatchResponse is returned by match functions, to provide
@@ -70,13 +71,13 @@ export class SuccessMatchResponse<RuleType extends Rule> implements VariantMatch
 export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchResponse<RuleType> {
   readonly error: ValidatorAssertionError;
   readonly variantCollection: UnionVariantCollection<RuleType>;
-  readonly deep: number;
+  readonly deep: DeepRange;
   constructor(
-    overallError: ValidatorAssertionError,
+    error: ValidatorAssertionError,
     variantCollection: UnionVariantCollection<RuleType>,
-    { deep }: { readonly deep: number },
+    { deep }: { readonly deep: DeepRange },
   ) {
-    this.error = overallError;
+    this.error = error;
     this.variantCollection = variantCollection;
     this.deep = deep;
   }
@@ -98,6 +99,11 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
   ): FailedMatchResponse<T> {
     return new FailedMatchResponse<T>(this.error, variantCollection, { deep: this.deep });
   }
+
+  withMinDeepness(deep: DeepRange): FailedMatchResponse<RuleType> {
+    const newDeep = maxDeepRange([this.deep, deep]);
+    return new FailedMatchResponse(this.error, this.variantCollection, { deep: newDeep });
+  }
 }
 
 // ---------------------------------------
@@ -115,7 +121,7 @@ export class FailedMatchResponse<RuleType extends Rule> implements VariantMatchR
 export function matchResponseFromErrorMap<RuleType extends Rule>(
   variantToError: Map<SpecificRuleset<RuleType>, ValidatorAssertionError>,
   targetCollection: UnionVariantCollection<RuleType>,
-  { deep }: { readonly deep: number },
+  { deep }: { readonly deep: DeepRange },
 ): VariantMatchResponse<RuleType> {
   if (variantToError.size === targetCollection.variants.length) {
     const unionError = buildUnionError(
@@ -181,6 +187,41 @@ export function mergeMatchResultsToSuccessResult(matchResponses: ReadonlyArray<V
     'Internal error: Merging variants to create a failed response is not supported',
   );
   return new SuccessMatchResponse([...failedVariants], commonCollection);
+}
+
+/**
+ * Merge responses together.
+ * Creates a combined union error message, using only the errors that were
+ * associated with the "deepest" failures.
+ * The new result will be assigned a deepness level of the provided "deep" parameter.
+ */
+export function mergeFailedOrEmptyResponsesToFailedResponse<RuleType extends Rule>(
+  matchResponses: ReadonlyArray<VariantMatchResponse<Rule>>,
+  targetCollection: UnionVariantCollection,
+  { deep }: { deep: DeepRange },
+): FailedMatchResponse<RuleType> {
+  const deepestLevel = Math.max(...matchResponses.map(
+    response => response instanceof FailedMatchResponse ? response.deep.start : -Infinity,
+  ));
+
+  const errorMessages = matchResponses.flatMap(response => {
+    if (response instanceof SuccessMatchResponse) {
+      assert(response.failedVariants().length === 0);
+      return [];
+    } else {
+      assert(response instanceof FailedMatchResponse);
+      if (response.failedVariants().length === 0) {
+        return [];
+      }
+      if (response.deep.end < deepestLevel) {
+        return [];
+      }
+      return [response.error.message];
+    }
+  });
+
+  assert(errorMessages.length > 0);
+  return new FailedMatchResponse(buildUnionError(errorMessages), targetCollection, { deep }) as FailedMatchResponse<RuleType>;
 }
 
 /**

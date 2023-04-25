@@ -1,6 +1,6 @@
 import type { Rule } from '../types/validationRules';
 import { matchVariants } from './unionEnforcer';
-import { DEEP_LEVELS } from './shared';
+import { DEEP_LEVELS } from './deepnessTools';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { SuccessMatchResponse } from './VariantMatchResponse';
 

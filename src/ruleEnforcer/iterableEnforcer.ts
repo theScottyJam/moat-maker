@@ -6,25 +6,31 @@ import {
   FailedMatchResponse,
 } from './VariantMatchResponse';
 import type { UnionVariantCollection } from './UnionVariantCollection';
-import { DEEP_LEVELS } from './shared';
+import { DEEP_LEVELS } from './deepnessTools';
 import { assert } from '../util';
 import { matchVariants } from './unionEnforcer';
+
+// The deep levels used in this module
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const availableDeepLevels = () => ({
+  typeCheck: DEEP_LEVELS.typeCheck,
+  immediateInfoCheck: DEEP_LEVELS.immediateInfoCheck,
+  recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
+});
 
 export function matchIterableVariants(
   variantCollection: UnionVariantCollection<IterableRule>,
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<IterableRule> {
+  assert(!variantCollection.isEmpty());
   let curVariantCollection = variantCollection;
-  if (curVariantCollection.isEmpty()) {
-    return SuccessMatchResponse.createEmpty(curVariantCollection);
-  }
   const allResults: Array<VariantMatchResponse<IterableRule>> = [];
 
   if (!isIterable(target)) {
     return variantCollection.createFailResponse(
       `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
-      { deep: DEEP_LEVELS.typeCheck },
+      { deep: availableDeepLevels().typeCheck },
     );
   }
 
@@ -32,7 +38,7 @@ export function matchIterableVariants(
     curVariantCollection.map(({ rootRule, interpolated }) => ({ rootRule: rootRule.iterableType, interpolated })),
     target,
     lookupPath,
-    { deep: DEEP_LEVELS.immediateInfoCheck },
+    { deep: availableDeepLevels().immediateInfoCheck },
   );
   allResults.push(iterableTypeResult as VariantMatchResponse<IterableRule>);
   curVariantCollection = curVariantCollection.removeFailed(iterableTypeResult);
@@ -47,7 +53,7 @@ export function matchIterableVariants(
       curVariantCollection.map(({ rootRule, interpolated }) => ({ rootRule: rootRule.entryType, interpolated })),
       entry,
       `[...${lookupPath}][${i}]`,
-      { deep: DEEP_LEVELS.recurseInwardsCheck },
+      { deep: availableDeepLevels().recurseInwardsCheck },
     );
 
     allResults.push(contentResults as VariantMatchResponse<IterableRule>);

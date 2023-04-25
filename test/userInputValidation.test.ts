@@ -210,7 +210,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       });
     });
 
-    test.skip('tuple rules can not have the wrong number of labels', () => {
+    test('tuple rules can not have the wrong number of labels', () => {
       const primitiveRule = { category: 'simple', type: 'string' } as const;
       const ruleset: Ruleset = {
         rootRule: {
@@ -225,13 +225,19 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
 
       const act = (): any => validator.fromRuleset(ruleset);
 
-      // TODO: This is the error we should receive, but we're incorrectly scrubbing that error out and
-      // showing other union errors instead.
+      // TODO: This error isn't ideal. There's two problems.
+      // 1. The nesting of the union variants. This shouldn't be hard to fix, I just need to, in the code, wait
+      // to build the union error from its variants until the last minute, instead of building them as I go.
+      // 2. The fact that it is recommending some rules like noop and array, both of which aren't the real problem
+      // in this case. I don't know if there's really a good fix for that issue.
       assert.throws(act, {
-        message: (
-          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected <argumentList>[0].rootRule, which was [object Object], to have exactly 4 label(s) but found 5.'
-        ),
+        message: [
+          'Received invalid "ruleset" argument for validator.fromRuleset(): Failed to match against any variant of a union.',
+          '  Variant 1: Expected <argumentList>[0].rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
+          '  Variant 2: Failed to match against any variant of a union.',
+          '      Variant 1: Expected <argumentList>[0].rootRule.category to be "noop" but got "tuple".',
+          '      Variant 2: Expected <argumentList>[0].rootRule.category to be "array" but got "tuple".',
+        ].join('\n'),
       });
     });
   });

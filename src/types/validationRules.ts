@@ -96,19 +96,6 @@ export type Rule = (
   | InterpolationRule
 );
 
-const allCategories: ReadonlyArray<Rule['category']> = [
-  'simple',
-  'primitiveLiteral',
-  'noop',
-  'object',
-  'array',
-  'tuple',
-  'iterable',
-  'union',
-  'intersection',
-  'interpolation',
-] as const;
-
 export interface Ruleset {
   readonly rootRule: Rule
   readonly interpolated: readonly unknown[]
@@ -224,5 +211,5 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 }
 
 export const _parsingRulesInternals = {
-  [packagePrivate]: { allCategories, allSimpleTypes, createRulesetCheck },
+  [packagePrivate]: { allSimpleTypes, createRulesetCheck },
 };

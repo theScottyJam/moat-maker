@@ -239,11 +239,7 @@ describe('union rules with objects', () => {
       const v = validator`{ type: 'A', [index: number]: { x: 2 }, 0: { y: 3 } } | { type: 'B', 0: string }`;
       const act = (): any => v.assertMatches({ type: 'A', 0: { x: 2 } });
       assert.throws(act, {
-        message: [
-          'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>["0"] to be of type "string" but got type "object".',
-          '  Variant 2: <receivedValue>["0"] is missing the required properties: "y"',
-        ].join('\n'),
+        message: '<receivedValue>["0"] is missing the required properties: "y"',
       });
     });
 

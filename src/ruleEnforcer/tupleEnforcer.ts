@@ -1,31 +1,39 @@
 import type { Rule, TupleRule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
 import { ValidatorAssertionError } from '../exceptions';
-import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
+import { FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
 import { UnionVariantCollection } from './UnionVariantCollection';
 import { matchVariants } from './unionEnforcer';
-import { DEEP_LEVELS, type SpecificRuleset } from './shared';
+import type { SpecificRuleset } from './shared';
+import { DEEP_LEVELS } from './deepnessTools';
+
+// The deep levels used in this module
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const availableDeepLevels = () => ({
+  irrelevant: DEEP_LEVELS.irrelevant,
+  typeCheck: DEEP_LEVELS.typeCheck,
+  immediateInfoCheck: DEEP_LEVELS.immediateInfoCheck,
+  recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
+});
 
 export function matchTupleVariants(
   variantCollection: UnionVariantCollection<TupleRule>,
   target: unknown,
   lookupPath: string,
 ): VariantMatchResponse<TupleRule> {
+  assert(!variantCollection.isEmpty());
   let curVariantCollection = variantCollection;
-  if (curVariantCollection.isEmpty()) {
-    return SuccessMatchResponse.createEmpty(curVariantCollection);
-  }
 
   if (!Array.isArray(target)) {
     return curVariantCollection.createFailResponse(
       `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
-      { deep: DEEP_LEVELS.typeCheck },
+      { deep: availableDeepLevels().typeCheck },
     );
   }
 
   const matchSizeResponse = curVariantCollection.matchEach(({ rootRule }) => {
     assertValidTupleSize(rootRule, target, lookupPath);
-  }, { deep: DEEP_LEVELS.immediateInfoCheck });
+  }, { deep: availableDeepLevels().immediateInfoCheck });
 
   curVariantCollection = curVariantCollection.removeFailed(matchSizeResponse);
   if (curVariantCollection.isEmpty()) {
@@ -48,7 +56,7 @@ export function matchTupleVariants(
       derivedCollection,
       subTarget,
       `${lookupPath}[${subTargetIndex}]`,
-      { deep: DEEP_LEVELS.recurseInwardsCheck },
+      { deep: availableDeepLevels().recurseInwardsCheck },
     );
     curVariantCollection = curVariantCollection.removeFailed(matchEntryResponse);
     if (curVariantCollection.isEmpty()) {
@@ -71,9 +79,9 @@ export function matchTupleVariants(
         new UnionVariantCollection([{ rootRule: rootRule.rest, interpolated }]),
         portionToTestAgainst,
         subPath,
-        { deep: DEEP_LEVELS.irrelevant },
+        { deep: availableDeepLevels().irrelevant },
       ).throwIfFailed();
-    }, { deep: DEEP_LEVELS.recurseInwardsCheck });
+    }, { deep: availableDeepLevels().recurseInwardsCheck });
 
   if (curVariantCollection.removeFailed(matchRestResponse).isEmpty()) {
     assert(matchRestResponse instanceof FailedMatchResponse);
