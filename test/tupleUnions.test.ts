@@ -89,7 +89,7 @@ describe('union rules with tuples', () => {
       const v = validator`[1] | [2] | [...5[]] | [1, 2]`;
       const act = (): any => v.assertMatches([3]);
       assert.throws(act, {
-        message: 'Expected <receivedValue>.slice(0)[0] to be 5 but got 3.',
+        message: 'Expected <receivedValue>[0] to be 5 but got 3.',
       });
     });
 
@@ -109,7 +109,7 @@ describe('union rules with tuples', () => {
       const v = validator`[0, ...4[]] | [0, ...5[]] | [0, 1, 2]`;
       const act = (): any => v.assertMatches([0, 4, 4, 4, 5]);
       assert.throws(act, {
-        message: 'Expected <receivedValue>.slice(1)[3] to be 4 but got 5.',
+        message: 'Expected <receivedValue>[4] to be 4 but got 5.',
       });
     });
 
@@ -121,8 +121,8 @@ describe('union rules with tuples', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.slice(1)[1] to be 0 but got 5.',
-          '  Variant 2: Expected <receivedValue>.slice(2)[2] to be 5 but got 4.',
+          '  Variant 1: Expected <receivedValue>[2] to be 0 but got 5.',
+          '  Variant 2: Expected <receivedValue>[4] to be 5 but got 4.',
         ].join('\n'),
       });
     });

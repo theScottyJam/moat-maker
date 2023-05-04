@@ -153,7 +153,7 @@ describe('tuple rules', () => {
     test('rejects when the rest entry is of the wrong type', () => {
       const v = validator`[string, number, ...boolean[]]`;
       const act = (): any => v.assertMatches(['xyz', 2, true, 'xyz']);
-      assert.throws(act, { message: 'Expected <receivedValue>.slice(2)[1] to be of type "boolean" but got type "string".' });
+      assert.throws(act, { message: 'Expected <receivedValue>[3] to be of type "boolean" but got type "string".' });
       assert.throws(act, TypeError);
     });
 
@@ -180,6 +180,13 @@ describe('tuple rules', () => {
       const v = validator`[string, number?, ...${myChecker}]`;
       v.assertMatches(['xyz']);
       expect(calledWith).toMatchObject([]);
+    });
+
+    test('nested rest', () => {
+      const v = validator`[string, ...[number, ...[boolean]]]`;
+      const act = (): any => v.assertMatches(['xyz', 1, 'whoops']);
+      // Notice how the error message can correctly collapse the nested rest into a single `<receivedValue>[2]`
+      assert.throws(act, { message: 'Expected <receivedValue>[2] to be of type "boolean" but got type "string".' });
     });
   });
 

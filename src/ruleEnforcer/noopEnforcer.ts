@@ -1,3 +1,4 @@
+import type { LookupPath } from '../LookupPath';
 import type { NoopRule } from '../types/validationRules';
 import type { CheckFnResponse } from './ruleMatcherTools';
 
@@ -8,7 +9,7 @@ export function noopCheck(
   rule: NoopRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   return [];
 }

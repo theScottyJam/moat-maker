@@ -1,3 +1,4 @@
+import type { LookupPath } from '../LookupPath';
 import { _parsingRulesInternals, type IterableRule } from '../types/validationRules';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
@@ -14,11 +15,14 @@ export function iterableCheck(
   rule: IterableRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!isIterable(target)) {
     return [{
-      message: `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
+      message: (
+        `Expected ${lookupPath.asString()} to be an iterable, ` +
+        'i.e. you should be able to use this value in a for-of loop.'
+      ),
       deep: availableDeepLevels().typeCheck,
       progress: -2,
     }];
@@ -36,7 +40,8 @@ export function iterableCheck(
 
   let i = 0;
   for (const entry of target) {
-    const entryMatchResponse = match(rule.entryType, entry, interpolated, `[...${lookupPath}][${i}]`);
+    const entryPath = lookupPath.thenConvertToArray().thenIndexArray(i);
+    const entryMatchResponse = match(rule.entryType, entry, interpolated, entryPath);
 
     if (entryMatchResponse.failed()) {
       return [{

@@ -1,3 +1,4 @@
+import type { LookupPath } from '../LookupPath';
 import type { Rule, TupleRule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
@@ -16,11 +17,11 @@ export function tupleCheck(
   rule: TupleRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!Array.isArray(target)) {
     return [{
-      message: `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
+      message: `Expected ${lookupPath.asString()} to be an array but got ${reprUnknownValue(target)}.`,
       deep: availableDeepLevels().typeCheck,
       progress: -2,
     }];
@@ -50,7 +51,7 @@ export function tupleCheck(
       tupleEntryRule,
       subTarget,
       interpolated,
-      `${lookupPath}[${subTargetIndex}]`,
+      lookupPath.thenIndexArray(subTargetIndex),
     );
 
     if (elementMatchResponse.failed()) {
@@ -70,7 +71,7 @@ export function tupleCheck(
       rule.rest,
       portionToTestAgainst,
       interpolated,
-      `${lookupPath}.slice(${startIndex})`,
+      lookupPath.thenSliceArray({ from: startIndex }),
     );
 
     if (restMatchResponse.failed()) {
@@ -85,7 +86,7 @@ export function tupleCheck(
   return [];
 }
 
-function checkTupleSize(rule: TupleRule, target: readonly unknown[], lookupPath: string): string | null {
+function checkTupleSize(rule: TupleRule, target: readonly unknown[], lookupPath: LookupPath): string | null {
   const minSize = rule.content.length;
   const maxSize = rule.rest !== null
     ? Infinity
@@ -93,14 +94,20 @@ function checkTupleSize(rule: TupleRule, target: readonly unknown[], lookupPath:
 
   if (target.length < minSize || target.length > maxSize) {
     if (minSize === maxSize) {
-      return `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`;
+      return (
+        `Expected the ${lookupPath.asString()} array to have ` +
+        `${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`
+      );
     } else if (maxSize !== Infinity) {
       return (
-        `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
+        `Expected the ${lookupPath.asString()} array to have between ${minSize} and ${maxSize} entries, ` +
         `but found ${target.length}.`
       );
     } else {
-      return `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`;
+      return (
+        `Expected the ${lookupPath.asString()} array to have at least ` +
+        `${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`
+      );
     }
   }
 

@@ -5,6 +5,7 @@ import { isIdentifier } from '../tokenStream';
 import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import { type MatchResponse, type CheckFnResponse, match } from './ruleMatcherTools';
+import { LookupPath } from '../LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -32,11 +33,11 @@ export function objectCheck(
   rule: ObjectRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!isObject(target)) {
     return [{
-      message: `Expected ${lookupPath} to be an object but got ${reprUnknownValue(target)}.`,
+      message: `Expected ${lookupPath.asString()} to be an object but got ${reprUnknownValue(target)}.`,
       deep: availableDeepLevels().nonSpecificTypeCheck,
       progress: -3,
     }];
@@ -78,7 +79,7 @@ export function objectCheck(
       propertyRule,
       propertyValue,
       interpolated,
-      calcSubLookupPath(lookupPath, key),
+      lookupPath.thenAccessProperty(key),
     );
 
     if (elementMatchResponse.failed()) {
@@ -139,7 +140,7 @@ function validateAndApplyDynamicKeys(
 function assertRequiredKeysArePresent(
   ruleWithStaticKeys: ObjectRuleWithStaticKeys,
   target: object,
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): string | null {
   const missingKeys = [...ruleWithStaticKeys.content.entries()]
     .filter(([key, value]) => !value.every(({ optional }) => optional))
@@ -148,7 +149,7 @@ function assertRequiredKeysArePresent(
 
   if (missingKeys.length > 0) {
     return (
-      `${lookupPath} is missing the required properties: ` +
+      `${lookupPath.asString()} is missing the required properties: ` +
       missingKeys.map(key => reprUnknownValue(key)).join(', ')
     );
   }
@@ -160,7 +161,7 @@ function checkIfIndexSignatureIsSatisfied(
   indexInfo: ObjectRuleIndexValue,
   target: object,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): MatchResponse | null {
   for (const [key, value] of allObjectEntries(target)) {
     if (doesIndexSignatureApplyToProperty(indexInfo, key, interpolated)) {
@@ -168,7 +169,7 @@ function checkIfIndexSignatureIsSatisfied(
         indexInfo.value,
         value,
         interpolated,
-        calcSubLookupPath(lookupPath, key),
+        lookupPath.thenAccessProperty(key),
       );
 
       if (matchResponse.failed()) {
@@ -241,18 +242,7 @@ function doesIndexSignatureApplyToProperty(
 }
 
 function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
-  return !match(rule, target, interpolated, '<receivedValue>').failed();
-}
-
-/** Calculates the next lookup path, given the current lookup path and an object key. */
-function calcSubLookupPath(lookupPath: string, key: string | symbol): string {
-  if (typeof key === 'string' && isIdentifier(key)) {
-    return `${lookupPath}.${key}`;
-  } else if (typeof key === 'string') {
-    return `${lookupPath}[${JSON.stringify(key)}]`;
-  } else {
-    return `${lookupPath}[Symbol(${key.description ?? ''})]`;
-  }
+  return !match(rule, target, interpolated, new LookupPath()).failed();
 }
 
 // ------------------------------

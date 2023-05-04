@@ -11,6 +11,7 @@ import { primitiveLiteralCheck } from './privitiveLiteralEnforcer';
 import { simpleCheck } from './simpleEnforcer';
 import { tupleCheck } from './tupleEnforcer';
 import { unionCheck } from './unionEnforcer';
+import type { LookupPath } from '../LookupPath';
 
 // With both progress values and deepness values, these numbers should either stay the same
 // or increase as you get further into a check algorithm. They should never decrease.
@@ -37,14 +38,14 @@ type CheckFn<RuleType extends Rule> = (
   rule: RuleType,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string
+  lookupPath: LookupPath
 ) => CheckFnResponse;
 
 export class MatchResponse {
   readonly for: Rule['category'];
-  readonly lookupPath: string;
+  readonly lookupPath: LookupPath;
   readonly failures: CheckFnResponse;
-  constructor(category: Rule['category'], lookupPath: string, failures: CheckFnResponse) {
+  constructor(category: Rule['category'], lookupPath: LookupPath, failures: CheckFnResponse) {
     this.for = category;
     this.lookupPath = lookupPath;
     this.failures = failures;
@@ -59,7 +60,7 @@ export function match(
   rule: Rule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): MatchResponse {
   const doMatch = <RuleType extends Rule>(rule: RuleType, checkFn: CheckFn<RuleType>): MatchResponse => {
     const failures = checkFn(rule, target, interpolated, lookupPath);
@@ -95,7 +96,7 @@ export function gatherErrorMessagesFor_(
 ): Map<MatchResponse, readonly string[]> {
   const responseToErrors = new Map<MatchResponse, string[]>();
   const groupedByPath = (
-    Object.values(group(matchResponses, m => m.lookupPath)) as
+    Object.values(group(matchResponses, m => m.lookupPath.asString())) as
     ReadonlyArray<readonly MatchResponse[]>
   );
   for (const responsesAtSamePath of groupedByPath) {

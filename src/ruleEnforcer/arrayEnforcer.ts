@@ -1,3 +1,4 @@
+import type { LookupPath } from '../LookupPath';
 import type { ArrayRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
@@ -14,18 +15,18 @@ export function arrayCheck(
   rule: ArrayRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!Array.isArray(target)) {
     return [{
-      message: `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
+      message: `Expected ${lookupPath.asString()} to be an array but got ${reprUnknownValue(target)}.`,
       deep: availableDeepLevels().typeCheck,
       progress: -1,
     }];
   }
 
   for (const [i, element] of target.entries()) {
-    const elementMatchResponse = match(rule.content, element, interpolated, `${lookupPath}[${i}]`);
+    const elementMatchResponse = match(rule.content, element, interpolated, lookupPath.thenIndexArray(i));
 
     if (elementMatchResponse.failed()) {
       return [{

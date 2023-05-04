@@ -204,7 +204,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
         message: 'Received invalid "myNumbs" arguments for fnWithValidation(): ' +
-        'Expected <argumentList>.slice(1)[0] to be of type "number" but got type "string".',
+        'Expected <argumentList>[1] to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });

@@ -3,6 +3,7 @@ import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import { reprUnknownValue } from '../util';
 import type { CheckFnResponse } from './ruleMatcherTools';
+import type { LookupPath } from '../LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -15,10 +16,13 @@ export function primitiveLiteralCheck(
   rule: PrimitiveLiteralRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
-  const formatError = (expectedValue: unknown, actualValue: unknown, lookupPath: string): string => {
-    return `Expected ${lookupPath} to be ${reprUnknownValue(expectedValue)} but got ${reprUnknownValue(actualValue)}.`;
+  const formatError = (expectedValue: unknown, actualValue: unknown, lookupPath: LookupPath): string => {
+    return (
+      `Expected ${lookupPath.asString()} to be ${reprUnknownValue(expectedValue)} ` +
+      `but got ${reprUnknownValue(actualValue)}.`
+    );
   };
 
   if (getSimpleTypeOf(target) !== getSimpleTypeOf(rule.value)) {

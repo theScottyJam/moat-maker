@@ -2,6 +2,7 @@ import type { SimpleRule } from '../types/validationRules';
 import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import type { CheckFnResponse } from './ruleMatcherTools';
+import type { LookupPath } from '../LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -13,7 +14,7 @@ export function simpleCheck(
   rule: SimpleRule,
   target: unknown,
   interpolated: readonly unknown[],
-  lookupPath: string,
+  lookupPath: LookupPath,
 ): CheckFnResponse {
   if (getSimpleTypeOf(target) === rule.type) {
     return [];
@@ -27,7 +28,7 @@ export function simpleCheck(
   }
 
   return [{
-    message: `Expected ${lookupPath} to be of type "${rule.type}" but got ${whatWasGot}.`,
+    message: `Expected ${lookupPath.asString()} to be of type "${rule.type}" but got ${whatWasGot}.`,
     deep: availableDeepLevels().typeCheck,
   }];
 }
