@@ -1,17 +1,9 @@
 import type { Rule } from '../types/validationRules';
-import { matchVariants } from './unionEnforcer';
-import { DEEP_LEVELS } from './deepnessTools';
-import { UnionVariantCollection } from './UnionVariantCollection';
-import { SuccessMatchResponse } from './VariantMatchResponse';
+import { gatherErrorMessagesFor, match } from './ruleMatcherTools';
+import { buildUnionError } from './shared';
 
 export function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
-  const variantCollection = new UnionVariantCollection([{ rootRule: rule, interpolated }]);
-  return matchVariants(
-    variantCollection,
-    target,
-    '<receivedValue>',
-    { deep: DEEP_LEVELS.irrelevant },
-  ) instanceof SuccessMatchResponse;
+  return !match(rule, target, interpolated, '<receivedValue>').failed();
 }
 
 /** Throws ValidatorAssertionError if the value does not match. */
@@ -21,11 +13,8 @@ export function assertMatches<T>(
   interpolated: readonly unknown[],
   lookupPath: string = '<receivedValue>',
 ): asserts target is T {
-  const variantCollection = new UnionVariantCollection([{ rootRule: rule, interpolated }]);
-  matchVariants(
-    variantCollection,
-    target,
-    lookupPath,
-    { deep: DEEP_LEVELS.irrelevant },
-  ).throwIfFailed();
+  const matchResponse = match(rule, target, interpolated, lookupPath);
+  if (matchResponse.failed()) {
+    throw buildUnionError(gatherErrorMessagesFor([matchResponse]));
+  }
 }

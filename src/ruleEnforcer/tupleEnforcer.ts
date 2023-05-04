@@ -1,11 +1,7 @@
 import type { Rule, TupleRule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
-import { ValidatorAssertionError } from '../exceptions';
-import { FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
-import { UnionVariantCollection } from './UnionVariantCollection';
-import { matchVariants } from './unionEnforcer';
-import type { SpecificRuleset } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
+import { match, type CheckFnResponse } from './ruleMatcherTools';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -16,82 +12,80 @@ export const availableDeepLevels = () => ({
   recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
 });
 
-export function matchTupleVariants(
-  variantCollection: UnionVariantCollection<TupleRule>,
+export function tupleCheck(
+  rule: TupleRule,
   target: unknown,
+  interpolated: readonly unknown[],
   lookupPath: string,
-): VariantMatchResponse<TupleRule> {
-  assert(!variantCollection.isEmpty());
-  let curVariantCollection = variantCollection;
-
+): CheckFnResponse {
   if (!Array.isArray(target)) {
-    return curVariantCollection.createFailResponse(
-      `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
-      { deep: availableDeepLevels().typeCheck },
-    );
+    return [{
+      message: `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
+      deep: availableDeepLevels().typeCheck,
+      progress: -2,
+    }];
   }
 
-  const matchSizeResponse = curVariantCollection.matchEach(({ rootRule }) => {
-    assertValidTupleSize(rootRule, target, lookupPath);
-  }, { deep: availableDeepLevels().immediateInfoCheck });
-
-  curVariantCollection = curVariantCollection.removeFailed(matchSizeResponse);
-  if (curVariantCollection.isEmpty()) {
-    assert(matchSizeResponse instanceof FailedMatchResponse);
-    return matchSizeResponse.asFailedResponseFor(variantCollection);
+  const maybeErrorMessage = checkTupleSize(rule, target, lookupPath);
+  if (maybeErrorMessage !== null) {
+    return [{
+      message: maybeErrorMessage,
+      deep: availableDeepLevels().immediateInfoCheck,
+      progress: -1,
+    }];
   }
 
   for (const [subTargetIndex, subTarget] of target.entries()) {
-    // I don't have to worry about required/optional here. Length checks were already done above.
-    const derivedCollection = curVariantCollection
-      .map(variant => deriveEntryRuleset(variant, subTargetIndex));
+    const tupleEntryRule = tupleEntryRuleFromIndex(subTargetIndex, rule);
 
-    if (derivedCollection.isEmpty()) {
-      // This means each variant is validating via "rest".
-      // We can break this loop and move onto the "rest" validation step.
+    if (tupleEntryRule === null) {
+      // Length checks should have already been done by this point,
+      // so if an index is being passed in, and there isn't a required or optional
+      // matching rule, then it must be matched via a rest rule.
+      assert(rule.rest !== null);
       break;
     }
 
-    const matchEntryResponse = matchVariants(
-      derivedCollection,
+    const elementMatchResponse = match(
+      tupleEntryRule,
       subTarget,
+      interpolated,
       `${lookupPath}[${subTargetIndex}]`,
-      { deep: availableDeepLevels().recurseInwardsCheck },
     );
-    curVariantCollection = curVariantCollection.removeFailed(matchEntryResponse);
-    if (curVariantCollection.isEmpty()) {
-      assert(matchEntryResponse instanceof FailedMatchResponse);
-      return matchEntryResponse.asFailedResponseFor(variantCollection);
+
+    if (elementMatchResponse.failed()) {
+      return [{
+        matchResponse: elementMatchResponse,
+        deep: availableDeepLevels().recurseInwardsCheck,
+        progress: subTargetIndex,
+      }];
     }
   }
 
-  // Validate "rest" rules
-  const matchRestResponse = curVariantCollection
-    .filter(({ rootRule }) => rootRule.rest !== null)
-    .matchEach(({ rootRule, interpolated }) => {
-      assert(rootRule.rest !== null);
+  if (rule.rest !== null) {
+    const startIndex = rule.content.length + rule.optionalContent.length;
+    const portionToTestAgainst = target.slice(startIndex);
 
-      const startIndex = rootRule.content.length + rootRule.optionalContent.length;
-      const portionToTestAgainst = target.slice(startIndex);
+    const restMatchResponse = match(
+      rule.rest,
+      portionToTestAgainst,
+      interpolated,
+      `${lookupPath}.slice(${startIndex})`,
+    );
 
-      const subPath = `${lookupPath}.slice(${startIndex})`;
-      matchVariants(
-        new UnionVariantCollection([{ rootRule: rootRule.rest, interpolated }]),
-        portionToTestAgainst,
-        subPath,
-        { deep: availableDeepLevels().irrelevant },
-      ).throwIfFailed();
-    }, { deep: availableDeepLevels().recurseInwardsCheck });
-
-  if (curVariantCollection.removeFailed(matchRestResponse).isEmpty()) {
-    assert(matchRestResponse instanceof FailedMatchResponse);
-    return matchRestResponse.asFailedResponseFor(variantCollection);
+    if (restMatchResponse.failed()) {
+      return [{
+        matchResponse: restMatchResponse,
+        deep: availableDeepLevels().recurseInwardsCheck,
+        progress: Infinity,
+      }];
+    }
   }
 
-  return matchSizeResponse;
+  return [];
 }
 
-function assertValidTupleSize(rule: TupleRule, target: unknown[], lookupPath: string): void {
+function checkTupleSize(rule: TupleRule, target: readonly unknown[], lookupPath: string): string | null {
   const minSize = rule.content.length;
   const maxSize = rule.rest !== null
     ? Infinity
@@ -99,39 +93,30 @@ function assertValidTupleSize(rule: TupleRule, target: unknown[], lookupPath: st
 
   if (target.length < minSize || target.length > maxSize) {
     if (minSize === maxSize) {
-      throw new ValidatorAssertionError(
-        `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
-      );
+      return `Expected the ${lookupPath} array to have ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`;
     } else if (maxSize !== Infinity) {
-      throw new ValidatorAssertionError(
+      return (
         `Expected the ${lookupPath} array to have between ${minSize} and ${maxSize} entries, ` +
-        `but found ${target.length}.`,
+        `but found ${target.length}.`
       );
     } else {
-      throw new ValidatorAssertionError(
-        `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`,
-      );
+      return `Expected the ${lookupPath} array to have at least ${minSize} ${minSize === 1 ? 'entry' : 'entries'}, but found ${target.length}.`;
     }
   }
+
+  return null;
 }
 
-/**
- * Provides a rule for matching a single tuple entry, given the tuple rule and an index.
- */
-function deriveEntryRuleset(
-  { rootRule, interpolated }: SpecificRuleset<TupleRule>,
-  index: number,
-): null | SpecificRuleset<Rule> {
-  const maybeRequiredEntry = rootRule.content[index];
+function tupleEntryRuleFromIndex(index: number, rule: TupleRule): null | Rule {
+  const maybeRequiredEntry = rule.content[index];
   if (maybeRequiredEntry !== undefined) {
-    return { rootRule: maybeRequiredEntry, interpolated };
+    return maybeRequiredEntry;
   }
 
-  const maybeOptionalEntry = rootRule.optionalContent[index - rootRule.content.length];
+  const maybeOptionalEntry = rule.optionalContent[index - rule.content.length];
   if (maybeOptionalEntry !== undefined) {
-    return { rootRule: maybeOptionalEntry, interpolated };
+    return maybeOptionalEntry;
   }
 
-  assert(rootRule.rest !== null);
   return null;
 }

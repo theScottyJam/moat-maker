@@ -1,14 +1,6 @@
-import { type IterableRule, _parsingRulesInternals } from '../types/validationRules';
-import {
-  SuccessMatchResponse,
-  type VariantMatchResponse,
-  mergeMatchResultsToSuccessResult,
-  FailedMatchResponse,
-} from './VariantMatchResponse';
-import type { UnionVariantCollection } from './UnionVariantCollection';
+import { _parsingRulesInternals, type IterableRule } from '../types/validationRules';
 import { DEEP_LEVELS } from './deepnessTools';
-import { assert } from '../util';
-import { matchVariants } from './unionEnforcer';
+import { match, type CheckFnResponse } from './ruleMatcherTools';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -18,55 +10,46 @@ export const availableDeepLevels = () => ({
   recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
 });
 
-export function matchIterableVariants(
-  variantCollection: UnionVariantCollection<IterableRule>,
+export function iterableCheck(
+  rule: IterableRule,
   target: unknown,
+  interpolated: readonly unknown[],
   lookupPath: string,
-): VariantMatchResponse<IterableRule> {
-  assert(!variantCollection.isEmpty());
-  let curVariantCollection = variantCollection;
-  const allResults: Array<VariantMatchResponse<IterableRule>> = [];
-
+): CheckFnResponse {
   if (!isIterable(target)) {
-    return variantCollection.createFailResponse(
-      `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
-      { deep: availableDeepLevels().typeCheck },
-    );
+    return [{
+      message: `Expected ${lookupPath} to be an iterable, i.e. you should be able to use this value in a for-of loop.`,
+      deep: availableDeepLevels().typeCheck,
+      progress: -2,
+    }];
   }
 
-  const iterableTypeResult = matchVariants(
-    curVariantCollection.map(({ rootRule, interpolated }) => ({ rootRule: rootRule.iterableType, interpolated })),
-    target,
-    lookupPath,
-    { deep: availableDeepLevels().immediateInfoCheck },
-  );
-  allResults.push(iterableTypeResult as VariantMatchResponse<IterableRule>);
-  curVariantCollection = curVariantCollection.removeFailed(iterableTypeResult);
-  if (curVariantCollection.isEmpty()) {
-    assert(iterableTypeResult instanceof FailedMatchResponse);
-    return iterableTypeResult.asFailedResponseFor(variantCollection);
+  const iterableTypeMatchResponse = match(rule.iterableType, target, interpolated, lookupPath);
+
+  if (iterableTypeMatchResponse.failed()) {
+    return [{
+      matchResponse: iterableTypeMatchResponse,
+      deep: availableDeepLevels().immediateInfoCheck,
+      progress: -1,
+    }];
   }
 
   let i = 0;
   for (const entry of target) {
-    const contentResults = matchVariants(
-      curVariantCollection.map(({ rootRule, interpolated }) => ({ rootRule: rootRule.entryType, interpolated })),
-      entry,
-      `[...${lookupPath}][${i}]`,
-      { deep: availableDeepLevels().recurseInwardsCheck },
-    );
+    const entryMatchResponse = match(rule.entryType, entry, interpolated, `[...${lookupPath}][${i}]`);
 
-    allResults.push(contentResults as VariantMatchResponse<IterableRule>);
-    curVariantCollection = curVariantCollection.removeFailed(contentResults);
-    if (curVariantCollection.isEmpty()) {
-      assert(contentResults instanceof FailedMatchResponse);
-      return contentResults.asFailedResponseFor(variantCollection);
+    if (entryMatchResponse.failed()) {
+      return [{
+        matchResponse: entryMatchResponse,
+        deep: availableDeepLevels().recurseInwardsCheck,
+        progress: i,
+      }];
     }
 
     ++i;
   }
 
-  return mergeMatchResultsToSuccessResult(allResults) as VariantMatchResponse<IterableRule>;
+  return [];
 }
 
 // ------------------------------

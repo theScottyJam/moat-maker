@@ -1,9 +1,7 @@
 import type { ArrayRule } from '../types/validationRules';
-import { assert, reprUnknownValue } from '../util';
-import { SuccessMatchResponse, FailedMatchResponse, type VariantMatchResponse } from './VariantMatchResponse';
-import type { UnionVariantCollection } from './UnionVariantCollection';
-import { matchVariants } from './unionEnforcer';
+import { reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
+import { match, type CheckFnResponse } from './ruleMatcherTools';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -12,38 +10,31 @@ export const availableDeepLevels = () => ({
   recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,
 });
 
-export function matchArrayVariants(
-  variantCollection: UnionVariantCollection<ArrayRule>,
+export function arrayCheck(
+  rule: ArrayRule,
   target: unknown,
+  interpolated: readonly unknown[],
   lookupPath: string,
-): VariantMatchResponse<ArrayRule> {
-  assert(!variantCollection.isEmpty());
-
+): CheckFnResponse {
   if (!Array.isArray(target)) {
-    return variantCollection.createFailResponse(
-      `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
-      { deep: availableDeepLevels().typeCheck },
-    );
+    return [{
+      message: `Expected ${lookupPath} to be an array but got ${reprUnknownValue(target)}.`,
+      deep: availableDeepLevels().typeCheck,
+      progress: -1,
+    }];
   }
 
-  let curVariantCollection = variantCollection;
   for (const [i, element] of target.entries()) {
-    const derivedCollection = curVariantCollection.map(
-      ({ rootRule, interpolated }) => ({ rootRule: rootRule.content, interpolated }),
-    );
-    const matchResult = matchVariants(
-      derivedCollection,
-      element,
-      `${lookupPath}[${i}]`,
-      { deep: availableDeepLevels().recurseInwardsCheck },
-    );
+    const elementMatchResponse = match(rule.content, element, interpolated, `${lookupPath}[${i}]`);
 
-    curVariantCollection = curVariantCollection.removeFailed(matchResult);
-    if (curVariantCollection.isEmpty()) {
-      assert(matchResult instanceof FailedMatchResponse);
-      return matchResult.asFailedResponseFor(variantCollection);
+    if (elementMatchResponse.failed()) {
+      return [{
+        matchResponse: elementMatchResponse,
+        deep: availableDeepLevels().recurseInwardsCheck,
+        progress: i,
+      }];
     }
   }
 
-  return SuccessMatchResponse.createEmpty(variantCollection);
+  return [];
 }

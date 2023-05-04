@@ -1,14 +1,7 @@
 import { ValidatorAssertionError } from '../exceptions';
 import { packagePrivate } from '../packagePrivateAccess';
-import type { Rule } from '../types/validationRules';
 import type { Expectation, Validator, ValidatorRef } from '../types/validator';
 import { assert, indentMultilineString } from '../util';
-
-/** Like the "RuleSet" interface, except you can specify the specific type of root rule it has. */
-export interface SpecificRuleset<RuleType extends Rule> {
-  readonly rootRule: RuleType
-  readonly interpolated: readonly unknown[]
-}
 
 export function isValidator(value: unknown): value is Validator {
   return Object(value)[packagePrivate]?.type === 'validator';

@@ -11,6 +11,21 @@ export class UnreachableCaseError extends Error {
   }
 }
 
+// Will be available natively once the `array.groups()` proposal goes through
+// (at the time of writing, this proposal is at stage 3).
+export function group<K extends string, V>(
+  items: readonly V[],
+  grouper: (x: V) => K,
+): { [index in K]?: readonly V[] } {
+  const result: Partial<{ [index in K]: V[] }> = {} as any;
+  for (const item of items) {
+    const groupName = grouper(item);
+    (result[groupName] ??= []).push(item);
+  }
+
+  return result;
+}
+
 export function indentMultilineString(multilineString: string, amount: number): string {
   return multilineString.split('\n').map(line => ' '.repeat(amount) + line).join('\n');
 }

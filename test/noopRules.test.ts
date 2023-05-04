@@ -7,6 +7,11 @@ describe('noop rules', () => {
       v.assertMatches('xyz');
     });
 
+    test('XXX', () => {
+      const v = validator`unknown`;
+      v.assertMatches('xyz');
+    });
+
     test('accepts object inputs', () => {
       const v = validator`unknown`;
       v.assertMatches({ x: 2 });

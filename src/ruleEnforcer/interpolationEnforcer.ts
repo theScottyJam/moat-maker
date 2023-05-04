@@ -1,11 +1,9 @@
-import type { InterpolationRule, Rule } from '../types/validationRules';
-import type { VariantMatchResponse } from './VariantMatchResponse';
-import { type UnionVariantCollection } from './UnionVariantCollection';
-import { isExpectation, isRef, isValidator, type SpecificRuleset } from './shared';
+import type { InterpolationRule } from '../types/validationRules';
+import { isExpectation, isRef, isValidator } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
-import { ValidatorAssertionError } from '../exceptions';
-import { assert, reprUnknownValue } from '../util';
+import { reprUnknownValue } from '../util';
 import { packagePrivate } from '../packagePrivateAccess';
+import { match, type CheckFnResponse } from './ruleMatcherTools';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -13,76 +11,95 @@ export const availableDeepLevels = () => ({
   nonRecursiveCheck: DEEP_LEVELS.nonRecursiveCheck,
 });
 
-export function preprocessInterpolatedValue(
-  ruleset: SpecificRuleset<InterpolationRule>,
-): { ruleset: SpecificRuleset<Rule>, updated: boolean } {
-  const { rootRule, interpolated } = ruleset;
-  const interpolatedValue = interpolated[rootRule.interpolationIndex];
+export function interpolationCheck(
+  rule: InterpolationRule,
+  target: unknown,
+  interpolated: readonly unknown[],
+  lookupPath: string,
+): CheckFnResponse {
+  const interpolatedValue = interpolated[rule.interpolationIndex];
 
   if (isValidator(interpolatedValue)) {
-    return {
-      ruleset: interpolatedValue.ruleset,
-      updated: true,
-    };
-  } else if (isRef(interpolatedValue)) {
-    return {
-      ruleset: interpolatedValue[packagePrivate].getValidator().ruleset,
-      updated: true,
-    };
-  } else {
-    return { ruleset, updated: false };
-  }
-}
+    const validatorMatchResponse = match(
+      interpolatedValue.ruleset.rootRule,
+      target,
+      interpolatedValue.ruleset.interpolated,
+      lookupPath,
+    );
 
-export function matchInterpolationVariants(
-  variantCollection: UnionVariantCollection<InterpolationRule>,
-  target: unknown,
-  lookupPath: string,
-): VariantMatchResponse<InterpolationRule> {
-  assert(!variantCollection.isEmpty());
-  return variantCollection.matchEach(({ rootRule, interpolated: allInterpolated }) => {
-    const interpolatedTarget = allInterpolated[rootRule.interpolationIndex];
-    assert(!isValidator(interpolatedTarget));
-    assert(!isRef(interpolatedTarget));
-
-    if (isExpectation(interpolatedTarget)) {
-      const maybeErrorMessage = interpolatedTarget[packagePrivate].testExpectation(target);
-      if (maybeErrorMessage !== null) {
-        throw new ValidatorAssertionError(
-          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
-        );
-      }
-    } else if (typeof interpolatedTarget === 'function') {
-      if (Object(target).constructor !== interpolatedTarget || !(Object(target) instanceof interpolatedTarget)) {
-        throw new ValidatorAssertionError(
-          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(interpolatedTarget)} ` +
-          '(and not an instance of a subclass).',
-        );
-      }
-    } else if (interpolatedTarget instanceof RegExp) {
-      if (typeof target !== 'string') {
-        throw new ValidatorAssertionError(
-          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${interpolatedTarget.toString()}`,
-        );
-      }
-      if (target.match(interpolatedTarget) === null) {
-        throw new ValidatorAssertionError(
-          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${interpolatedTarget.toString()}`,
-        );
-      }
-    } else if (isObject(interpolatedTarget)) {
-      // TODO: It would be nice if we could do this check earlier, when the validator instance is first made
-      // (There's already tests for this, so those tests can be updated as well).
-      throw new TypeError(
-        'Not allowed to interpolate a regular object into a validator. ' +
-        '(Exceptions include classes, validators, refs, etc)',
-      );
-    } else if (!sameValueZero(target, interpolatedTarget)) {
-      throw new ValidatorAssertionError(
-        `Expected ${lookupPath} to be the value ${reprUnknownValue(interpolatedTarget)} but got ${reprUnknownValue(target)}.`,
-      );
+    if (validatorMatchResponse.failed()) {
+      return [{
+        matchResponse: validatorMatchResponse,
+        deep: 'INHERIT' as const,
+      }];
     }
-  }, { deep: availableDeepLevels().nonRecursiveCheck });
+  } else if (isRef(interpolatedValue)) {
+    const validator = interpolatedValue[packagePrivate].getValidator();
+    const validatorMatchResponse = match(
+      validator.ruleset.rootRule,
+      target,
+      validator.ruleset.interpolated,
+      lookupPath,
+    );
+
+    if (validatorMatchResponse.failed()) {
+      return [{
+        matchResponse: validatorMatchResponse,
+        deep: 'INHERIT' as const,
+      }];
+    }
+  } else if (isExpectation(interpolatedValue)) {
+    const maybeErrorMessage = interpolatedValue[packagePrivate].testExpectation(target);
+    if (maybeErrorMessage !== null) {
+      return [{
+        message: `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
+        deep: availableDeepLevels().nonRecursiveCheck,
+      }];
+    }
+  } else if (typeof interpolatedValue === 'function') {
+    if (Object(target).constructor !== interpolatedValue || !(Object(target) instanceof interpolatedValue)) {
+      return [{
+        message: (
+          `Expected ${lookupPath}, which was ${reprUnknownValue(target)}, to be an instance of ${reprUnknownValue(interpolatedValue)} ` +
+        '(and not an instance of a subclass).'
+        ),
+        deep: availableDeepLevels().nonRecursiveCheck,
+      }];
+    }
+  } else if (interpolatedValue instanceof RegExp) {
+    if (typeof target !== 'string') {
+      return [{
+        message: (
+          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to be a string that matches the regular expression ${interpolatedValue.toString()}`
+        ),
+        deep: availableDeepLevels().nonRecursiveCheck,
+      }];
+    }
+    if (target.match(interpolatedValue) === null) {
+      return [{
+        message: (
+          `Expected <receivedValue>, which was ${reprUnknownValue(target)}, to match the regular expression ${interpolatedValue.toString()}`
+        ),
+        deep: availableDeepLevels().nonRecursiveCheck,
+      }];
+    }
+  } else if (isObject(interpolatedValue)) {
+    // TODO: It would be nice if we could do this check earlier, when the validator instance is first made
+    // (There's already tests for this, so those tests can be updated as well).
+    throw new TypeError(
+      'Not allowed to interpolate a regular object into a validator. ' +
+      '(Exceptions include classes, validators, refs, etc)',
+    );
+  } else if (!sameValueZero(target, interpolatedValue)) {
+    return [{
+      message: (
+        `Expected ${lookupPath} to be the value ${reprUnknownValue(interpolatedValue)} but got ${reprUnknownValue(target)}.`
+      ),
+      deep: availableDeepLevels().nonRecursiveCheck,
+    }];
+  }
+
+  return [];
 }
 
 // ------------------------------

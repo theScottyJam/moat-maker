@@ -109,10 +109,20 @@ describe('union rules with tuples', () => {
       const v = validator`[0, ...4[]] | [0, ...5[]] | [0, 1, 2]`;
       const act = (): any => v.assertMatches([0, 4, 4, 4, 5]);
       assert.throws(act, {
+        message: 'Expected <receivedValue>.slice(1)[3] to be 4 but got 5.',
+      });
+    });
+
+    test('sibling tuple rule errors with invalid lengths are ignored (test 4)', () => {
+      const v = validator`[0, ...0[]] | [0, 0, ...5[]] | [0, 1, 2]`;
+      const act = (): any => v.assertMatches([0, 0, 5, 5, 4]);
+      // A union-style error shows, because the lookup paths don't quite line up,
+      // so it won't remove duplicates.
+      assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.slice(1)[3] to be 4 but got 5.',
-          '  Variant 2: Expected <receivedValue>.slice(1)[0] to be 5 but got 4.',
+          '  Variant 1: Expected <receivedValue>.slice(1)[1] to be 0 but got 5.',
+          '  Variant 2: Expected <receivedValue>.slice(2)[2] to be 5 but got 4.',
         ].join('\n'),
       });
     });
@@ -160,14 +170,6 @@ describe('union rules with tuples', () => {
       assert.throws(act, {
         message: 'Expected the <receivedValue>[1] array to have between 1 and 2 entries, but found 0.',
       });
-    });
-  });
-
-  test('you can not supply bad property values for a nested object, even if you properly match another variant', () => {
-    const v = validator`[{ type: 'A', value: 1 }] | [{ type: 'B' }]`;
-    const act = (): any => v.assertMatches([{ type: 'B', value: 2 }]);
-    assert.throws(act, {
-      message: 'Expected <receivedValue>[0].value to be 1 but got 2.',
     });
   });
 

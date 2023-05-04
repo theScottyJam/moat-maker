@@ -223,8 +223,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue> to be 1 but got 3.',
+          '  Variant 1: Expected <receivedValue> to be 1 but got 3.',
+          '  Variant 2: Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -235,15 +235,15 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be 2 but got 1.',
-          '  Variant 2: Expected <receivedValue> to be of type "string" but got type "number".',
+          '  Variant 1: Expected <receivedValue> to be of type "string" but got type "number".',
+          '  Variant 2: Expected <receivedValue> to be 2 but got 1.',
         ].join('\n'),
       });
     });
 
     // The highest possible deepness level of the left-hand side of "&" is higher than other union variants,
     // so only the error for the RHS of "&" should show.
-    test('tuples and an array subclass', () => {
+    test('higher-deepness matches with interpolation', () => {
       class MyArray extends Array {}
       const v = validator`[1, 2, 3] & ${MyArray} | [1, 2]`;
       const act = (): any => v.assertMatches([1, 2, 3]);
@@ -257,14 +257,14 @@ describe('unions of different types', () => {
 
     // The highest possible deepness level of the left-hand side of "&" is equal to other union variants,
     // so errors from the other variants show, instead of the failed RHS of "&".
-    test('tuples and an array subclass', () => {
+    test('lower-deepness matches with interpolation', () => {
       const v = validator`number & ${validator`1`} | 2`;
       const act = (): any => v.assertMatches(3);
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue> to be 1 but got 3.',
+          '  Variant 1: Expected <receivedValue> to be 1 but got 3.',
+          '  Variant 2: Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -291,8 +291,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be of type "number" but got type "object".',
-          '  Variant 2: Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
+          '  Variant 1: Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
+          '  Variant 2: Expected <receivedValue> to be of type "number" but got type "object".',
         ].join('\n'),
       });
     });

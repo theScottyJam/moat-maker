@@ -118,14 +118,7 @@ describe('union rules with objects', () => {
     });
   });
 
-  describe('picking object variants to travel down, when there are multiple potential options', () => {
-    // This "picking a variant to travel down" behavior can lead to error messages that don't
-    // fully explain everything that could be wrong. These error messages tend to be of a similar quality to
-    // TypeScript's error messages, so I'm not overly worried about it. And, if we don't pick-and-choose,
-    // we may run into errors that are extremely large, due to the many possible things that could have gone wrong
-    // at every step of the nesting process. Though, ideally, we would still leave some sort of note stating that
-    // they may be other ways to fix the issue then what's stated in the error message - maybe in a future release.
-
+  describe('Following multiple variant paths at once, and collecting errors from them', () => {
     test('fail to match all variants, because deep primitive properties are incorrect', () => {
       const v = validator`{ sub: { y: 2 } } | { sub: { y: 3 } } | { sub2: { y: 2 } } | { sub2: { y: 3 } }`;
       const act = (): any => v.assertMatches({ sub: { y: 0 }, sub2: { y: 0 } });
@@ -134,6 +127,8 @@ describe('union rules with objects', () => {
           'Failed to match against any variant of a union.',
           '  Variant 1: Expected <receivedValue>.sub.y to be 2 but got 0.',
           '  Variant 2: Expected <receivedValue>.sub.y to be 3 but got 0.',
+          '  Variant 3: Expected <receivedValue>.sub2.y to be 2 but got 0.',
+          '  Variant 4: Expected <receivedValue>.sub2.y to be 3 but got 0.',
         ].join('\n'),
       });
     });
@@ -142,7 +137,11 @@ describe('union rules with objects', () => {
       const v = validator`{ sub: { x: 2 } } | { sub2: { y: 2 } }`;
       const act = (): any => v.assertMatches({ sub: {}, sub2: {} });
       assert.throws(act, {
-        message: '<receivedValue>.sub is missing the required properties: "x"',
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: <receivedValue>.sub is missing the required properties: "x"',
+          '  Variant 2: <receivedValue>.sub2 is missing the required properties: "y"',
+        ].join('\n'),
       });
     });
 
@@ -150,25 +149,11 @@ describe('union rules with objects', () => {
       const v = validator`{ sub: { w?: 2, x: 0 } } | { sub2: { y?: 2, z: 0 } }`;
       const act = (): any => v.assertMatches({ sub: {}, sub2: {} });
       assert.throws(act, {
-        message: '<receivedValue>.sub is missing the required properties: "x"',
-      });
-    });
-  });
-
-  describe('if you correctly match one union variant, you can not improperly match another variant', () => {
-    test('you can not set incorrect required fields of the unmatched union variant.', () => {
-      const v = validator`{ type: 'A', value: 1 } | { type: 'B' }`;
-      const act = (): any => v.assertMatches({ type: 'B', value: 2 });
-      assert.throws(act, {
-        message: 'Expected <receivedValue>.value to be 1 but got 2.',
-      });
-    });
-
-    test('you can not set incorrect optional fields of the unmatched union variant.', () => {
-      const v = validator`{ type: 'A', value?: 1 } | { type: 'B' }`;
-      const act = (): any => v.assertMatches({ type: 'B', value: 2 });
-      assert.throws(act, {
-        message: 'Expected <receivedValue>.value to be 1 but got 2.',
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: <receivedValue>.sub is missing the required properties: "x"',
+          '  Variant 2: <receivedValue>.sub2 is missing the required properties: "z"',
+        ].join('\n'),
       });
     });
   });
@@ -179,8 +164,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.a to be 1 but got 2.',
-        '  Variant 2: Expected <receivedValue>.a to be 0 but got 2.',
+        '  Variant 1: Expected <receivedValue>.a to be 0 but got 2.',
+        '  Variant 2: Expected <receivedValue>.a to be 1 but got 2.',
       ].join('\n'),
     });
   });
@@ -197,15 +182,6 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: 'Expected <receivedValue>.type to be "B" but got "A".',
       });
-    });
-
-    test('a key matches the index type from one variant, and a required property from another', () => {
-      const v = validator`{ type: 'A', [index: number]: number } | { type: 'B', 0: string }`;
-      // The `type` property matches the first union, which normally means we can't supply any properties that
-      // match the keys on the second variant and has invalid value types (like `0` with a numeric value).
-      // This, however, works anyways, because the `0` key also matches the index type on the first union.
-      // (You can see this in action, if you take out the index rule, then see an error pop up)
-      v.assertMatches({ type: 'A', 0: 2 });
     });
 
     test('if you match the union variant that does not have the index type, you are not constrained by it', () => {
@@ -246,9 +222,9 @@ describe('union rules with objects', () => {
     test('merging index types with other properties on the same union variant (test 3)', () => {
       const v = validator`{ type: 'A', [index: number]: { x: 2 }, 0: { y: 3 } } | { type: 'B', 0: string }`;
       const act = (): any => v.assertMatches({ type: 'A', 0: { y: 3 } });
-      // TODO: Perhaps it's worth investigating why it's suggesting to change the type.
+      // TODO: Perhaps it's worth investigating why it's only showing one union variant error
       assert.throws(act, {
-        message: 'Expected <receivedValue>.type to be "B" but got "A".',
+        message: 'Expected <receivedValue>["0"] to be of type "string" but got type "object".',
       });
     });
 
@@ -274,10 +250,11 @@ describe('union rules with objects', () => {
       const v = validator`{ x: 2, y: 2 } | { x: 3, y: 3 }`;
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+        ].join('\n'),
       });
     });
 
@@ -285,10 +262,11 @@ describe('union rules with objects', () => {
       const v = validator`{ sub: { x: 2, y: 2 } } | { sub: { x: 3, y: 3 } }`;
       const act = (): any => v.assertMatches({ sub: { x: 2, y: 3 } });
       assert.throws(act, {
-        message: (
-          "<receivedValue>.sub's properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.sub.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.sub.x to be 3 but got 2.',
+        ].join('\n'),
       });
     });
 
@@ -296,10 +274,11 @@ describe('union rules with objects', () => {
       const v = validator`{ x?: 2, y?: 2 } | { x?: 3, y?: 3 }`;
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+        ].join('\n'),
       });
     });
 
@@ -307,10 +286,11 @@ describe('union rules with objects', () => {
       const v = validator`{ x: 2, y: 2 } | { x?: 3, y?: 3 }`;
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+        ].join('\n'),
       });
     });
 
@@ -318,10 +298,12 @@ describe('union rules with objects', () => {
       const v = validator`{ x: 2, y: 2, z: 2 } | { x: 3, y: 3, z: 3 } | { x: 4, y: 4, z: 4}`;
       const act = (): any => v.assertMatches({ x: 2, y: 3, z: 4 });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+          '  Variant 3: Expected <receivedValue>.x to be 4 but got 2.',
+        ].join('\n'),
       });
     });
 
@@ -329,33 +311,37 @@ describe('union rules with objects', () => {
       const v = validator`{ x: 2, y: 2, z: 2 } | { x: 3, y: 3, z: 3 } | { x: 4, y: 4, z: 4}`;
       const act = (): any => v.assertMatches({ x: 2, y: 3, z: 3 });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
+          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+          '  Variant 3: Expected <receivedValue>.x to be 4 but got 2.',
+        ].join('\n'),
       });
     });
 
-    test('object matchers includes an index type', () => {
+    test('object matchers includes an index type (test 1)', () => {
       const v = validator`{ x: 'A', 0: 'A' } | { x: 'B', [index: number]: 'B' }`;
       const act = (): any => v.assertMatches({ x: 'A', 0: 'B' });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>["0"] to be "A" but got "B".',
+          '  Variant 2: Expected <receivedValue>.x to be "B" but got "A".',
+        ].join('\n'),
       });
     });
 
-    test('object matchers includes multiple index types (test 1)', () => {
+    test('object matchers includes multiple index types (test 2)', () => {
       const mySymb = Symbol('test symbol');
       const v = validator`{ [index: symbol]: 'A', 0: 'A' } | { [${mySymb}]: 'B', [index: number]: 'B' }`;
       const act = (): any => v.assertMatches({ [mySymb]: 'A', 0: 'B' });
       assert.throws(act, {
-        message: (
-          "<receivedValue>'s properties matches various union variants " +
-          'when it needs to pick a single variant to follow.'
-        ),
+        message: [
+          'Failed to match against any variant of a union.',
+          '  Variant 1: Expected <receivedValue>["0"] to be "A" but got "B".',
+          '  Variant 2: Expected <receivedValue>[Symbol(test symbol)] to be "B" but got "A".',
+        ].join('\n'),
       });
     });
   });
@@ -375,20 +361,17 @@ describe('union rules with objects', () => {
   test('matching against two nested objects that do not overlap at the deeper level (test 1)', () => {
     const v = validator`number | { sub: { y: 0 } } | { sub: { z: 0 } }`;
     const act = (): any => v.assertMatches({ sub: { y: 1, z: 1 } });
-    // TODO: It's not an ideal error message, since it doesn't explain that there's two possible union variants that
-    // could be matched here. But, this is currently, technically working as designed.
     assert.throws(act, {
-      message: 'Expected <receivedValue>.sub.y to be 0 but got 1.',
+      message: [
+        'Failed to match against any variant of a union.',
+        '  Variant 1: Expected <receivedValue>.sub.y to be 0 but got 1.',
+        '  Variant 2: Expected <receivedValue>.sub.z to be 0 but got 1.',
+      ].join('\n'),
     });
   });
 
   test('matching against two nested objects that do not overlap at the deeper level (test 2)', () => {
     const v = validator`number | { sub: { y: 0 } } | { sub: { z: 0 } }`;
-    const act = (): any => v.assertMatches({ sub: { y: 1, z: 0 } });
-    // It's not an ideal error message, since it doesn't explain that another possible option
-    // is to just omit the `y` field. But, for now, it works.
-    assert.throws(act, {
-      message: 'Expected <receivedValue>.sub.y to be 0 but got 1.',
-    });
+    v.assertMatches({ sub: { y: 1, z: 0 } });
   });
 });
