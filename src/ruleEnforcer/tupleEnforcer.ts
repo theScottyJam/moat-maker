@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import type { Rule, TupleRule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
@@ -22,6 +22,7 @@ export function tupleCheck(
   if (!Array.isArray(target)) {
     return [{
       message: `Expected ${lookupPath.asString()} to be an array but got ${reprUnknownValue(target)}.`,
+      lookupPath,
       deep: availableDeepLevels().typeCheck,
       progress: -2,
     }];
@@ -31,6 +32,7 @@ export function tupleCheck(
   if (maybeErrorMessage !== null) {
     return [{
       message: maybeErrorMessage,
+      lookupPath,
       deep: availableDeepLevels().immediateInfoCheck,
       progress: -1,
     }];

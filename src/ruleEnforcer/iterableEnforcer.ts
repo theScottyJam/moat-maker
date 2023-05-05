@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import { _parsingRulesInternals, type IterableRule } from '../types/validationRules';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
@@ -23,6 +23,7 @@ export function iterableCheck(
         `Expected ${lookupPath.asString()} to be an iterable, ` +
         'i.e. you should be able to use this value in a for-of loop.'
       ),
+      lookupPath,
       deep: availableDeepLevels().typeCheck,
       progress: -2,
     }];

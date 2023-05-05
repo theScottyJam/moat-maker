@@ -4,7 +4,7 @@ import { DEEP_LEVELS } from './deepnessTools';
 import { reprUnknownValue } from '../util';
 import { packagePrivate } from '../packagePrivateAccess';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -54,6 +54,7 @@ export function interpolationCheck(
     if (maybeErrorMessage !== null) {
       return [{
         message: `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
+        lookupPath,
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
@@ -65,6 +66,7 @@ export function interpolationCheck(
           `to be an instance of ${reprUnknownValue(interpolatedValue)} ` +
           '(and not an instance of a subclass).'
         ),
+        lookupPath,
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
@@ -75,6 +77,7 @@ export function interpolationCheck(
           `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, ` +
           `to be a string that matches the regular expression ${interpolatedValue.toString()}`
         ),
+        lookupPath,
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
@@ -84,6 +87,7 @@ export function interpolationCheck(
           `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, ` +
           `to match the regular expression ${interpolatedValue.toString()}`
         ),
+        lookupPath,
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
@@ -100,6 +104,7 @@ export function interpolationCheck(
         `Expected ${lookupPath.asString()} to be the value ${reprUnknownValue(interpolatedValue)} ` +
         `but got ${reprUnknownValue(target)}.`
       ),
+      lookupPath,
       deep: availableDeepLevels().nonRecursiveCheck,
     }];
   }

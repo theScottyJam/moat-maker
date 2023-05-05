@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import type { UnionRule } from '../types/validationRules';
 import { match, type MatchResponse, type CheckFnResponse } from './ruleMatcherTools';
 

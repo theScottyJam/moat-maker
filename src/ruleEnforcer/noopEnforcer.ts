@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import type { NoopRule } from '../types/validationRules';
 import type { CheckFnResponse } from './ruleMatcherTools';
 

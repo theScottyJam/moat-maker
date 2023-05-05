@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import type { IntersectionRule } from '../types/validationRules';
 import { getMaxDeepnessLevelOf, maxDeepRange, DEEP_LEVELS, type DeepRange } from './deepnessTools';
 import { calcCheckResponseDeepness, match, type CheckFnResponse } from './ruleMatcherTools';

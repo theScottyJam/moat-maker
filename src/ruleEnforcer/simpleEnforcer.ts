@@ -2,7 +2,7 @@ import type { SimpleRule } from '../types/validationRules';
 import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import type { CheckFnResponse } from './ruleMatcherTools';
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -29,6 +29,7 @@ export function simpleCheck(
 
   return [{
     message: `Expected ${lookupPath.asString()} to be of type "${rule.type}" but got ${whatWasGot}.`,
+    lookupPath,
     deep: availableDeepLevels().typeCheck,
   }];
 }

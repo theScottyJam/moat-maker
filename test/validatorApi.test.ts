@@ -165,7 +165,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
         message: 'Received invalid "myNumb" argument for fnWithValidation(): ' +
-        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+        'Expected <argument #2> to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });
@@ -178,7 +178,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
         message: 'Received invalid arguments for fnWithValidation(): ' +
-        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+        'Expected <argument #2> to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });
@@ -191,7 +191,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
         message: 'Received invalid "myNumb" argument for fnWithValidation(): ' +
-        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+        'Expected <argument #2> to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });
@@ -204,7 +204,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
         message: 'Received invalid "myNumbs" arguments for fnWithValidation(): ' +
-        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+        'Expected <argument #2> to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });
@@ -219,7 +219,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('<argumentList>[2] -- Received invalid arguments for ');
       assert.throws(act, {
         message: 'Received invalid "myStr" argument for fnWithValidation(): ' +
-        'Expected <argumentList>[0] to be "xyz" but got "<argumentList>[2] -- Received invalid arguments for ".',
+        'Expected <argument #1> to be "xyz" but got "<argumentList>[2] -- Received invalid arguments for ".',
       });
       assert.throws(act, TypeError);
     });
@@ -232,7 +232,7 @@ describe('validator behavior', () => {
       const act = (): any => fnWithValidation('xyz', 2);
       assert.throws(act, {
         message: 'Received invalid arguments for fnWithValidation(): ' +
-        'Expected <argumentList>[1] to be of type "string" but got type "number".',
+        'Expected <argument #2> to be of type "string" but got type "number".',
       });
       assert.throws(act, TypeError);
     });
@@ -242,7 +242,7 @@ describe('validator behavior', () => {
       const act = (): any => v.assertArgs('myModule.myFn', { 0: 'a', 1: 'b', length: 2 });
       assert.throws(act, {
         message: 'Received invalid "myNumb" argument for myModule.myFn(): ' +
-        'Expected <argumentList>[1] to be of type "number" but got type "string".',
+        'Expected <argument #2> to be of type "number" but got type "string".',
       });
       assert.throws(act, TypeError);
     });

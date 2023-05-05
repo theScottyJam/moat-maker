@@ -4,15 +4,6 @@ import { generateMessageWithPosition } from './errorFormatter';
 
 const ExceptionConstructionKey = Symbol('exception constructor key');
 
-/**
- * Only used internally.
- * This will be translated into another error type, like a TypeError,
- * before API users see it.
- */
-export class ValidatorAssertionError extends Error {
-  name = 'ValidatorAssertionError';
-}
-
 export class ValidatorSyntaxError extends Error {
   name = 'ValidatorSyntaxError';
   constructor(

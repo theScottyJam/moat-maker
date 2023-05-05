@@ -1,4 +1,4 @@
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 import type { ArrayRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
@@ -20,6 +20,7 @@ export function arrayCheck(
   if (!Array.isArray(target)) {
     return [{
       message: `Expected ${lookupPath.asString()} to be an array but got ${reprUnknownValue(target)}.`,
+      lookupPath,
       deep: availableDeepLevels().typeCheck,
       progress: -1,
     }];

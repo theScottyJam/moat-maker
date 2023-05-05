@@ -3,7 +3,7 @@ import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import { reprUnknownValue } from '../util';
 import type { CheckFnResponse } from './ruleMatcherTools';
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -28,6 +28,7 @@ export function primitiveLiteralCheck(
   if (getSimpleTypeOf(target) !== getSimpleTypeOf(rule.value)) {
     return [{
       message: formatError(rule.value, target, lookupPath),
+      lookupPath,
       deep: availableDeepLevels().typeCheck,
       progress: 1,
     }];
@@ -36,6 +37,7 @@ export function primitiveLiteralCheck(
   if (target !== rule.value) {
     return [{
       message: formatError(rule.value, target, lookupPath),
+      lookupPath,
       deep: availableDeepLevels().immediateInfoCheck,
       progress: 2,
     }];

@@ -1,41 +1,57 @@
-import { UnreachableCaseError } from './util';
-import { isIdentifier } from './tokenStream';
+import { UnreachableCaseError } from '../util';
+import { isIdentifier } from '../tokenStream';
 
-type PathSegment =
-  { category: 'thenAccessProperty', propertyKey: string | symbol }
+export type PathSegment =
+  { category: 'accessProperty', propertyKey: string | symbol }
   | { category: 'indexArray', index: number }
   | { category: 'sliceArray', from: number }
   | { category: 'convertToArray' };
 
+interface CustomStringifierOpts {
+  readonly rootText: string
+  readonly pathSegments: readonly PathSegment[]
+}
+
+type CustomStringifier = (opts: CustomStringifierOpts) => string;
+
+interface ConstructorOpts {
+  customStringifier?: CustomStringifier | undefined
+  pathSegments?: readonly PathSegment[]
+}
+
 export class LookupPath {
-  #rootText: string;
-  #pathSegments: readonly PathSegment[];
-  constructor(rootText = '<receivedValue>', { _pathSegments = [] }: { _pathSegments?: readonly PathSegment[] } = {}) {
+  readonly #rootText: string;
+  readonly #customStringifier: CustomStringifier | undefined;
+  readonly pathSegments: readonly PathSegment[];
+  constructor(rootText = '<receivedValue>', { customStringifier, pathSegments = [] }: ConstructorOpts = {}) {
     this.#rootText = rootText;
-    this.#pathSegments = _pathSegments;
+    this.#customStringifier = customStringifier;
+    this.pathSegments = pathSegments;
   }
 
   #push(pathSegment: PathSegment): LookupPath {
     return new LookupPath(this.#rootText, {
-      _pathSegments: [...this.#pathSegments, pathSegment],
+      customStringifier: this.#customStringifier,
+      pathSegments: [...this.pathSegments, pathSegment],
     });
   }
 
   #pop(): LookupPath {
     return new LookupPath(this.#rootText, {
-      _pathSegments: this.#pathSegments.slice(0, -1),
+      customStringifier: this.#customStringifier,
+      pathSegments: this.pathSegments.slice(0, -1),
     });
   }
 
   thenAccessProperty(propertyKey: string | symbol): LookupPath {
-    return this.#push({ category: 'thenAccessProperty', propertyKey });
+    return this.#push({ category: 'accessProperty', propertyKey });
   }
 
   thenIndexArray(index: number): LookupPath {
     let newPath = this as LookupPath;
     let updatedIndex = index;
     while (true) {
-      const segment = at(newPath.#pathSegments, -1);
+      const segment = at(newPath.pathSegments, -1);
       if (segment?.category !== 'sliceArray') {
         break;
       }
@@ -55,9 +71,16 @@ export class LookupPath {
   }
 
   asString(): string {
+    if (this.#customStringifier !== undefined) {
+      return this.#customStringifier({
+        rootText: this.#rootText,
+        pathSegments: this.pathSegments,
+      });
+    }
+
     let path = this.#rootText;
-    for (const segment of this.#pathSegments) {
-      if (segment.category === 'thenAccessProperty') {
+    for (const segment of this.pathSegments) {
+      if (segment.category === 'accessProperty') {
         if (typeof segment.propertyKey === 'string' && isIdentifier(segment.propertyKey)) {
           path = `${path}.${segment.propertyKey}`;
         } else if (typeof segment.propertyKey === 'string') {

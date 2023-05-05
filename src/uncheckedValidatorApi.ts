@@ -6,7 +6,7 @@
 import { assert } from './util';
 import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
-import { assertMatches, doesMatch } from './ruleEnforcer';
+import { matchArgument, matchValue } from './ruleEnforcer';
 import { lookupCacheEntry } from './cacheControl';
 import type { Rule, Ruleset } from './types/validationRules';
 import type {
@@ -17,7 +17,6 @@ import type {
   ValidatorTemplateTagStaticFields,
   Expectation,
 } from './types/validator';
-import { ValidatorAssertionError } from './exceptions';
 import { packagePrivate } from './packagePrivateAccess';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
@@ -49,23 +48,25 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
         throw new TypeError('The assertMatches() errorPrefix string must end with a colon.');
       }
 
-      try {
-        assertMatches(ruleset.rootRule, value, ruleset.interpolated, opts?.at);
-      } catch (error) {
-        // Rethrow as TypeError relatively low down the call stack, so we don't have too
-        // many unnecessary stack frames in the call stack.
-        if (error instanceof ValidatorAssertionError) {
-          const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
-          if (opts?.errorFactory !== undefined) {
-            throw opts?.errorFactory(...buildRethrowErrorArgs(error, prefix + error.message));
-          } else {
-            throw new TypeError(...buildRethrowErrorArgs(error, prefix + error.message));
-          }
+      const matched = matchValue(
+        ruleset.rootRule,
+        value,
+        ruleset.interpolated,
+        opts?.at,
+        { errorPrefix: opts?.errorPrefix },
+      );
+
+      // throw as TypeError relatively low down the call stack, so we don't have too
+      // many unnecessary stack frames in the call stack.
+      if (!matched.success) {
+        if (opts?.errorFactory !== undefined) {
+          throw opts?.errorFactory(matched.message);
+        } else {
+          throw new TypeError(matched.message);
         }
-        throw error;
       }
 
-      return value as any;
+      return value as T;
     },
     // Same as assertMatches(), except with a different type signature, and
     // returns void. Functions with assertion signatures have stricter rules
@@ -77,43 +78,40 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
         throw new TypeError('The assertionTypeGuard() errorPrefix string must end with a colon.');
       }
 
-      try {
-        assertMatches(ruleset.rootRule, value, ruleset.interpolated, opts?.at);
-      } catch (error) {
-        // Rethrow as TypeError relatively low down the call stack, so we don't have too
-        // many unnecessary stack frames in the call stack.
-        if (error instanceof ValidatorAssertionError) {
-          const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
-          if (opts?.errorFactory !== undefined) {
-            throw opts?.errorFactory(...buildRethrowErrorArgs(error, prefix + error.message));
-          } else {
-            throw new TypeError(...buildRethrowErrorArgs(error, prefix + error.message));
-          }
+      const matched = matchValue(
+        ruleset.rootRule,
+        value,
+        ruleset.interpolated,
+        opts?.at,
+        { errorPrefix: opts?.errorPrefix },
+      );
+
+      // Throw as TypeError relatively low down the call stack, so we don't have too
+      // many unnecessary stack frames in the call stack.
+      if (!matched.success) {
+        if (opts?.errorFactory !== undefined) {
+          throw opts?.errorFactory(matched.message);
+        } else {
+          throw new TypeError(matched.message);
         }
-        throw error;
       }
     },
     assertArgs(whichFn: string, args: ArrayLike<unknown>) {
-      const opts = {
-        errorPrefix: `Received invalid arguments for ${whichFn}():`,
-        at: '<argumentList>',
-      };
+      const matched = matchArgument(
+        ruleset.rootRule,
+        Array.from(args),
+        ruleset.interpolated,
+        { whichFn },
+      );
 
-      try {
-        assertMatches(ruleset.rootRule, Array.from(args), ruleset.interpolated, opts.at);
-      } catch (error) {
-        // Rethrow as TypeError relatively low down the call stack, so we don't have too
-        // many unnecessary stack frames in the call stack.
-        if (error instanceof ValidatorAssertionError) {
-          const prefix = opts?.errorPrefix !== undefined ? opts.errorPrefix + ' ' : '';
-          const updatedMessage = rebuildAssertArgsMessage(ruleset.rootRule, prefix + error.message);
-          throw new TypeError(...buildRethrowErrorArgs(error, updatedMessage));
-        }
-        throw error;
+      // Throw as TypeError relatively low down the call stack, so we don't have too
+      // many unnecessary stack frames in the call stack.
+      if (!matched.success) {
+        throw new TypeError(matched.message);
       }
     },
     matches(value: unknown): value is T {
-      return doesMatch(ruleset.rootRule, value, ruleset.interpolated);
+      return matchValue(ruleset.rootRule, value, ruleset.interpolated).success;
     },
     ruleset,
   });
@@ -162,40 +160,3 @@ const staticFields: ValidatorTemplateTagStaticFields = {
 };
 
 Object.assign(uncheckedValidator, staticFields);
-
-function buildRethrowErrorArgs(error: ValidatorAssertionError, message: string = error.message): any {
-  // This version of TypeScript does not yet support error causes, which
-  // is why we have to use the `any` type here.
-  const errorOpts = (error as any).cause !== undefined
-    ? { cause: (error as any).cause }
-    : [];
-
-  return [message, errorOpts];
-}
-
-// Takes a ValidationAssertionError message, and attempts to edit in the
-// name of the argument that failed to match.
-function rebuildAssertArgsMessage(rule: Rule, message: string): string {
-  if (rule.category !== 'tuple') return message;
-  if (rule.entryLabels === null) return message;
-
-  const indexAsString = (
-    /<argumentList>\[(\d+)\]/.exec(message)?.[1] ??
-    /<argumentList>\.slice\((\d+)\)/.exec(message)?.[1]
-  );
-  if (indexAsString === undefined) return message;
-
-  const index = Number(indexAsString);
-  const label = rule.entryLabels[index];
-  assert(label !== undefined);
-
-  assert(message.startsWith('Received invalid arguments for'));
-  const afterSlice = message.slice('Received invalid arguments for'.length);
-
-  const isRestParam = rule.rest !== null && index === rule.entryLabels.length - 1;
-
-  return (
-    `Received invalid "${label}" argument${isRestParam ? 's' : ''} for` +
-    afterSlice
-  );
-}

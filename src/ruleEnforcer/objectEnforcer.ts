@@ -5,7 +5,7 @@ import { isIdentifier } from '../tokenStream';
 import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import { type MatchResponse, type CheckFnResponse, match } from './ruleMatcherTools';
-import { LookupPath } from '../LookupPath';
+import { LookupPath } from './LookupPath';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -38,6 +38,7 @@ export function objectCheck(
   if (!isObject(target)) {
     return [{
       message: `Expected ${lookupPath.asString()} to be an object but got ${reprUnknownValue(target)}.`,
+      lookupPath,
       deep: availableDeepLevels().nonSpecificTypeCheck,
       progress: -3,
     }];
@@ -48,6 +49,7 @@ export function objectCheck(
   if (maybeRequiredKeyMessage !== null) {
     return [{
       message: maybeRequiredKeyMessage,
+      lookupPath,
       deep: availableDeepLevels().immediateInfoCheck,
       progress: -2,
     }];

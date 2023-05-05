@@ -11,7 +11,7 @@ import { primitiveLiteralCheck } from './privitiveLiteralEnforcer';
 import { simpleCheck } from './simpleEnforcer';
 import { tupleCheck } from './tupleEnforcer';
 import { unionCheck } from './unionEnforcer';
-import type { LookupPath } from '../LookupPath';
+import type { LookupPath } from './LookupPath';
 
 // With both progress values and deepness values, these numbers should either stay the same
 // or increase as you get further into a check algorithm. They should never decrease.
@@ -19,6 +19,7 @@ import type { LookupPath } from '../LookupPath';
 export type CheckFnResponse = ReadonlyArray<(
   {
     readonly message: string
+    readonly lookupPath: LookupPath
     readonly deep: DeepRange
     readonly progress?: number
   } | {
@@ -78,63 +79,6 @@ export function match(
   else if (rule.category === 'intersection') return doMatch(rule, intersectionCheck);
   else if (rule.category === 'interpolation') return doMatch(rule, interpolationCheck);
   else throw new UnreachableCaseError(rule);
-}
-
-export function gatherErrorMessagesFor(matchResponses: readonly MatchResponse[]): readonly string[] {
-  const responseToErrors = gatherErrorMessagesFor_(matchResponses);
-
-  const errors: string[] = [];
-  for (const response of matchResponses) {
-    errors.push(...responseToErrors.get(response) ?? []);
-  }
-
-  return errors;
-}
-
-export function gatherErrorMessagesFor_(
-  matchResponses: readonly MatchResponse[],
-): Map<MatchResponse, readonly string[]> {
-  const responseToErrors = new Map<MatchResponse, string[]>();
-  const groupedByPath = (
-    Object.values(group(matchResponses, m => m.lookupPath.asString())) as
-    ReadonlyArray<readonly MatchResponse[]>
-  );
-  for (const responsesAtSamePath of groupedByPath) {
-    const groupedByType = group(responsesAtSamePath, r => r.for);
-    const furthestFailures = Object.values(groupedByType).flatMap(responsesOfSameType => {
-      const failures = responsesOfSameType
-        .flatMap(result => result.failures.map(failure => ({ failure, originResult: result })));
-
-      assert(failures.length > 0);
-      const farThreshold = Math.max(...failures.map(({ failure }) => failure.progress ?? -Infinity));
-      return failures.filter(({ failure }) => (failure.progress ?? -Infinity) === farThreshold);
-    });
-
-    const deepThreshold = Math.max(...furthestFailures.flatMap(
-      ({ failure }) => calcCheckResponseDeepness(failure).map(deep => deep.start),
-    ));
-    const deepestAndFurthestFailures = furthestFailures
-      .filter(({ failure }) => calcCheckResponseDeepness(failure).every(deep => deep.end >= deepThreshold));
-
-    const subResponseToErrors = gatherErrorMessagesFor_(
-      deepestAndFurthestFailures.flatMap(({ failure }) => {
-        return 'matchResponse' in failure ? [failure.matchResponse] : [];
-      }),
-    );
-
-    // Collect error messages, ensuring order is preserved.
-    for (const { failure, originResult } of deepestAndFurthestFailures) {
-      const errors = responseToErrors.get(originResult) ?? [];
-      if ('message' in failure) {
-        errors.push(failure.message);
-      } else {
-        errors.push(...subResponseToErrors.get(failure.matchResponse) ?? []);
-      }
-      responseToErrors.set(originResult, errors);
-    }
-  }
-
-  return responseToErrors;
 }
 
 export function calcCheckResponseDeepness(matchResponse: CheckFnResponse[number]): DeepRange[] {
