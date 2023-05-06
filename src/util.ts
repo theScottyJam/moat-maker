@@ -1,6 +1,6 @@
-export function assert(condition: boolean, message = 'Internal Error: Assertion Failed'): asserts condition {
+export function assert(condition: boolean, message = 'Assertion Failed'): asserts condition {
   if (!condition) {
-    throw new Error(message);
+    throw new Error('Internal Error: ' + message);
   }
 }
 
@@ -9,6 +9,13 @@ export class UnreachableCaseError extends Error {
   constructor(value: never) {
     super(`Unexpected value ${String(value)}`);
   }
+}
+
+/** Used when you wish to access an array element that you know must exist, and you need to tell TypeScript of this.
+ * e.g. `myArray[0]?.sub.prop ?? throwIndexOutOfBounds()`
+ */
+export function throwIndexOutOfBounds(): never {
+  throw new Error('Internal error: Attempted to index an array with an out-of-bounds index.');
 }
 
 // Will be available natively once the `array.groups()` proposal goes through

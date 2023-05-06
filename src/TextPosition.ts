@@ -2,7 +2,7 @@
 // Between the list entries are where values are interpolated into the string.
 // In this module, this list of strings is referred to as "sections".
 
-import { assert } from './util';
+import { assert, throwIndexOutOfBounds } from './util';
 
 interface TextPositionData {
   readonly sectionIndex: number
@@ -38,10 +38,6 @@ export type PointedAt = string | typeof INTERPOLATION_POINT | typeof END_OF_TEXT
 /** Same as `PointedAt`, except without the end-of-text symbol. */
 export type ContentPointedAt = string | typeof INTERPOLATION_POINT;
 
-function throwIndexOutOfBounds(): never {
-  throw new Error('Internal error: Attempted to index an array with an out-of-bounds index.');
-}
-
 export class TextPosition {
   readonly #sections: readonly string[];
   readonly sectionIndex: number;
@@ -74,7 +70,7 @@ export class TextPosition {
 
   getPreviousChar(): PointedAt {
     if (this.textIndex === 0) {
-      assert(this.sectionIndex !== 0, 'Internal error: Reached beginning of text');
+      assert(this.sectionIndex !== 0, 'Reached beginning of text');
       return this.#getCharAt({
         sectionIndex: this.sectionIndex - 1,
         textIndex: this.#sections[this.sectionIndex - 1]?.length ?? throwIndexOutOfBounds(),
@@ -124,7 +120,7 @@ export class TextPosition {
   #advanceOneUnit(): TextPosition {
     if (this.textIndex === (this.#sections[this.sectionIndex]?.length ?? throwIndexOutOfBounds())) {
       // advance to next section
-      assert(this.sectionIndex + 1 !== this.#sections.length, 'Internal error: Reached end of text');
+      assert(this.sectionIndex + 1 !== this.#sections.length, 'Reached end of text');
       return new TextPosition(this.#sections, {
         sectionIndex: this.sectionIndex + 1,
         textIndex: 0,
@@ -180,7 +176,7 @@ export class TextPosition {
   #backtrackOneUnitInLine(): TextPosition {
     if (this.textIndex === 0) {
       // backtrack to previous section
-      assert(this.sectionIndex > 0, 'Internal error: Reached beginning of text');
+      assert(this.sectionIndex > 0, 'Reached beginning of text');
       return new TextPosition(this.#sections, {
         sectionIndex: this.sectionIndex - 1,
         textIndex: this.#sections[this.sectionIndex - 1]?.length ?? throwIndexOutOfBounds(),
@@ -210,7 +206,7 @@ export class TextPosition {
       }
 
       const char = pos.getChar();
-      assert(char !== END_OF_TEXT, 'Internal error: Reached end-of-text without hitting the end pos.');
+      assert(char !== END_OF_TEXT, 'Reached end-of-text without hitting the end pos.');
       result.push(char);
     }
     return result;

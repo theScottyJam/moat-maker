@@ -10,6 +10,7 @@ import type { LookupPath } from './LookupPath';
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const availableDeepLevels = () => ({
   nonRecursiveCheck: DEEP_LEVELS.nonRecursiveCheck,
+  any: DEEP_LEVELS.any,
 });
 
 export function interpolationCheck(
@@ -55,7 +56,7 @@ export function interpolationCheck(
       return [{
         message: `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
         lookupPath,
-        deep: availableDeepLevels().nonRecursiveCheck,
+        deep: availableDeepLevels().any,
       }];
     }
   } else if (typeof interpolatedValue === 'function') {

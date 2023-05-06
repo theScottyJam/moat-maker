@@ -8,9 +8,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
 // they're simple smoke tests to make sure the validation checks
 // aren't completely busted.
 
-// TODO: These tests are broken right now.
-// (DISABLE_PARAM_VALIDATION ? describe.skip : describe)('user input validation for validator API', () => {
-describe.skip('user input validation for validator API', () => {
+(DISABLE_PARAM_VALIDATION ? describe.skip : describe)('user input validation for validator API', () => {
   test('TypeErrors are thrown when bad input is given', () => {
     const act = (): any => validator(42 as any);
     assert.throws(act, TypeError);
@@ -21,7 +19,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "parts" argument for validator(): ' +
-        'Expected <argumentList>[0] to be an object but got 42.'
+        'Expected <argument #1> to be an object but got 42.'
       ),
     });
   });
@@ -31,7 +29,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-        'Expected <argumentList>[1] to be an object but got 42.'
+        'Expected <argument #2> to be an object but got 42.'
       ),
     });
   });
@@ -41,7 +39,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertionTypeGuard(): ' +
-        'Expected <argumentList>[1] to be an object but got 42.'
+        'Expected <argument #2> to be an object but got 42.'
       ),
     });
   });
@@ -51,7 +49,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
-        'Expected <argumentList>[1], which was [object Object], to be array-like.'
+        'Expected <argument #2>, which was [object Object], to be array-like.'
       ),
     });
   });
@@ -61,7 +59,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
-        'Expected <argumentList>[1], which was [object Object], to be array-like.'
+        'Expected <argument #2>, which was [object Object], to be array-like.'
       ),
     });
   });
@@ -99,10 +97,18 @@ describe.skip('user input validation for validator API', () => {
     });
 
     assert.throws(act, {
-      message: (
-        'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-        'Expected <argumentList>[0].rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".'
-      ),
+      message: [
+        (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Failed to match against any variant of a union.'
+        ),
+        '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "union".',
+        '  Variant 2: Expected <argument #1>.rootRule.variants[0].category to be "noop" but got "array".',
+        '  Variant 3: Expected <argument #1>.rootRule.variants[0].content.category to be "noop" but got "intersection".',
+        '  Variant 4: Expected <argument #1>.rootRule.variants[0].content.category to be "union" but got "intersection".',
+        '  Variant 5: Expected <argument #1>.rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".',
+        '  Variant 6: Expected <argument #1>.rootRule.category to be "intersection" but got "union".',
+      ].join('\n'),
     });
   });
 
@@ -111,8 +117,8 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: [
         'Received invalid "stringOrValidator" argument for validator.from(): Failed to match against any variant of a union.',
-        '  Variant 1: Expected <argumentList>[0] to be of type "string" but got type "number".',
-        '  Variant 2: Expected <argumentList>[0], which was 42, to be a validator instance.',
+        '  Variant 1: Expected <argument #1> to be of type "string" but got type "number".',
+        '  Variant 2: Expected <argument #1>, which was 42, to be a validator instance.',
       ].join('\n'),
     });
   });
@@ -123,7 +129,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-        'Expected <argumentList>[1] to be an object but got "arguments".'
+        'Expected <argument #2> to be an object but got "arguments".'
       ),
     });
   });
@@ -143,7 +149,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "validator" argument for <validator ref>.set(): ' +
-        'Expected <argumentList>[0], which was 42, to be a validator instance.'
+        'Expected <argument #1>, which was 42, to be a validator instance.'
       ),
     });
   });
@@ -153,7 +159,7 @@ describe.skip('user input validation for validator API', () => {
     assert.throws(act, {
       message: (
         'Received invalid "testExpectation" argument for validator.expectTo(): ' +
-        'Expected <argumentList>[0], which was 42, to be an instance of `Function` (and not an instance of a subclass).'
+        'Expected <argument #1>, which was 42, to be an instance of `Function` (and not an instance of a subclass).'
       ),
     });
   });
@@ -187,10 +193,15 @@ describe.skip('user input validation for validator API', () => {
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: (
-          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected <argumentList>[0].rootRule.variants, which was [object Array], to be non-empty.'
-        ),
+        message: [
+          (
+            'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+            'Failed to match against any variant of a union.'
+          ),
+          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "union".',
+          '  Variant 2: Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.',
+          '  Variant 3: Expected <argument #1>.rootRule.category to be "intersection" but got "union".',
+        ].join('\n'),
       });
     });
 
@@ -206,10 +217,15 @@ describe.skip('user input validation for validator API', () => {
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: (
-          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected <argumentList>[0].rootRule.variants, which was [object Array], to be non-empty.'
-        ),
+        message: [
+          (
+            'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+            'Failed to match against any variant of a union.'
+          ),
+          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "intersection".',
+          '  Variant 2: Expected <argument #1>.rootRule.category to be "union" but got "intersection".',
+          '  Variant 3: Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.',
+        ].join('\n'),
       });
     });
 
@@ -228,18 +244,18 @@ describe.skip('user input validation for validator API', () => {
 
       const act = (): any => validator.fromRuleset(ruleset);
 
-      // TODO: This error isn't ideal. There's two problems.
-      // 1. The nesting of the union variants. This shouldn't be hard to fix, I just need to, in the code, wait
-      // to build the union error from its variants until the last minute, instead of building them as I go.
-      // 2. The fact that it is recommending some rules like noop and array, both of which aren't the real problem
+      // TODO: This error isn't ideal.
+      // The fact that it is recommending some rules like noop and array, both of which aren't the real problem
       // in this case. I don't know if there's really a good fix for that issue.
       assert.throws(act, {
         message: [
-          'Received invalid "ruleset" argument for validator.fromRuleset(): Failed to match against any variant of a union.',
-          '  Variant 1: Expected <argumentList>[0].rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
-          '  Variant 2: Failed to match against any variant of a union.',
-          '      Variant 1: Expected <argumentList>[0].rootRule.category to be "noop" but got "tuple".',
-          '      Variant 2: Expected <argumentList>[0].rootRule.category to be "array" but got "tuple".',
+          (
+            'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+            'Failed to match against any variant of a union.'
+          ),
+          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "tuple".',
+          '  Variant 2: Expected <argument #1>.rootRule.category to be "array" but got "tuple".',
+          '  Variant 3: Expected <argument #1>.rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
         ].join('\n'),
       });
     });

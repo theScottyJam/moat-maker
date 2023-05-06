@@ -304,4 +304,25 @@ describe('interpolation', () => {
       expect(v.matches({ x: 2, y: 3 })).toBe(false);
     });
   });
+
+  test('expectation failures at "parent" lookup paths are not auto-pruned.', () => {
+    const failExpectation = validator.expectTo(x => 'fail');
+    const v = validator`${failExpectation} | { x: 2 }`;
+    const act = (): any => v.assertMatches({ x: 3 });
+    assert.throws(act, {
+      message: [
+        'Failed to match against any variant of a union.',
+        '  Variant 1: Expected <receivedValue>, which was [object Object], to fail',
+        '  Variant 2: Expected <receivedValue>.x to be 2 but got 3.',
+      ].join('\n'),
+    });
+  });
+
+  test('non-expectation, interpolation failures at "parent" lookup paths can be pruned.', () => {
+    const v = validator`${'badValue'} | { x: 2 }`;
+    const act = (): any => v.assertMatches({ x: 3 });
+    assert.throws(act, {
+      message: 'Expected <receivedValue>.x to be 2 but got 3.',
+    });
+  });
 });

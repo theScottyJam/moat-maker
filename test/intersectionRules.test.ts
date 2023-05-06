@@ -18,12 +18,6 @@ describe('intersection rules', () => {
     expect(v.matches(42)).toBe(false);
   });
 
-  test.only('XXX', () => {
-    const v = validator`{ x: number } & { y: number } & { z: number }`;
-    const act = (): any => v.assertMatches({ x: 2, y: 3 });
-    assert.throws(act, { message: '<receivedValue> is missing the required properties: "z"' });
-  });
-
   test('produces the correct rule', () => {
     const v = validator`string & null & undefined`;
     expect(v.ruleset).toMatchObject({

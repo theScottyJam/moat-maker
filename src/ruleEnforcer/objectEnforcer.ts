@@ -10,7 +10,6 @@ import { LookupPath } from './LookupPath';
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const availableDeepLevels = () => ({
-  irrelevant: DEEP_LEVELS.irrelevant,
   nonSpecificTypeCheck: DEEP_LEVELS.nonSpecificTypeCheck,
   immediateInfoCheck: DEEP_LEVELS.immediateInfoCheck,
   recurseInwardsCheck: DEEP_LEVELS.recurseInwardsCheck,

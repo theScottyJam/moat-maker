@@ -1,7 +1,7 @@
 import { createValidatorSyntaxError, type ValidatorSyntaxError } from './exceptions';
 import { TextPosition, type TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
 import type { Token, TokenStream } from './types/tokenizer';
-import { assert, UnreachableCaseError } from './util';
+import { assert, throwIndexOutOfBounds, UnreachableCaseError } from './util';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
 // we need one.
@@ -10,10 +10,6 @@ const getIdentifierPattern = (): RegExp => /[a-zA-Z$_][a-zA-Z0-9$_]*/y;
 interface ExtractResult {
   readonly value: string
   readonly range: TextRange
-}
-
-function throwIndexOutOfBounds(): never {
-  throw new Error('Internal error: Attempted to index an array with an out-of-bounds index.');
 }
 
 export function createTokenStream(sections: readonly string[]): TokenStream {
@@ -58,7 +54,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
  * (i.e. the passed in pos object), and the last position in the extracted range.
  */
 function extract(regex: RegExp, sections: readonly string[], pos: TextPosition): ExtractResult | null {
-  assert(regex.sticky, 'Internal error: The sticky flag must be set');
+  assert(regex.sticky, 'The sticky flag must be set');
   assert(regex.lastIndex === 0);
 
   regex.lastIndex = pos.textIndex;

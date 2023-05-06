@@ -32,9 +32,6 @@ export interface DeepRange {
  * variants can quickly grow to astronomical numbers.
  */
 export const DEEP_LEVELS = {
-  // Used when the deepness level doesn't matter, because, e.g. this is a top-level assertion,
-  // or we're about to reassign the deepness level anyways, etc.
-  irrelevant: { start: -1, end: -1 },
   // Used as a minimum value for algorithms. Shouldn't actually get passed around.
   min: { start: -1, end: -1 },
   // This is specifically used for the "is this value an instance of an Object" type check.
@@ -50,6 +47,9 @@ export const DEEP_LEVELS = {
   // A general non-recursive check - used when the match could pertain to any specific type
   // of non-recursive check above, but you don't have enough information to categorize it.
   nonRecursiveCheck: { start: 0, end: 2 },
+  // Used when a match should be prioritized in such a way that it always shows up.
+  // However, you don't want it to influence what gets pruned.
+  any: { start: 0, end: 3 },
   // Information that requires you to recurse into a nested data structure.
   recurseInwardsCheck: { start: 3, end: 3 },
 } satisfies Record<string, DeepRange>;
@@ -60,7 +60,7 @@ export function getMaxDeepnessLevelOf(rule: Rule): DeepRange {
   } else if (rule.category === 'primitiveLiteral') {
     return maxDeepRange(Object.values(availableDeepLevelsForPrimitiveLiteral()));
   } else if (rule.category === 'noop') {
-    return DEEP_LEVELS.irrelevant;
+    return DEEP_LEVELS.min;
   } else if (rule.category === 'object') {
     return maxDeepRange(Object.values(availableDeepLevelsForObject()));
   } else if (rule.category === 'array') {

@@ -12,6 +12,7 @@ import { simpleCheck } from './simpleEnforcer';
 import { tupleCheck } from './tupleEnforcer';
 import { unionCheck } from './unionEnforcer';
 import type { LookupPath } from './LookupPath';
+import { isExpectation } from './shared';
 
 // With both progress values and deepness values, these numbers should either stay the same
 // or increase as you get further into a check algorithm. They should never decrease.
@@ -43,17 +44,28 @@ type CheckFn<RuleType extends Rule> = (
 ) => CheckFnResponse;
 
 export class MatchResponse {
+  readonly #rule: Rule;
+  readonly #interpolated: readonly unknown[];
   readonly for: Rule['category'];
   readonly lookupPath: LookupPath;
   readonly failures: CheckFnResponse;
-  constructor(category: Rule['category'], lookupPath: LookupPath, failures: CheckFnResponse) {
-    this.for = category;
+  constructor(rule: Rule, interpolated: readonly unknown[], lookupPath: LookupPath, failures: CheckFnResponse) {
+    this.#rule = rule;
+    this.#interpolated = interpolated;
+    this.for = rule.category;
     this.lookupPath = lookupPath;
     this.failures = failures;
   }
 
   failed(): boolean {
     return this.failures.length > 0;
+  }
+
+  isExpectationBeingInterpolated(): boolean {
+    return (
+      this.#rule.category === 'interpolation' &&
+      isExpectation(this.#interpolated[this.#rule.interpolationIndex])
+    );
   }
 }
 
@@ -65,7 +77,7 @@ export function match(
 ): MatchResponse {
   const doMatch = <RuleType extends Rule>(rule: RuleType, checkFn: CheckFn<RuleType>): MatchResponse => {
     const failures = checkFn(rule, target, interpolated, lookupPath);
-    return new MatchResponse(rule.category, lookupPath, failures);
+    return new MatchResponse(rule, interpolated, lookupPath, failures);
   };
 
   if (rule.category === 'simple') return doMatch(rule, simpleCheck);

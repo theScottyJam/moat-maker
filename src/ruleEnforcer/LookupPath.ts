@@ -1,4 +1,4 @@
-import { UnreachableCaseError } from '../util';
+import { assert, UnreachableCaseError } from '../util';
 import { isIdentifier } from '../tokenStream';
 
 export type PathSegment =
@@ -27,6 +27,32 @@ export class LookupPath {
     this.#rootText = rootText;
     this.#customStringifier = customStringifier;
     this.pathSegments = pathSegments;
+  }
+
+  isParentOf(other: LookupPath): boolean {
+    if (this.pathSegments.length <= other.pathSegments.length) {
+      return false;
+    }
+
+    return other.pathSegments.every((otherSegment, i) => {
+      const thisSegment = this.pathSegments[i];
+      assert(thisSegment !== undefined);
+      return LookupPath.comparePathSegments(thisSegment, otherSegment);
+    });
+  }
+
+  static comparePathSegments(segment1: PathSegment, segment2: PathSegment): boolean {
+    if (segment1.category === 'accessProperty') {
+      return segment2.category === 'accessProperty' && segment1.propertyKey === segment2.propertyKey;
+    } else if (segment1.category === 'indexArray') {
+      return segment2.category === 'indexArray' && segment1.index === segment2.index;
+    } else if (segment1.category === 'sliceArray') {
+      return segment2.category === 'sliceArray' && segment1.from === segment2.from;
+    } else if (segment1.category === 'convertToArray') {
+      return segment2.category === 'convertToArray';
+    } else {
+      throw new UnreachableCaseError(segment1);
+    }
   }
 
   #push(pathSegment: PathSegment): LookupPath {
