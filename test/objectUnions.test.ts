@@ -16,8 +16,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: <receivedValue> is missing the required properties: "x"',
-        '  Variant 2: <receivedValue> is missing the required properties: "y"',
+        '  * <receivedValue> is missing the required properties: "x"',
+        '  * <receivedValue> is missing the required properties: "y"',
       ].join('\n'),
     });
   });
@@ -28,8 +28,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.x to be of type "number" but got type "boolean".',
-        '  Variant 2: Expected <receivedValue>.x to be of type "string" but got type "boolean".',
+        '  * Expected <receivedValue>.x to be of type "number" but got type "boolean".',
+        '  * Expected <receivedValue>.x to be of type "string" but got type "boolean".',
       ].join('\n'),
     });
   });
@@ -46,8 +46,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.x to be 0 but got 2.',
-          '  Variant 2: Expected <receivedValue>.x to be 1 but got 2.',
+          '  * Expected <receivedValue>.x to be 0 but got 2.',
+          '  * Expected <receivedValue>.x to be 1 but got 2.',
         ].join('\n'),
       });
     });
@@ -68,9 +68,9 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.x to be 0 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 1 but got 3.',
-          '  Variant 3: Expected <receivedValue>.x to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 0 but got 3.',
+          '  * Expected <receivedValue>.x to be 1 but got 3.',
+          '  * Expected <receivedValue>.x to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -83,8 +83,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.x to be 2 but got 0.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 0.',
+          '  * Expected <receivedValue>.x to be 2 but got 0.',
+          '  * Expected <receivedValue>.x to be 3 but got 0.',
         ].join('\n'),
       });
     });
@@ -95,8 +95,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.sub.y to be 2 but got 0.',
-          '  Variant 2: Expected <receivedValue>.sub.y to be 3 but got 0.',
+          '  * Expected <receivedValue>.sub.y to be 2 but got 0.',
+          '  * Expected <receivedValue>.sub.y to be 3 but got 0.',
         ].join('\n'),
       });
     });
@@ -125,10 +125,10 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.sub.y to be 2 but got 0.',
-          '  Variant 2: Expected <receivedValue>.sub.y to be 3 but got 0.',
-          '  Variant 3: Expected <receivedValue>.sub2.y to be 2 but got 0.',
-          '  Variant 4: Expected <receivedValue>.sub2.y to be 3 but got 0.',
+          '  * Expected <receivedValue>.sub.y to be 2 but got 0.',
+          '  * Expected <receivedValue>.sub.y to be 3 but got 0.',
+          '  * Expected <receivedValue>.sub2.y to be 2 but got 0.',
+          '  * Expected <receivedValue>.sub2.y to be 3 but got 0.',
         ].join('\n'),
       });
     });
@@ -139,8 +139,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: <receivedValue>.sub is missing the required properties: "x"',
-          '  Variant 2: <receivedValue>.sub2 is missing the required properties: "y"',
+          '  * <receivedValue>.sub is missing the required properties: "x"',
+          '  * <receivedValue>.sub2 is missing the required properties: "y"',
         ].join('\n'),
       });
     });
@@ -151,8 +151,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: <receivedValue>.sub is missing the required properties: "x"',
-          '  Variant 2: <receivedValue>.sub2 is missing the required properties: "z"',
+          '  * <receivedValue>.sub is missing the required properties: "x"',
+          '  * <receivedValue>.sub2 is missing the required properties: "z"',
         ].join('\n'),
       });
     });
@@ -164,8 +164,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.a to be 0 but got 2.',
-        '  Variant 2: Expected <receivedValue>.a to be 1 but got 2.',
+        '  * Expected <receivedValue>.a to be 0 but got 2.',
+        '  * Expected <receivedValue>.a to be 1 but got 2.',
       ].join('\n'),
     });
   });
@@ -200,8 +200,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.myprop.subobj.y to be 1 but got 5.',
-          '  Variant 2: Expected <receivedValue>.myprop.subobj.y to be 2 but got 5.',
+          '  * Expected <receivedValue>.myprop.subobj.y to be 1 but got 5.',
+          '  * Expected <receivedValue>.myprop.subobj.y to be 2 but got 5.',
         ].join('\n'),
       });
     });
@@ -252,8 +252,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
       });
     });
@@ -264,8 +264,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.sub.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.sub.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.sub.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.sub.x to be 3 but got 2.',
         ].join('\n'),
       });
     });
@@ -276,8 +276,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
       });
     });
@@ -288,8 +288,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
       });
     });
@@ -300,9 +300,9 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
-          '  Variant 3: Expected <receivedValue>.x to be 4 but got 2.',
+          '  * Expected <receivedValue>.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.x to be 4 but got 2.',
         ].join('\n'),
       });
     });
@@ -313,9 +313,9 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.y to be 2 but got 3.',
-          '  Variant 2: Expected <receivedValue>.x to be 3 but got 2.',
-          '  Variant 3: Expected <receivedValue>.x to be 4 but got 2.',
+          '  * Expected <receivedValue>.y to be 2 but got 3.',
+          '  * Expected <receivedValue>.x to be 3 but got 2.',
+          '  * Expected <receivedValue>.x to be 4 but got 2.',
         ].join('\n'),
       });
     });
@@ -326,8 +326,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>["0"] to be "A" but got "B".',
-          '  Variant 2: Expected <receivedValue>.x to be true but got false.',
+          '  * Expected <receivedValue>["0"] to be "A" but got "B".',
+          '  * Expected <receivedValue>.x to be true but got false.',
         ].join('\n'),
       });
     });
@@ -339,8 +339,8 @@ describe('union rules with objects', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>["0"] to be "A" but got "B".',
-          '  Variant 2: Expected <receivedValue>[Symbol(test symbol)] to be "B" but got "A".',
+          '  * Expected <receivedValue>["0"] to be "A" but got "B".',
+          '  * Expected <receivedValue>[Symbol(test symbol)] to be "B" but got "A".',
         ].join('\n'),
       });
     });
@@ -352,8 +352,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: <receivedValue> is missing the required properties: "x", "y"',
-        '  Variant 2: <receivedValue> is missing the required properties: "x", "z"',
+        '  * <receivedValue> is missing the required properties: "x", "y"',
+        '  * <receivedValue> is missing the required properties: "x", "z"',
       ].join('\n'),
     });
   });
@@ -364,8 +364,8 @@ describe('union rules with objects', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.sub.y to be 0 but got 1.',
-        '  Variant 2: Expected <receivedValue>.sub.z to be 0 but got 1.',
+        '  * Expected <receivedValue>.sub.y to be 0 but got 1.',
+        '  * Expected <receivedValue>.sub.z to be 0 but got 1.',
       ].join('\n'),
     });
   });

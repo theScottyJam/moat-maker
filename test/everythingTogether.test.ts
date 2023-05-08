@@ -139,8 +139,8 @@ describe('unions of different types', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>[1] to be 2 but got 4.',
-        '  Variant 2: Expected <receivedValue>[1] to be 3 but got 4.',
+        '  * Expected <receivedValue>[1] to be 2 but got 4.',
+        '  * Expected <receivedValue>[1] to be 3 but got 4.',
       ].join('\n'),
     });
   });
@@ -208,8 +208,8 @@ describe('unions of different types', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: <receivedValue> is missing the required properties: "y"',
-        '  Variant 2: Expected the <receivedValue> array to have 1 entry, but found 2.',
+        '  * <receivedValue> is missing the required properties: "y"',
+        '  * Expected the <receivedValue> array to have 1 entry, but found 2.',
       ].join('\n'),
     });
   });
@@ -223,8 +223,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be 1 but got 3.',
-          '  Variant 2: Expected <receivedValue> to be 2 but got 3.',
+          '  * Expected <receivedValue> to be 1 but got 3.',
+          '  * Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -235,8 +235,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be of type "string" but got type "number".',
-          '  Variant 2: Expected <receivedValue> to be 2 but got 1.',
+          '  * Expected <receivedValue> to be of type "string" but got type "number".',
+          '  * Expected <receivedValue> to be 2 but got 1.',
         ].join('\n'),
       });
     });
@@ -263,8 +263,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue> to be 1 but got 3.',
-          '  Variant 2: Expected <receivedValue> to be 2 but got 3.',
+          '  * Expected <receivedValue> to be 1 but got 3.',
+          '  * Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -277,8 +277,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>, which was [object Object], to be empty.',
-          '  Variant 2: <receivedValue> is missing the required properties: "x"',
+          '  * Expected <receivedValue>, which was [object Object], to be empty.',
+          '  * <receivedValue> is missing the required properties: "x"',
         ].join('\n'),
       });
     });
@@ -291,8 +291,8 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
-          '  Variant 2: Expected <receivedValue> to be of type "number" but got type "object".',
+          '  * Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
+          '  * Expected <receivedValue> to be of type "number" but got type "object".',
         ].join('\n'),
       });
     });

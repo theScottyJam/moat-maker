@@ -8,8 +8,8 @@ describe('union rules with arrays', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>[0] to be of type "number" but got type "boolean".',
-        '  Variant 2: Expected <receivedValue>[0] to be of type "string" but got type "boolean".',
+        '  * Expected <receivedValue>[0] to be of type "number" but got type "boolean".',
+        '  * Expected <receivedValue>[0] to be of type "string" but got type "boolean".',
       ].join('\n'),
     });
   });
@@ -26,8 +26,8 @@ describe('union rules with arrays', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>[0] to be 0 but got 2.',
-          '  Variant 2: Expected <receivedValue>[0] to be 1 but got 2.',
+          '  * Expected <receivedValue>[0] to be 0 but got 2.',
+          '  * Expected <receivedValue>[0] to be 1 but got 2.',
         ].join('\n'),
       });
     });
@@ -48,9 +48,9 @@ describe('union rules with arrays', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>[0] to be 0 but got 3.',
-          '  Variant 2: Expected <receivedValue>[0] to be 1 but got 3.',
-          '  Variant 3: Expected <receivedValue>[0] to be 2 but got 3.',
+          '  * Expected <receivedValue>[0] to be 0 but got 3.',
+          '  * Expected <receivedValue>[0] to be 1 but got 3.',
+          '  * Expected <receivedValue>[0] to be 2 but got 3.',
         ].join('\n'),
       });
     });
@@ -63,8 +63,8 @@ describe('union rules with arrays', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>[0] to be 2 but got 0.',
-          '  Variant 2: Expected <receivedValue>[0] to be 3 but got 0.',
+          '  * Expected <receivedValue>[0] to be 2 but got 0.',
+          '  * Expected <receivedValue>[0] to be 3 but got 0.',
         ].join('\n'),
       });
     });

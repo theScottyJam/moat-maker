@@ -15,9 +15,9 @@ describe('union rules', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
-        '  Variant 2: Expected <receivedValue> to be of type "string" but got type "null".',
-        '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
+        '  * Expected <receivedValue> to be of type "number" but got type "null".',
+        '  * Expected <receivedValue> to be of type "string" but got type "null".',
+        '  * Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
     assert.throws(act, TypeError);
@@ -30,8 +30,8 @@ describe('union rules', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
-        '  Variant 2: Expected <receivedValue>, which was null, to throw',
+        '  * Expected <receivedValue> to be of type "number" but got type "null".',
+        '  * Expected <receivedValue>, which was null, to throw',
         '    a multiline',
         '    error.',
       ].join('\n'),
@@ -132,9 +132,9 @@ describe('union rules', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue> to be of type "number" but got type "null".',
-        '  Variant 2: Expected <receivedValue> to be of type "string" but got type "null".',
-        '  Variant 3: Expected <receivedValue> to be of type "undefined" but got type "null".',
+        '  * Expected <receivedValue> to be of type "number" but got type "null".',
+        '  * Expected <receivedValue> to be of type "string" but got type "null".',
+        '  * Expected <receivedValue> to be of type "undefined" but got type "null".',
       ].join('\n'),
     });
     assert.throws(act, TypeError);
@@ -174,9 +174,9 @@ describe('union rules', () => {
     assert.throws(act, {
       message: [
         'Failed to match against any variant of a union.',
-        '  Variant 1: Expected <receivedValue>.x to be 2 but got 0.',
-        '  Variant 2: Expected <receivedValue>.x to be 3 but got 0.',
-        '  Variant 3: Expected <receivedValue>.x to be 4 but got 0.',
+        '  * Expected <receivedValue>.x to be 2 but got 0.',
+        '  * Expected <receivedValue>.x to be 3 but got 0.',
+        '  * Expected <receivedValue>.x to be 4 but got 0.',
       ].join('\n'),
     });
   });

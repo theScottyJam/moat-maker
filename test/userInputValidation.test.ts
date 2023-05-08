@@ -109,8 +109,8 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: [
         'Received invalid "stringOrValidator" argument for validator.from(): Failed to match against any variant of a union.',
-        '  Variant 1: Expected <argument #1> to be of type "string" but got type "number".',
-        '  Variant 2: Expected <argument #1>, which was 42, to be a validator instance.',
+        '  * Expected <argument #1> to be of type "string" but got type "number".',
+        '  * Expected <argument #1>, which was 42, to be a validator instance.',
       ].join('\n'),
     });
   });
@@ -165,8 +165,8 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
           'validator.expectTo() received a bad "testExpectation" function: ' +
           'Failed to match against any variant of a union.'
         ),
-        '  Variant 1: Expected <testExpectation return value> to be of type "string" but got type "number".',
-        '  Variant 2: Expected <testExpectation return value> to be of type "null" but got type "number".',
+        '  * Expected <testExpectation return value> to be of type "string" but got type "number".',
+        '  * Expected <testExpectation return value> to be of type "null" but got type "number".',
       ].join('\n'),
     });
   });
@@ -235,9 +235,9 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
             'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
             'Failed to match against any variant of a union.'
           ),
-          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "tuple".',
-          '  Variant 2: Expected <argument #1>.rootRule.category to be "array" but got "tuple".',
-          '  Variant 3: Expected <argument #1>.rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
+          '  * Expected <argument #1>.rootRule.category to be "noop" but got "tuple".',
+          '  * Expected <argument #1>.rootRule.category to be "array" but got "tuple".',
+          '  * Expected <argument #1>.rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
         ].join('\n'),
       });
     });

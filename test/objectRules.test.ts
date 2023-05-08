@@ -107,8 +107,8 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.another to be of type "string" but got type "boolean".',
-          '  Variant 2: Expected <receivedValue>.another to be of type "number" but got type "boolean".',
+          '  * Expected <receivedValue>.another to be of type "string" but got type "boolean".',
+          '  * Expected <receivedValue>.another to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
       assert.throws(act, TypeError);
@@ -120,8 +120,8 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.num to be of type "string" but got type "boolean".',
-          '  Variant 2: Expected <receivedValue>.num to be of type "number" but got type "boolean".',
+          '  * Expected <receivedValue>.num to be of type "string" but got type "boolean".',
+          '  * Expected <receivedValue>.num to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
       assert.throws(act, TypeError);
@@ -133,8 +133,8 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
-          '  Variant 1: Expected <receivedValue>.str to be of type "string" but got type "boolean".',
-          '  Variant 2: Expected <receivedValue>.str to be of type "number" but got type "boolean".',
+          '  * Expected <receivedValue>.str to be of type "string" but got type "boolean".',
+          '  * Expected <receivedValue>.str to be of type "number" but got type "boolean".',
         ].join('\n'),
       });
       assert.throws(act, TypeError);
