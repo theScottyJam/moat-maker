@@ -13,12 +13,20 @@ When looking at a group of like-type rules at the same lookup path, we'll check 
 When looking at a group at the same lookup path, we'll check what the highest "deep" value on them is. Any error that has a lower deep value will be discarded. Some errors have a range of deep values - the "start" of the range is used when determining what the highest deepness value in the group is, while the "end" of the range is used to decide if a particular error should be discarded.
 
 Any time an error shows up, who's lookup path is the parent of another errors lookup path, it will be discarded. e.g. an error at "a.b" will be discarded if there's also an error centered at "a.b.c". The exception is if the parent error is specifically a custom expectation - we want to make sure custom-built errors show up when they should, and those have the chance of digging deep into the object when matching, so even though the expectation may have ran on "a.b", the custom expectation itself may be checking information on the ".c" property of what it's inspecting.
+
+In JavaScript, it's a common pattern to have a union of different objects who all have some sort of "type" property
+that's set to unique strings (or in some cases, numbers). An attempt is made to detect these "type" properties. If one is found, and the target object's type property value corresponds to one particular union variant, than all other variant errors will be discarded. A property is believed to be a "type" property if:
+- On each variant, the property's rule is a PrimitiveLiteralRule who's value is either a string or a number.
+- The value of this PrimitiveLiteralRule is unique for each variant.
+- There's only one such property that follows the above rules.
 */
 
 import type { LookupPath, PathSegment } from './LookupPath';
 import type { Rule } from '../types/validationRules';
 import { assert, group, indentMultilineString, throwIndexOutOfBounds } from '../util';
-import { calcCheckResponseDeepness, type MatchResponse } from './ruleMatcherTools';
+import { calcCheckResponseDeepness, type CheckFnResponse, type MatchResponse } from './ruleMatcherTools';
+import { comparePrimitiveLiterals } from './privitiveLiteralEnforcer';
+import { isExpectation } from './shared';
 
 export interface BuildValueMatchErrorOpts {
   readonly errorPrefix?: string | undefined
@@ -123,10 +131,12 @@ function gatherErrorMessagesFor_(
     ReadonlyArray<readonly MatchResponse[]>
   );
   for (const responsesAtSamePath of groupedByPath) {
-    const groupedByType = group(responsesAtSamePath, r => r.for);
+    const groupedByType = group(responsesAtSamePath, r => r.rule.category);
     const furthestFailures = Object.values(groupedByType).flatMap(responsesOfSameType => {
-      const failures = responsesOfSameType
+      const failures_ = responsesOfSameType
         .flatMap(result => result.failures.map(failure => ({ failure, originResult: result })));
+
+      const failures = filterByVariantIdentifyingProperty(failures_);
 
       assert(failures.length > 0);
       const farThreshold = Math.max(...failures.map(({ failure }) => failure.progress ?? -Infinity));
@@ -152,7 +162,10 @@ function gatherErrorMessagesFor_(
         errors.push({
           message: failure.message,
           lookupPath: failure.lookupPath,
-          isExpectationBeingInterpolated: originResult.isExpectationBeingInterpolated(),
+          isExpectationBeingInterpolated: (
+            originResult.rule.category === 'interpolation' &&
+            isExpectation(originResult.interpolated[originResult.rule.interpolationIndex])
+          ),
         });
       } else {
         errors.push(...subResponseToErrors.get(failure.matchResponse) ?? []);
@@ -174,6 +187,95 @@ function filterOutLowerErrors(errorInfos: readonly VariantErrorInfo[]): readonly
     });
   });
   return res;
+}
+
+interface FailureInfo {
+  readonly failure: CheckFnResponse[number]
+  readonly originResult: MatchResponse
+}
+
+/**
+ * Tries to look for a variant-identifying property in the various object patterns,
+ * that is used to determine which union variant you're trying to conform to.
+ * If a property is found that looks like it behaves like this
+ * (i.e. it can be used to identify which variant is being targeted - often this is a "type" property),
+ * and if the value being matched correctly conforms to this found property,
+ * than all other errors will be discarded.
+ */
+function filterByVariantIdentifyingProperty(failureInfos: readonly FailureInfo[]): readonly FailureInfo[] {
+  const firstFailureInfo = failureInfos[0] ?? throwIndexOutOfBounds();
+  if (firstFailureInfo.originResult.rule.category !== 'object') {
+    return failureInfos;
+  }
+
+  // Maps candidate property names to the potential values they could be set to.
+  const candidateProperties = new Map<string, Set<unknown>>(
+    [...firstFailureInfo.originResult.rule.content.keys()]
+      .map(key => [key, new Set([])]),
+  );
+  for (const { originResult } of failureInfos) {
+    assert(originResult.rule.category === 'object');
+    for (const key of candidateProperties.keys()) {
+      const propertyRuleInfo = originResult.rule.content.get(key);
+      const isCanidate = (
+        propertyRuleInfo !== undefined &&
+        !propertyRuleInfo.optional &&
+        propertyRuleInfo.rule.category === 'primitiveLiteral' &&
+        (['string', 'number'] as string[]).includes(typeof propertyRuleInfo.rule.value)
+      );
+
+      if (!isCanidate) {
+        candidateProperties.delete(key);
+        continue;
+      }
+
+      const propSet = candidateProperties.get(key);
+      if (propSet === undefined) {
+        continue;
+      }
+
+      const primitiveValue = propertyRuleInfo.rule.value;
+      if (propSet.has(primitiveValue)) {
+        // Each variant must have a unique value for it to be a candidate.
+        candidateProperties.delete(key);
+      } else {
+        propSet.add(primitiveValue);
+      }
+    }
+  }
+
+  // Failed to find exactly one variant-identifying property
+  if (candidateProperties.size !== 1) {
+    return failureInfos;
+  }
+
+  const [candidateEntry] = candidateProperties;
+  assert(candidateEntry !== undefined);
+  const variantIdentifyingKey = candidateEntry[0];
+
+  for (const failureInfo of failureInfos) {
+    const { originResult } = failureInfo;
+    if (!isObject(originResult.target)) {
+      return failureInfos;
+    }
+
+    // Later on, once support is better, this can be replaced with Object.hasOwn()
+    if (!Object.prototype.hasOwnProperty.call(originResult.target, variantIdentifyingKey)) {
+      return failureInfos;
+    }
+
+    assert(originResult.rule.category === 'object');
+    const propertyRuleInfo = originResult.rule.content.get(variantIdentifyingKey);
+    assert(propertyRuleInfo !== undefined);
+    assert(propertyRuleInfo.rule.category === 'primitiveLiteral');
+    const primitiveValue = propertyRuleInfo.rule.value;
+    if (comparePrimitiveLiterals(primitiveValue, (originResult.target as any)[variantIdentifyingKey])) {
+      // We found the one matching failure info. Lets return just that one.
+      return [failureInfo];
+    }
+  }
+
+  return failureInfos;
 }
 
 /**
@@ -198,6 +300,10 @@ export function buildUnionError(variantErrorMessages_: readonly string[]): strin
 // ------------------------------
 //   UTILITY FUNCTIONS
 // ------------------------------
+
+function isObject(value: unknown): value is object {
+  return value === Object(value);
+}
 
 function unique<T>(array: readonly T[]): readonly T[] {
   return [...new Set(array)];

@@ -321,13 +321,13 @@ describe('union rules with objects', () => {
     });
 
     test('object matchers includes an index type (test 1)', () => {
-      const v = validator`{ x: 'A', 0: 'A' } | { x: 'B', [index: number]: 'B' }`;
-      const act = (): any => v.assertMatches({ x: 'A', 0: 'B' });
+      const v = validator`{ x: false, 0: 'A' } | { x: true, [index: number]: 'B' }`;
+      const act = (): any => v.assertMatches({ x: false, 0: 'B' });
       assert.throws(act, {
         message: [
           'Failed to match against any variant of a union.',
           '  Variant 1: Expected <receivedValue>["0"] to be "A" but got "B".',
-          '  Variant 2: Expected <receivedValue>.x to be "B" but got "A".',
+          '  Variant 2: Expected <receivedValue>.x to be true but got false.',
         ].join('\n'),
       });
     });

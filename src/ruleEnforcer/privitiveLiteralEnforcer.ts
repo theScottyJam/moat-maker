@@ -12,6 +12,13 @@ export const availableDeepLevels = () => ({
   immediateInfoCheck: DEEP_LEVELS.immediateInfoCheck,
 });
 
+/** An export of the comparison function used internally.
+ * (Which, in this case, is just a simple `===`).
+ */
+export function comparePrimitiveLiterals(a: unknown, b: unknown): boolean {
+  return a === b;
+}
+
 export function primitiveLiteralCheck(
   rule: PrimitiveLiteralRule,
   target: unknown,
@@ -34,7 +41,7 @@ export function primitiveLiteralCheck(
     }];
   }
 
-  if (target !== rule.value) {
+  if (!comparePrimitiveLiterals(target, rule.value)) {
     return [{
       message: formatError(rule.value, target, lookupPath),
       lookupPath,

@@ -97,18 +97,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
 
     assert.throws(act, {
-      message: [
-        (
-          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Failed to match against any variant of a union.'
-        ),
-        '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "union".',
-        '  Variant 2: Expected <argument #1>.rootRule.variants[0].category to be "noop" but got "array".',
-        '  Variant 3: Expected <argument #1>.rootRule.variants[0].content.category to be "noop" but got "intersection".',
-        '  Variant 4: Expected <argument #1>.rootRule.variants[0].content.category to be "union" but got "intersection".',
-        '  Variant 5: Expected <argument #1>.rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".',
-        '  Variant 6: Expected <argument #1>.rootRule.category to be "intersection" but got "union".',
-      ].join('\n'),
+      message: (
+        'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+        'Expected <argument #1>.rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".'
+      ),
     });
   });
 
@@ -193,15 +185,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: [
-          (
-            'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-            'Failed to match against any variant of a union.'
-          ),
-          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "union".',
-          '  Variant 2: Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.',
-          '  Variant 3: Expected <argument #1>.rootRule.category to be "intersection" but got "union".',
-        ].join('\n'),
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.'
+        ),
       });
     });
 
@@ -217,15 +204,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       const act = (): any => validator.fromRuleset(ruleset);
 
       assert.throws(act, {
-        message: [
-          (
-            'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-            'Failed to match against any variant of a union.'
-          ),
-          '  Variant 1: Expected <argument #1>.rootRule.category to be "noop" but got "intersection".',
-          '  Variant 2: Expected <argument #1>.rootRule.category to be "union" but got "intersection".',
-          '  Variant 3: Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.',
-        ].join('\n'),
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.'
+        ),
       });
     });
 
