@@ -173,11 +173,11 @@ describe('tuple rules', () => {
 
     test('an expectation function interpolated into a rest patter will get called, even when it receives an empty array', () => {
       let calledWith: any = null;
-      const myChecker = validator.expectTo(value => {
+      const myExpectation = validator.expectTo(value => {
         calledWith = value;
         return null;
       });
-      const v = validator`[string, number?, ...${myChecker}]`;
+      const v = validator`[string, number?, ...${myExpectation}]`;
       v.assertMatches(['xyz']);
       expect(calledWith).toMatchObject([]);
     });

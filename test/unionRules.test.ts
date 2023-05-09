@@ -24,8 +24,8 @@ describe('union rules', () => {
   });
 
   test('properly indents multiline errors when composing multiple errors together.', () => {
-    const alwaysFail = validator.expectTo(() => 'throw\na multiline\nerror.');
-    const v = validator`number | ${alwaysFail}`;
+    const expectNothing = validator.expectTo(() => 'throw\na multiline\nerror.');
+    const v = validator`number | ${expectNothing}`;
     const act = (): any => v.assertMatches(null);
     assert.throws(act, {
       message: [

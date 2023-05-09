@@ -149,7 +149,7 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     content: ${ruleRef}
   }`;
 
-  const expectProperTupleRule = validator.expectTo(value_ => {
+  const andExpectProperTupleRule = validator.expectTo(value_ => {
     const value = value_ as TupleRule;
     const allowedLabelCount = value.content.length + value.optionalContent.length + (value.rest !== null ? 1 : 0);
     if (value.entryLabels !== null && value.entryLabels.length !== allowedLabelCount) {
@@ -164,7 +164,7 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     optionalContent: ${ruleRef}[]
     rest: ${ruleRef} | null
     entryLabels: string[] | null
-  } & ${expectProperTupleRule}`;
+  } & ${andExpectProperTupleRule}`;
 
   const iterableRuleCheck = validator`{
     category: 'iterable'

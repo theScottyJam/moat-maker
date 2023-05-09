@@ -306,8 +306,8 @@ describe('interpolation', () => {
   });
 
   test('expectation failures at "parent" lookup paths are not auto-pruned.', () => {
-    const failExpectation = validator.expectTo(x => 'fail');
-    const v = validator`${failExpectation} | { x: 2 }`;
+    const expectNothing = validator.expectTo(x => 'fail');
+    const v = validator`${expectNothing} | { x: 2 }`;
     const act = (): any => v.assertMatches({ x: 3 });
     assert.throws(act, {
       message: [

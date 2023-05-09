@@ -157,8 +157,8 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
   });
 
   test('validator.expectTo() with bad doCheck callback', () => {
-    const badChecker = validator.expectTo(() => 2 as any);
-    const act = (): any => validator`${badChecker}`.matches(2);
+    const badExpectation = validator.expectTo(() => 2 as any);
+    const act = (): any => validator`${badExpectation}`.matches(2);
     assert.throws(act, {
       message: [
         (
