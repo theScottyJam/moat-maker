@@ -56,7 +56,7 @@ describe('validator behavior', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2, { at: undefined, errorPrefix: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, Error);
+      assert.throws(act, TypeError);
     });
 
     test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
@@ -129,7 +129,7 @@ describe('validator behavior', () => {
       const v = validator`string`;
       const act = (): any => v.assertionTypeGuard(2, { at: undefined, errorPrefix: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });
-      assert.throws(act, Error);
+      assert.throws(act, TypeError);
     });
 
     test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
