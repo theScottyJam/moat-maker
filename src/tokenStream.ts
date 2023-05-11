@@ -12,7 +12,7 @@ interface ExtractResult {
   readonly range: TextRange
 }
 
-export function createTokenStream(sections: readonly string[]): TokenStream {
+export function createTokenStream(sections: readonly string[], interpolated: readonly unknown[]): TokenStream {
   let tokenStack: [Token, Token, Token, Token];
   {
     const beforeTextToken: Token = {
@@ -31,6 +31,7 @@ export function createTokenStream(sections: readonly string[]): TokenStream {
 
   return Object.freeze({
     originalText: sections,
+    interpolated,
     last() {
       return tokenStack[0];
     },

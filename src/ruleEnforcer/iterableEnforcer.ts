@@ -1,5 +1,5 @@
 import type { LookupPath } from './LookupPath';
-import { _parsingRulesInternals, type IterableRule } from '../types/validationRules';
+import { _validationRulesInternals, type IterableRule } from '../types/validationRules';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
 

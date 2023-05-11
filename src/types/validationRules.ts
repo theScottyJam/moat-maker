@@ -6,6 +6,8 @@
 import { FrozenMap } from '../util';
 import type { Validator, ValidatorTemplateTag } from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
+import type { LazyEvaluator } from './LazyEvaluator';
+import { getSimpleTypeOf } from '../ruleEnforcer/shared';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -101,7 +103,52 @@ export interface Ruleset {
   readonly interpolated: readonly unknown[]
 }
 
-function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
+function createLazyEvaluator(deriveValidator: (value: unknown) => Validator): LazyEvaluator {
+  return {
+    [packagePrivate]: { type: 'lazyEvaluator', deriveValidator },
+  };
+}
+
+function checkDynamicObjectKey(
+  interpolationIndex: number,
+  interpolated: readonly unknown[],
+  { expectationErrorMessage = false }: { expectationErrorMessage?: boolean } = {},
+): string | null {
+  if (interpolationIndex >= interpolated.length) {
+    if (expectationErrorMessage) {
+      // Expected it to...
+      return `be an in-bounds index into the interpolated array (which is of length ${interpolated.length}).`;
+    } else {
+      return (
+        `The interpolated value #${interpolationIndex + 1} corresponds to an out-of-bounds index ` +
+        'in the interpolation array.'
+      );
+    }
+  }
+
+  const key = interpolated[interpolationIndex];
+
+  if (!['string', 'symbol', 'number'].includes(typeof key)) {
+    if (expectationErrorMessage) {
+      return (
+        // Expected it to...
+        'index into the interpolated array to a valid value. ' +
+        'Since this index is for a dynamic object key, the corresponding ' +
+        'interpolated value should be of type string, symbol, or number. ' +
+        `Got type ${getSimpleTypeOf(key)}.`
+      );
+    } else {
+      return (
+        `The interpolated value #${interpolationIndex + 1} corresponds to a dynamic object key, and as such, ` +
+        'it must be either of type string, symbol, or number. ' +
+        `Got type ${getSimpleTypeOf(key)}.`
+      );
+    }
+  }
+  return null;
+}
+
+function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly unknown[]): Validator {
   const expectNonEmptyArray = validator.expectTo(
     value => Array.isArray(value) && value.length > 0 ? null : 'be non-empty.',
   );
@@ -137,10 +184,17 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
     label: string
   }`;
 
+  const andExpectValidDynamicObjectKey = validator.expectTo(interpolationIndex => {
+    return checkDynamicObjectKey(interpolationIndex as number, interpolated, { expectationErrorMessage: true });
+  });
+
   const objectRuleCheck = validator`{
     category: 'object'
     content: (${FrozenMap} | ${Map})@<[string, ${objectRuleContentValueCheck}]>
-    dynamicContent: (${FrozenMap} | ${Map})@<[number, ${objectRuleContentValueCheck}]>
+    dynamicContent: (${FrozenMap} | ${Map})@<[
+      number & ${andExpectValidDynamicObjectKey},
+      ${objectRuleContentValueCheck}
+    ]>
     index: ${objectRuleIndexValueCheck} | null
   }`;
 
@@ -202,14 +256,22 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 
   ruleRef.set(ruleCheck);
 
-  const rulesetCheck = validator`{
-    rootRule: ${ruleCheck}
-    interpolated: unknown[]
-  }`;
+  return ruleCheck;
+}
+
+function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
+  const rulesetCheck = validator`
+    { interpolated: unknown[] } &
+    ${createLazyEvaluator((target_: any) => {
+      const target = target_ as { interpolated: unknown[] };
+      const interpolated = target.interpolated;
+      return validator`{ rootRule: ${createRuleCheck(validator, interpolated)} }`;
+    })}
+  `;
 
   return rulesetCheck;
 }
 
-export const _parsingRulesInternals = {
-  [packagePrivate]: { allSimpleTypes, createRulesetCheck },
+export const _validationRulesInternals = {
+  [packagePrivate]: { allSimpleTypes, createRulesetCheck, checkDynamicObjectKey },
 };

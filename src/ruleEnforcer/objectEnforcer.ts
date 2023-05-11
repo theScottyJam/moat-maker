@@ -1,8 +1,5 @@
 import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
-import { createValidatorSyntaxError } from '../exceptions';
-import { isIdentifier } from '../tokenStream';
-import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import { type MatchResponse, type CheckFnResponse, match } from './ruleMatcherTools';
 import { LookupPath } from './LookupPath';
@@ -115,14 +112,7 @@ function validateAndApplyDynamicKeys(
       key = String(key);
     }
 
-    if (typeof key !== 'string' && typeof key !== 'symbol') {
-      // TODO: It would be good to throw this error when the validator is first built, instead of at this point.
-      throw createValidatorSyntaxError(
-        'Attempted to match against a mal-formed validator instance. ' +
-        `Its interpolation #${interpolationIndex + 1} must be either of type string, symbol, or number. ` +
-        `Got type ${getSimpleTypeOf(key)}.`,
-      );
-    }
+    assert(typeof key === 'string' || typeof key === 'symbol');
 
     let existingContentEntry = content.get(key);
     if (existingContentEntry === undefined) {

@@ -1,4 +1,4 @@
-import { type Ruleset, _parsingRulesInternals } from './types/validationRules';
+import { type Ruleset, _validationRulesInternals } from './types/validationRules';
 import {
   type AssertMatchesOpts,
   createAssertMatchesOptsCheck,
@@ -12,7 +12,7 @@ import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './packagePrivateAccess';
 import { DISABLE_PARAM_VALIDATION } from './config';
 
-const { createRulesetCheck } = _parsingRulesInternals[packagePrivate];
+const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
 
 const expectValidator = uncheckedValidator.expectTo(

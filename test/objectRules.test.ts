@@ -287,30 +287,78 @@ describe('object rules', () => {
     });
 
     test('rejects boolean dynamic keys', () => {
-      const v = validator`{ [${true}]: 42 }`;
-      const act = (): any => v.assertMatches({});
+      const act = (): any => validator`{ [${true}]: 42 }`;
       assert.throws(act, {
         message: (
-          'Attempted to match against a mal-formed validator instance. ' +
-          'Its interpolation #1 must be either of type string, symbol, or number. ' +
-          'Got type boolean.'
+          'The interpolated value #1 corresponds to a dynamic object key, ' +
+          'and as such, it must be either of type string, symbol, or number. Got type boolean.'
         ),
       });
-      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, TypeError);
     });
 
     test('rejects boxed string dynamic keys', () => {
       // eslint-disable-next-line no-new-wrappers
-      const v = validator`{ x: ${41}, [${new String('value')}]: 42 }`;
-      const act = (): any => v.assertMatches({});
+      const act = (): any => validator`{ x: ${41}, [${new String('value')}]: 42 }`;
       assert.throws(act, {
         message: (
-          'Attempted to match against a mal-formed validator instance. ' +
-          'Its interpolation #2 must be either of type string, symbol, or number. ' +
-          'Got type object.'
+          'The interpolated value #2 corresponds to a dynamic object key, ' +
+          'and as such, it must be either of type string, symbol, or number. Got type object.'
         ),
       });
-      assert.throws(act, ValidatorSyntaxError);
+      assert.throws(act, TypeError);
+    });
+
+    test('rejects boolean dynamic keys in fromRuleset()', () => {
+      const act = (): any => validator.fromRuleset({
+        rootRule: {
+          category: 'object' as const,
+          content: new Map([]),
+          dynamicContent: new Map([[0, { optional: false, rule: { category: 'noop' } }]]),
+          index: null,
+        },
+        interpolated: [true],
+      });
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected [...<argument #1>.rootRule.dynamicContent][0][0], which was 0, ' +
+          'to index into the interpolated array to a valid value. ' +
+          'Since this index is for a dynamic object key, the corresponding interpolated value ' +
+          'should be of type string, symbol, or number. Got type boolean.'
+        ),
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('rejects out-of-range dynamic keys', () => {
+      // It's technically impossible to reach this scenario, unless you're
+      // improperly using the validator template tag as a function instead of a tag.
+      const act = (): any => validator({ raw: ['{ [', ']: any }'] } as any);
+      assert.throws(act, {
+        message: 'The interpolated value #1 corresponds to an out-of-bounds index in the interpolation array.',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('rejects out-of-range dynamic keys in fromRuleset()', () => {
+      const act = (): any => validator.fromRuleset({
+        rootRule: {
+          category: 'object' as const,
+          content: new Map([]),
+          dynamicContent: new Map([[0, { optional: false, rule: { category: 'noop' } }]]),
+          index: null,
+        },
+        interpolated: [],
+      });
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected [...<argument #1>.rootRule.dynamicContent][0][0], which was 0, ' +
+          'to be an in-bounds index into the interpolated array (which is of length 0).'
+        ),
+      });
+      assert.throws(act, TypeError);
     });
 
     test('works with duplicate dynamic keys', () => {

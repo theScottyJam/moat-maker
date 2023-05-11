@@ -1,4 +1,5 @@
 import { packagePrivate } from '../packagePrivateAccess';
+import type { LazyEvaluator } from '../types/LazyEvaluator';
 import type { Expectation, Validator, ValidatorRef } from '../types/validator';
 
 export function isValidator(value: unknown): value is Validator {
@@ -11,6 +12,10 @@ export function isRef(value: unknown): value is ValidatorRef {
 
 export function isExpectation(value: unknown): value is Expectation {
   return Object(value)[packagePrivate]?.type === 'expectation';
+}
+
+export function isLazyEvaluator(value: unknown): value is LazyEvaluator {
+  return Object(value)[packagePrivate]?.type === 'lazyEvaluator';
 }
 
 /**

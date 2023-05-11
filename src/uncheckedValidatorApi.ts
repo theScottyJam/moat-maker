@@ -31,7 +31,7 @@ export const uncheckedValidator = function uncheckedValidator<T=unknown>(
     }, { assumeRootRuleIsDeepFrozen: true }));
   } else {
     const ruleset = freezeRuleset({
-      rootRule: parse(parts.raw),
+      rootRule: parse(parts.raw, interpolated),
       interpolated,
     });
     cacheEntry.set(ruleset.rootRule);
@@ -125,7 +125,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
   from(unknownValue: string | Validator): Validator {
     return typeof unknownValue === 'string'
       ? fromRuleset(freezeRuleset({
-        rootRule: parse([unknownValue]),
+        rootRule: parse([unknownValue], []),
         interpolated: [],
       }))
       : unknownValue;

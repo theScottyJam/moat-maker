@@ -6,16 +6,16 @@ import {
   type ObjectRuleContentValue,
   type SimpleTypeVariant,
   type ObjectRuleIndexValue,
-  _parsingRulesInternals,
+  _validationRulesInternals,
 } from './types/validationRules';
 import type { TokenStream } from './types/tokenizer';
 import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from './util';
 
-const { allSimpleTypes } = _parsingRulesInternals[packagePrivate];
+const { allSimpleTypes, checkDynamicObjectKey } = _validationRulesInternals[packagePrivate];
 
 /** Returns a yet-to-be-frozen rule */
-export function parse(parts: readonly string[]): Rule {
-  const tokenStream = createTokenStream(parts);
+export function parse(parts: readonly string[], interpolated: readonly unknown[]): Rule {
+  const tokenStream = createTokenStream(parts, interpolated);
   if (tokenStream.peek().category === 'eof') {
     throw createValidatorSyntaxError('The validator had no content.');
   }
@@ -224,6 +224,10 @@ function parseObject(tokenStream: TokenStream): Rule {
       };
     } else if ('keyInterpolationIndex' in keyInfo) {
       const { keyInterpolationIndex, optional } = keyInfo;
+      const maybeErrorMessage = checkDynamicObjectKey(keyInterpolationIndex, tokenStream.interpolated);
+      if (maybeErrorMessage !== null) {
+        throw new TypeError(maybeErrorMessage);
+      }
       ruleTemplate.dynamicContentEntries.push([keyInterpolationIndex, {
         optional,
         rule: valueRule,
