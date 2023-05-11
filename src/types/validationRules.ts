@@ -3,11 +3,10 @@
 // what shape of data we expect to find in a ruleset.
 // See the doc page here: https://thescottyjam.gitbook.io/moat-maker/resources/syntax-reference
 
-import { asOrdinal, FrozenMap } from '../util';
+import { asOrdinal, FrozenMap, reprUnknownValue } from '../util';
 import type { Validator, ValidatorTemplateTag } from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
 import type { LazyEvaluator } from './LazyEvaluator';
-import { getSimpleTypeOf } from '../ruleEnforcer/shared';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -135,13 +134,13 @@ function checkDynamicObjectKey(
         'index into the interpolated array to a valid value. ' +
         'Since this index is for a dynamic object key, the corresponding ' +
         'interpolated value should be of type string, symbol, or number. ' +
-        `Got type ${getSimpleTypeOf(key)}.`
+        `Got ${reprUnknownValue(key)}.`
       );
     } else {
       return (
         `The ${asOrdinal(interpolationIndex + 1)} interpolated value corresponds to a dynamic object key, ` +
         'and as such, it must be either of type string, symbol, or number. ' +
-        `Got type ${getSimpleTypeOf(key)}.`
+        `Got ${reprUnknownValue(key)}.`
       );
     }
   }

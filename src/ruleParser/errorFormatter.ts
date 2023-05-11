@@ -2,7 +2,7 @@
 // and may call strings like "${…}" or "\\n" a "char".
 
 import { TextPosition, type TextRange, type ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition';
-import { assert, indentMultilineString, pipe } from './util';
+import { assert, indentMultilineString, pipe } from '../util';
 
 const MAX_LINE_WIDTH = 70;
 const MAX_UNDERLINED_WIDTH = 40;

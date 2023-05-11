@@ -291,7 +291,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: (
           'The 1st interpolated value corresponds to a dynamic object key, ' +
-          'and as such, it must be either of type string, symbol, or number. Got type boolean.'
+          'and as such, it must be either of type string, symbol, or number. Got true.'
         ),
       });
       assert.throws(act, TypeError);
@@ -303,7 +303,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: (
           'The 2nd interpolated value corresponds to a dynamic object key, ' +
-          'and as such, it must be either of type string, symbol, or number. Got type object.'
+          'and as such, it must be either of type string, symbol, or number. Got [object String].'
         ),
       });
       assert.throws(act, TypeError);
@@ -325,7 +325,7 @@ describe('object rules', () => {
           'Expected [...<1st argument>.rootRule.dynamicContent][0][0], which was 0, ' +
           'to index into the interpolated array to a valid value. ' +
           'Since this index is for a dynamic object key, the corresponding interpolated value ' +
-          'should be of type string, symbol, or number. Got type boolean.'
+          'should be of type string, symbol, or number. Got true.'
         ),
       });
       assert.throws(act, TypeError);

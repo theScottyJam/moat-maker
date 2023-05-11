@@ -1,5 +1,5 @@
 import { assert, UnreachableCaseError } from '../util';
-import { isIdentifier } from '../tokenStream';
+import { isIdentifier } from '../ruleParser';
 
 export type PathSegment =
   { category: 'accessProperty', propertyKey: string | symbol }

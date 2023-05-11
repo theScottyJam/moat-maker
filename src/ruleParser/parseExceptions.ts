@@ -1,4 +1,4 @@
-import { assert } from './util';
+import { assert } from '../util';
 import type { TextRange } from './TextPosition';
 import { generateMessageWithPosition } from './errorFormatter';
 
