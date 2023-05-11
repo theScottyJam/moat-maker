@@ -19,7 +19,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "parts" argument for validator(): ' +
-        'Expected <argument #1> to be an object but got 42.'
+        'Expected <1st argument> to be an object but got 42.'
       ),
     });
   });
@@ -29,7 +29,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-        'Expected <argument #2> to be an object but got 42.'
+        'Expected <2nd argument> to be an object but got 42.'
       ),
     });
   });
@@ -39,7 +39,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertionTypeGuard(): ' +
-        'Expected <argument #2> to be an object but got 42.'
+        'Expected <2nd argument> to be an object but got 42.'
       ),
     });
   });
@@ -49,7 +49,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
-        'Expected <argument #2>, which was [object Object], to be array-like.'
+        'Expected <2nd argument>, which was [object Object], to be array-like.'
       ),
     });
   });
@@ -59,7 +59,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
-        'Expected <argument #2>, which was [object Object], to be array-like.'
+        'Expected <2nd argument>, which was [object Object], to be array-like.'
       ),
     });
   });
@@ -99,7 +99,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-        'Expected <argument #1>.rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".'
+        'Expected <1st argument>.rootRule.variants[0].content.variants[1].category to be "noop" but got "nonsenseCategory".'
       ),
     });
   });
@@ -109,8 +109,8 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: [
         'Received invalid "stringOrValidator" argument for validator.from(): Failed to match against any variant of a union.',
-        '  * Expected <argument #1> to be of type "string" but got type "number".',
-        '  * Expected <argument #1>, which was 42, to be a validator instance.',
+        '  * Expected <1st argument> to be of type "string" but got type "number".',
+        '  * Expected <1st argument>, which was 42, to be a validator instance.',
       ].join('\n'),
     });
   });
@@ -121,7 +121,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-        'Expected <argument #2> to be an object but got "arguments".'
+        'Expected <2nd argument> to be an object but got "arguments".'
       ),
     });
   });
@@ -141,7 +141,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "validator" argument for <validator ref>.set(): ' +
-        'Expected <argument #1>, which was 42, to be a validator instance.'
+        'Expected <1st argument>, which was 42, to be a validator instance.'
       ),
     });
   });
@@ -151,7 +151,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, {
       message: (
         'Received invalid "testExpectation" argument for validator.expectTo(): ' +
-        'Expected <argument #1>, which was 42, to be an instance of `Function` (and not an instance of a subclass).'
+        'Expected <1st argument>, which was 42, to be an instance of `Function` (and not an instance of a subclass).'
       ),
     });
   });
@@ -187,7 +187,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       assert.throws(act, {
         message: (
           'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.'
+          'Expected <1st argument>.rootRule.variants, which was [object Array], to be non-empty.'
         ),
       });
     });
@@ -206,7 +206,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       assert.throws(act, {
         message: (
           'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected <argument #1>.rootRule.variants, which was [object Array], to be non-empty.'
+          'Expected <1st argument>.rootRule.variants, which was [object Array], to be non-empty.'
         ),
       });
     });
@@ -235,9 +235,9 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
             'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
             'Failed to match against any variant of a union.'
           ),
-          '  * Expected <argument #1>.rootRule.category to be "noop" but got "tuple".',
-          '  * Expected <argument #1>.rootRule.category to be "array" but got "tuple".',
-          '  * Expected <argument #1>.rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
+          '  * Expected <1st argument>.rootRule.category to be "noop" but got "tuple".',
+          '  * Expected <1st argument>.rootRule.category to be "array" but got "tuple".',
+          '  * Expected <1st argument>.rootRule, which was [object Object], to have exactly 4 label(s) but found 3.',
         ].join('\n'),
       });
     });

@@ -290,7 +290,7 @@ describe('object rules', () => {
       const act = (): any => validator`{ [${true}]: 42 }`;
       assert.throws(act, {
         message: (
-          'The interpolated value #1 corresponds to a dynamic object key, ' +
+          'The 1st interpolated value corresponds to a dynamic object key, ' +
           'and as such, it must be either of type string, symbol, or number. Got type boolean.'
         ),
       });
@@ -302,7 +302,7 @@ describe('object rules', () => {
       const act = (): any => validator`{ x: ${41}, [${new String('value')}]: 42 }`;
       assert.throws(act, {
         message: (
-          'The interpolated value #2 corresponds to a dynamic object key, ' +
+          'The 2nd interpolated value corresponds to a dynamic object key, ' +
           'and as such, it must be either of type string, symbol, or number. Got type object.'
         ),
       });
@@ -322,7 +322,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: (
           'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected [...<argument #1>.rootRule.dynamicContent][0][0], which was 0, ' +
+          'Expected [...<1st argument>.rootRule.dynamicContent][0][0], which was 0, ' +
           'to index into the interpolated array to a valid value. ' +
           'Since this index is for a dynamic object key, the corresponding interpolated value ' +
           'should be of type string, symbol, or number. Got type boolean.'
@@ -336,7 +336,7 @@ describe('object rules', () => {
       // improperly using the validator template tag as a function instead of a tag.
       const act = (): any => validator({ raw: ['{ [', ']: any }'] } as any);
       assert.throws(act, {
-        message: 'The interpolated value #1 corresponds to an out-of-bounds index in the interpolation array.',
+        message: 'The 1st interpolated value corresponds to an out-of-bounds index in the interpolation array.',
       });
       assert.throws(act, TypeError);
     });
@@ -354,7 +354,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: (
           'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-          'Expected [...<argument #1>.rootRule.dynamicContent][0][0], which was 0, ' +
+          'Expected [...<1st argument>.rootRule.dynamicContent][0][0], which was 0, ' +
           'to be an in-bounds index into the interpolated array (which is of length 0).'
         ),
       });

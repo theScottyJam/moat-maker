@@ -3,7 +3,7 @@
 // what shape of data we expect to find in a ruleset.
 // See the doc page here: https://thescottyjam.gitbook.io/moat-maker/resources/syntax-reference
 
-import { FrozenMap } from '../util';
+import { asOrdinal, FrozenMap } from '../util';
 import type { Validator, ValidatorTemplateTag } from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
 import type { LazyEvaluator } from './LazyEvaluator';
@@ -120,7 +120,7 @@ function checkDynamicObjectKey(
       return `be an in-bounds index into the interpolated array (which is of length ${interpolated.length}).`;
     } else {
       return (
-        `The interpolated value #${interpolationIndex + 1} corresponds to an out-of-bounds index ` +
+        `The ${asOrdinal(interpolationIndex + 1)} interpolated value corresponds to an out-of-bounds index ` +
         'in the interpolation array.'
       );
     }
@@ -139,8 +139,8 @@ function checkDynamicObjectKey(
       );
     } else {
       return (
-        `The interpolated value #${interpolationIndex + 1} corresponds to a dynamic object key, and as such, ` +
-        'it must be either of type string, symbol, or number. ' +
+        `The ${asOrdinal(interpolationIndex + 1)} interpolated value corresponds to a dynamic object key, ` +
+        'and as such, it must be either of type string, symbol, or number. ' +
         `Got type ${getSimpleTypeOf(key)}.`
       );
     }

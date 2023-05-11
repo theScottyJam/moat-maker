@@ -64,6 +64,14 @@ export function reprUnknownValue(value: unknown): string {
   return String(value);
 }
 
+const englishOrdinalRules = new Intl.PluralRules('en', { type: 'ordinal' });
+/** Converts numbers like `2` to the string `'2nd'`. */
+export function asOrdinal(number: number): string {
+  const suffixes = { one: 'st', two: 'nd', few: 'rd', other: 'th' } as const;
+  const suffix = suffixes[englishOrdinalRules.select(number) as 'one' | 'two' | 'few' | 'other'];
+  return String(number) + suffix;
+}
+
 export class FrozenMap<K, V> {
   #content: Map<K, V>;
   constructor(entries: ReadonlyArray<[K, V]>) {

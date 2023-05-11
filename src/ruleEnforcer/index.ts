@@ -7,6 +7,7 @@ import {
   type BuildArgumentMatchErrorOpts,
 } from './errorMessageBuilder';
 import { match } from './ruleMatcherTools';
+import { asOrdinal } from '../util';
 
 export function matchValue(
   rule: Rule,
@@ -37,7 +38,7 @@ export function matchArgument(
       const firstPathSegment = pathSegments[0];
       if (firstPathSegment !== undefined && firstPathSegment.category === 'indexArray') {
         return new LookupPath(
-          `<argument #${firstPathSegment.index + 1}>`,
+          `<${asOrdinal(firstPathSegment.index + 1)} argument>`,
           { pathSegments: pathSegments.slice(1) },
         ).asString();
       }
