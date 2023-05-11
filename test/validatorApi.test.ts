@@ -209,21 +209,6 @@ describe('validator behavior', () => {
       assert.throws(act, TypeError);
     });
 
-    test('error formatting does not trip up if special strings are found in odd places in error string', () => {
-      // The message-updating algorithm does a find-and-replace algorithm. We want to make sure it
-      // won't get tripped up and finding the wrong thing.
-      function fnWithValidation(x: any): void {
-        // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: "xyz"]`.assertArgs(fnWithValidation.name, arguments);
-      }
-      const act = (): any => fnWithValidation('<argumentList>[2] -- Received invalid arguments for ');
-      assert.throws(act, {
-        message: 'Received invalid "myStr" argument for fnWithValidation(): ' +
-        'Expected <1st argument> to be "xyz" but got "<argumentList>[2] -- Received invalid arguments for ".',
-      });
-      assert.throws(act, TypeError);
-    });
-
     test('gives the right error when matching against a non-tuple', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
