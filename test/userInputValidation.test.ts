@@ -171,7 +171,6 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  // TODO: Add more tests here, now that the super-long-union-error bug is fixed
   describe('custom validation requirements for rulesets', () => {
     test('union rules can not have zero variants', () => {
       const ruleset: Ruleset = {
@@ -241,5 +240,34 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         ].join('\n'),
       });
     });
+
+    const primitiveLiteralTests = [
+      { value: NaN, messageFragment: 'which was NaN, to not be NaN.' },
+      { value: Infinity, messageFragment: 'which was Infinity, to be finite.' },
+      { value: -Infinity, messageFragment: 'which was -Infinity, to be finite.' },
+    ];
+    for (const { value, messageFragment } of primitiveLiteralTests) {
+      test(`primitive literal rules can not be ${value}`, () => {
+        const ruleset: Ruleset = {
+          rootRule: { category: 'primitiveLiteral', value },
+          interpolated: [],
+        };
+
+        const act = (): any => validator.fromRuleset(ruleset);
+
+        assert.throws(act, {
+          message: [
+            (
+              'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+              'Failed to match against any variant of a union.'
+            ),
+            '  * Expected <1st argument>.rootRule.value to be of type "string" but got type "number".',
+            '  * Expected <1st argument>.rootRule.value to be of type "bigint" but got type "number".',
+            '  * Expected <1st argument>.rootRule.value to be of type "boolean" but got type "number".',
+            `  * Expected <1st argument>.rootRule.value, ${messageFragment}`,
+          ].join('\n'),
+        });
+      });
+    }
   });
 });

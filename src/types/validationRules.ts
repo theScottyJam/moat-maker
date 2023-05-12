@@ -163,9 +163,14 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     type: ${simpleTypeVariantCheck}
   }`;
 
+  const andExpectNotNaN = validator.expectTo(value => Number.isNaN(value) ? 'not be NaN.' : null);
+  const andExpectNotInfinity = validator.expectTo(value => !Number.isFinite(value) ? 'be finite.' : null);
+
   const primitiveLiteralRuleCheck = validator`{
     category: 'primitiveLiteral'
-    value: string | number | bigint | boolean
+    value: string | bigint | boolean | (
+      number & ${andExpectNotNaN} & ${andExpectNotInfinity}
+    )
   }`;
 
   const noopRuleCheck = validator`{
