@@ -1,11 +1,12 @@
 import type { LookupPath } from './LookupPath';
 import type { UnionRule } from '../types/validationRules';
 import { match, type MatchResponse, type CheckFnResponse } from './ruleMatcherTools';
+import type { InterpolatedValue } from '../types/validator';
 
 export function unionCheck(
   rule: UnionRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   const matchResponses: MatchResponse[] = [];

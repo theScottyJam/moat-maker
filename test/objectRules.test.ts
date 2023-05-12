@@ -286,7 +286,7 @@ describe('object rules', () => {
       assert.throws(act2, { message: '<receivedValue> is missing the required properties: Symbol(testSymb)' });
     });
 
-    test('rejects boolean dynamic keys', () => {
+    test('rejects invalid primitive dynamic keys, like booleans', () => {
       const act = (): any => validator`{ [${true}]: 42 }`;
       assert.throws(act, {
         message: (
@@ -297,14 +297,23 @@ describe('object rules', () => {
       assert.throws(act, TypeError);
     });
 
-    test('rejects boxed string dynamic keys', () => {
+    test('rejects invalid dynamic keys, like boxed strings', () => {
       // eslint-disable-next-line no-new-wrappers
-      const act = (): any => validator`{ x: ${41}, [${new String('value')}]: 42 }`;
+      const act = (): any => validator`{ x: ${41}, [${new String('value') as any}]: 42 }`;
       assert.throws(act, {
-        message: (
-          'The 2nd interpolated value corresponds to a dynamic object key, ' +
-          'and as such, it must be either of type string, symbol, or number. Got [object String].'
-        ),
+        message: [
+          (
+            'Received invalid "interpolated" argument for validator(): ' +
+            'One of the following issues needs to be resolved:'
+          ),
+          '  * Expected <3rd argument>, which was [object String], to be a primitive.',
+          '  * Expected <3rd argument>, which was [object String], to be a Validator.',
+          '  * Expected <3rd argument>, which was [object String], to be a ValidatorRef.',
+          '  * Expected <3rd argument>, which was [object String], to be an Expectation.',
+          '  * Expected <3rd argument>, which was [object String], to be an instance of RegExp',
+          '  * Expected <3rd argument>, which was [object String], to be an instance of Function',
+          '  * Expected <3rd argument>, which was [object String], to be an internally-used-only lazy evaluator.',
+        ].join('\n'),
       });
       assert.throws(act, TypeError);
     });

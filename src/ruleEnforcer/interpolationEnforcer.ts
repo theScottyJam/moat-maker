@@ -1,7 +1,7 @@
 import type { InterpolationRule } from '../types/validationRules';
-import { isExpectation, isLazyEvaluator, isRef, isValidator } from './shared';
+import { isExpectation, isLazyEvaluator, isRef, isValidator, type InterpolatedValue } from '../types/validator';
 import { DEEP_LEVELS } from './deepnessTools';
-import { reprUnknownValue } from '../util';
+import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { packagePrivate } from '../packagePrivateAccess';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
 import type { LookupPath } from './LookupPath';
@@ -16,7 +16,7 @@ export const availableDeepLevels = () => ({
 export function interpolationCheck(
   rule: InterpolationRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   const interpolatedValue = interpolated[rule.interpolationIndex];
@@ -107,22 +107,19 @@ export function interpolationCheck(
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
-  } else if (isObject(interpolatedValue)) {
-    // TODO: It would be nice if we could do this check earlier, when the validator instance is first made
-    // (There's already tests for this, so those tests can be updated as well).
-    throw new TypeError(
-      'Not allowed to interpolate a regular object into a validator. ' +
-      '(Exceptions include classes, validators, refs, etc)',
-    );
-  } else if (!sameValueZero(target, interpolatedValue)) {
-    return [{
-      message: (
-        `Expected ${lookupPath.asString()} to be the value ${reprUnknownValue(interpolatedValue)} ` +
-        `but got ${reprUnknownValue(target)}.`
-      ),
-      lookupPath,
-      deep: availableDeepLevels().nonRecursiveCheck,
-    }];
+  } else if (!isObject(interpolatedValue)) {
+    if (!sameValueZero(target, interpolatedValue)) {
+      return [{
+        message: (
+          `Expected ${lookupPath.asString()} to be the value ${reprUnknownValue(interpolatedValue)} ` +
+          `but got ${reprUnknownValue(target)}.`
+        ),
+        lookupPath,
+        deep: availableDeepLevels().nonRecursiveCheck,
+      }];
+    }
+  } else {
+    throw new UnreachableCaseError(interpolatedValue);
   }
 
   return [];

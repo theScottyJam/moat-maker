@@ -7,6 +7,8 @@ import {
   type ValidatorTemplateTagStaticFields,
   type ValidatorTemplateTag,
   type Expectation,
+  type InterpolatedValue,
+  createInterpolatedValueCheck,
 } from './types/validator';
 import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './packagePrivateAccess';
@@ -14,6 +16,7 @@ import { DISABLE_PARAM_VALIDATION } from './config';
 
 const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
+const interpolatedValueCheck = createInterpolatedValueCheck(uncheckedValidator);
 
 const expectValidator = uncheckedValidator.expectTo(
   (value: unknown) => Object(value)[packagePrivate]?.type === 'validator'
@@ -36,9 +39,9 @@ const expectArrayLike = uncheckedValidator.expectTo(
 
 export const validator = function validator<T=unknown>(
   parts: TemplateStringsArray,
-  ...interpolated: readonly unknown[]
+  ...interpolated: readonly InterpolatedValue[]
 ): Validator<T> {
-  !DISABLE_PARAM_VALIDATION && uncheckedValidator`[parts: { raw: string[] }, ...interpolated: unknown[]]`
+  !DISABLE_PARAM_VALIDATION && uncheckedValidator`[parts: { raw: string[] }, ...interpolated: ${interpolatedValueCheck}[]]`
     .assertArgs(validator.name, arguments);
 
   return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));

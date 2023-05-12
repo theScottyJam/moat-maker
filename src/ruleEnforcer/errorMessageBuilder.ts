@@ -26,7 +26,7 @@ import type { Rule } from '../types/validationRules';
 import { assert, group, indentMultilineString, throwIndexOutOfBounds } from '../util';
 import { calcCheckResponseDeepness, type CheckFnResponse, type MatchResponse } from './ruleMatcherTools';
 import { comparePrimitiveLiterals } from './privitiveLiteralEnforcer';
-import { isExpectation } from './shared';
+import { isExpectation } from '../types/validator';
 
 export interface BuildValueMatchErrorOpts {
   readonly errorPrefix?: string | undefined
@@ -93,9 +93,19 @@ export function buildArgumentMatchError(
     }
   }
 
-  const label = rule.entryLabels[labelIndex];
-  assert(label !== undefined);
-  const isRestParam = rule.rest !== null && labelIndex === rule.entryLabels.length - 1;
+  // <-- Write test for this behavior - this wsa the test case I used to trigger it:
+  /*
+  test.only('XXX', () => {
+      const act = (): any => validator`${41} | { [${{} as any}]: 42 }`;
+      act();
+    });
+    */
+
+  // Gets the entry label at the index, and if it's out of bounds (undefined), we must be in a rest rule,
+  // so we'll just grab the last entry label.
+  const label = rule.entryLabels[labelIndex] ?? rule.entryLabels[rule.entryLabels.length - 1] ?? throwIndexOutOfBounds();
+
+  const isRestParam = rule.rest !== null && labelIndex >= rule.entryLabels.length - 1;
 
   return (
     `Received invalid "${label}" argument${isRestParam ? 's' : ''} for ${whichFn}(): ` +

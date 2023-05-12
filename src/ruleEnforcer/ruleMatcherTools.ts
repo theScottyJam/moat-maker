@@ -12,6 +12,7 @@ import { simpleCheck } from './simpleEnforcer';
 import { tupleCheck } from './tupleEnforcer';
 import { unionCheck } from './unionEnforcer';
 import type { LookupPath } from './LookupPath';
+import type { InterpolatedValue } from '../types/validator';
 
 // With both progress values and deepness values, these numbers should either stay the same
 // or increase as you get further into a check algorithm. They should never decrease.
@@ -38,20 +39,20 @@ export type CheckFnResponse = ReadonlyArray<(
 type CheckFn<RuleType extends Rule> = (
   rule: RuleType,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath
 ) => CheckFnResponse;
 
 export class MatchResponse {
   readonly rule: Rule;
   readonly target: unknown;
-  readonly interpolated: readonly unknown[];
+  readonly interpolated: readonly InterpolatedValue[];
   readonly lookupPath: LookupPath;
   readonly failures: CheckFnResponse;
   constructor(
     rule: Rule,
     target: unknown,
-    interpolated: readonly unknown[],
+    interpolated: readonly InterpolatedValue[],
     lookupPath: LookupPath,
     failures: CheckFnResponse,
   ) {
@@ -70,7 +71,7 @@ export class MatchResponse {
 export function match(
   rule: Rule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): MatchResponse {
   const doMatch = <RuleType extends Rule>(rule: RuleType, checkFn: CheckFn<RuleType>): MatchResponse => {

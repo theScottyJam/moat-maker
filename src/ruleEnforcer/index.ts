@@ -8,11 +8,12 @@ import {
 } from './errorMessageBuilder';
 import { match } from './ruleMatcherTools';
 import { asOrdinal } from '../util';
+import type { InterpolatedValue } from '../types/validator';
 
 export function matchValue(
   rule: Rule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   baseLookupPath?: string | undefined,
   errorFormattingOpts: BuildValueMatchErrorOpts = {},
 ): { success: true } | { success: false, message: string } {
@@ -30,7 +31,7 @@ export function matchValue(
 export function matchArgument(
   rule: Rule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   errorFormattingOpts: BuildArgumentMatchErrorOpts,
 ): { success: true } | { success: false, message: string } {
   const lookupPath = new LookupPath('<argumentList>', {

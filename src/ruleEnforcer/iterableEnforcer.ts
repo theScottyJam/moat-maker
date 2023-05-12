@@ -2,6 +2,7 @@ import type { LookupPath } from './LookupPath';
 import { _validationRulesInternals, type IterableRule } from '../types/validationRules';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
+import type { InterpolatedValue } from '../types/validator';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -14,7 +15,7 @@ export const availableDeepLevels = () => ({
 export function iterableCheck(
   rule: IterableRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!isIterable(target)) {

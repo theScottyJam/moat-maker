@@ -3,6 +3,7 @@ import type { Rule, TupleRule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
+import type { InterpolatedValue } from '../types/validator';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -15,7 +16,7 @@ export const availableDeepLevels = () => ({
 export function tupleCheck(
   rule: TupleRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!Array.isArray(target)) {
@@ -87,7 +88,7 @@ export function tupleCheck(
   return [];
 }
 
-function checkTupleSize(rule: TupleRule, target: readonly unknown[], lookupPath: LookupPath): string | null {
+function checkTupleSize(rule: TupleRule, target: readonly InterpolatedValue[], lookupPath: LookupPath): string | null {
   const minSize = rule.content.length;
   const maxSize = rule.rest !== null
     ? Infinity

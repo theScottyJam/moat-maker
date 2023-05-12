@@ -3,6 +3,7 @@ import { getSimpleTypeOf } from './shared';
 import { DEEP_LEVELS } from './deepnessTools';
 import type { CheckFnResponse } from './ruleMatcherTools';
 import type { LookupPath } from './LookupPath';
+import type { InterpolatedValue } from '../types/validator';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -13,7 +14,7 @@ export const availableDeepLevels = () => ({
 export function simpleCheck(
   rule: SimpleRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   if (getSimpleTypeOf(target) === rule.type) {

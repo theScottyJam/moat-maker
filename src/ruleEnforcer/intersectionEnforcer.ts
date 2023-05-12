@@ -2,11 +2,12 @@ import type { LookupPath } from './LookupPath';
 import type { IntersectionRule } from '../types/validationRules';
 import { getMaxDeepnessLevelOf, maxDeepRange, DEEP_LEVELS, type DeepRange } from './deepnessTools';
 import { calcCheckResponseDeepness, match, type CheckFnResponse } from './ruleMatcherTools';
+import type { InterpolatedValue } from '../types/validator';
 
 export function intersectionCheck(
   rule: IntersectionRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   let currentMaxDeepnessLevel: DeepRange = DEEP_LEVELS.min;

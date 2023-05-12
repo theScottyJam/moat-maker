@@ -3,6 +3,7 @@ import type { ArrayRule } from '../types/validationRules';
 import { reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
+import type { InterpolatedValue } from '../types/validator';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -14,7 +15,7 @@ export const availableDeepLevels = () => ({
 export function arrayCheck(
   rule: ArrayRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!Array.isArray(target)) {

@@ -1,9 +1,10 @@
 import { strict as assert } from 'node:assert';
-import { type Validator, validator } from '../src';
+import { validator, type Validator } from '../src';
+import type { InterpolatedValue } from '../src/types/validator';
 
 const createValidator = (content: string): Validator => validator({ raw: [content] } as any);
 
-const createInterpolatedValidator = (valuesToInterpolate: unknown[], content: string): Validator => {
+const createInterpolatedValidator = (valuesToInterpolate: InterpolatedValue[], content: string): Validator => {
   return validator({
     raw: content.split('<INTERPOLATE>'),
   } as any, ...valuesToInterpolate);

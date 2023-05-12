@@ -16,12 +16,13 @@ import type {
   ValidatorTemplateTag,
   ValidatorTemplateTagStaticFields,
   Expectation,
+  InterpolatedValue,
 } from './types/validator';
 import { packagePrivate } from './packagePrivateAccess';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray,
-  ...interpolated: readonly unknown[]
+  ...interpolated: readonly InterpolatedValue[]
 ): Validator<T> {
   const cacheEntry = lookupCacheEntry(parts.raw);
   if (cacheEntry.exists()) {

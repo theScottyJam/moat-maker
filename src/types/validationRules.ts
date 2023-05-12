@@ -4,9 +4,14 @@
 // See the doc page here: https://thescottyjam.gitbook.io/moat-maker/resources/syntax-reference
 
 import { asOrdinal, FrozenMap, reprUnknownValue } from '../util';
-import type { Validator, ValidatorTemplateTag } from './validator';
+import {
+  type InterpolatedValue,
+  type Validator,
+  type ValidatorTemplateTag,
+  type LazyEvaluator,
+  createInterpolatedValueCheck,
+} from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
-import type { LazyEvaluator } from './LazyEvaluator';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -99,7 +104,7 @@ export type Rule = (
 
 export interface Ruleset {
   readonly rootRule: Rule
-  readonly interpolated: readonly unknown[]
+  readonly interpolated: readonly InterpolatedValue[]
 }
 
 function createLazyEvaluator(deriveValidator: (value: unknown) => Validator): LazyEvaluator {
@@ -110,7 +115,7 @@ function createLazyEvaluator(deriveValidator: (value: unknown) => Validator): La
 
 function checkDynamicObjectKey(
   interpolationIndex: number,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   { expectationErrorMessage = false }: { expectationErrorMessage?: boolean } = {},
 ): string | null {
   if (interpolationIndex >= interpolated.length) {
@@ -147,7 +152,7 @@ function checkDynamicObjectKey(
   return null;
 }
 
-function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly unknown[]): Validator {
+function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly InterpolatedValue[]): Validator {
   const expectNonEmptyArray = validator.expectTo(
     value => Array.isArray(value) && value.length > 0 ? null : 'be non-empty.',
   );
@@ -264,10 +269,11 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 }
 
 function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
+  const interpolatedValueCheck = createInterpolatedValueCheck(validator);
   const rulesetCheck = validator`
-    { interpolated: unknown[] } &
+    { interpolated: ${interpolatedValueCheck}[] } &
     ${createLazyEvaluator((target_: any) => {
-      const target = target_ as { interpolated: unknown[] };
+      const target = target_ as { interpolated: InterpolatedValue[] };
       const interpolated = target.interpolated;
       return validator`{ rootRule: ${createRuleCheck(validator, interpolated)} }`;
     })}

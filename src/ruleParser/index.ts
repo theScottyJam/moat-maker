@@ -10,13 +10,14 @@ import {
 } from '../types/validationRules';
 import type { TokenStream } from '../types/tokenizer';
 import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from '../util';
+import type { InterpolatedValue } from '../types/validator';
 
 const { allSimpleTypes, checkDynamicObjectKey } = _validationRulesInternals[packagePrivate];
 
 export { isIdentifier, ValidatorSyntaxError };
 
 /** Returns a yet-to-be-frozen rule */
-export function parse(parts: readonly string[], interpolated: readonly unknown[]): Rule {
+export function parse(parts: readonly string[], interpolated: readonly InterpolatedValue[]): Rule {
   const tokenStream = createTokenStream(parts, interpolated);
   if (tokenStream.peek().category === 'eof') {
     throw createValidatorSyntaxError('The validator had no content.');

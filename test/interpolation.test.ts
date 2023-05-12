@@ -141,15 +141,54 @@ describe('interpolation', () => {
   });
 
   describe('non-special object interpolation', () => {
-    test('forbids non-special objects (i.e. objects types that do not have special interpolation behaviors) to be interpolated', () => {
+    // TODO: Eventually it would be nice to extend .assertArgs() to have, say, a fnType: ... parameter
+    // that you could configure to be things like 'normal', 'constructor', or 'templateTag'.
+    // In the case of 'templateTag', it can format errors, so instead of saying `<2nd argument>`, it says
+    // <1st interpolated value>.
+    test('forbids non-special objects (i.e. object types that do not have special interpolation behaviors) to be interpolated', () => {
       const obj = { x: 2 };
-      const act = (): any => validator`${obj}`.assertMatches(2);
+      const act = (): any => validator`${obj as any}`;
       assert.throws(act,
         {
-          message: (
-            'Not allowed to interpolate a regular object into a validator. ' +
-            '(Exceptions include classes, validators, refs, etc)'
-          ),
+          message: [
+            (
+              'Received invalid "interpolated" arguments for validator(): ' +
+              'One of the following issues needs to be resolved:'
+            ),
+            '  * Expected <2nd argument>, which was [object Object], to be a primitive.',
+            '  * Expected <2nd argument>, which was [object Object], to be a Validator.',
+            '  * Expected <2nd argument>, which was [object Object], to be a ValidatorRef.',
+            '  * Expected <2nd argument>, which was [object Object], to be an Expectation.',
+            '  * Expected <2nd argument>, which was [object Object], to be an instance of RegExp',
+            '  * Expected <2nd argument>, which was [object Object], to be an instance of Function',
+            '  * Expected <2nd argument>, which was [object Object], to be an internally-used-only lazy evaluator.',
+          ].join('\n'),
+        },
+      );
+      assert.throws(act, TypeError);
+    });
+
+    test('forbids non-special objects to be interpolated in fromRuleset()', () => {
+      const obj = { x: 2 };
+      const act = (): any => validator.fromRuleset({
+        rootRule: { category: 'noop' },
+        interpolated: [{ invalid: 'object' } as any],
+      });
+      assert.throws(act,
+        {
+          message: [
+            (
+              'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+              'One of the following issues needs to be resolved:'
+            ),
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a primitive.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a Validator.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a ValidatorRef.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an Expectation.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of RegExp',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of Function',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an internally-used-only lazy evaluator.',
+          ].join('\n'),
         },
       );
       assert.throws(act, TypeError);

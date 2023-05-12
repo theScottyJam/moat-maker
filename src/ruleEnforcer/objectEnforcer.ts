@@ -3,6 +3,7 @@ import { assert, reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
 import { type MatchResponse, type CheckFnResponse, match } from './ruleMatcherTools';
 import { LookupPath } from './LookupPath';
+import type { InterpolatedValue } from '../types/validator';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -28,7 +29,7 @@ export interface ObjectRuleWithStaticKeys {
 export function objectCheck(
   rule: ObjectRule,
   target: unknown,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
   if (!isObject(target)) {
@@ -98,7 +99,7 @@ export function objectCheck(
  */
 function validateAndApplyDynamicKeys(
   rule: ObjectRule,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
 ): ObjectRuleWithStaticKeys {
   const content = new Map<string | symbol, ObjectRuleContentValue[]>(
     [...rule.content.entries()]
@@ -151,7 +152,7 @@ function assertRequiredKeysArePresent(
 function checkIfIndexSignatureIsSatisfied(
   indexInfo: ObjectRuleIndexValue,
   target: object,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): MatchResponse | null {
   for (const [key, value] of allObjectEntries(target)) {
@@ -183,7 +184,7 @@ function checkIfIndexSignatureIsSatisfied(
 function derivePropertyRule(
   ruleWithStaticKeys: ObjectRuleWithStaticKeys,
   key: string | symbol,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
 ): null | Rule {
   const intersectionRules = [];
 
@@ -221,7 +222,7 @@ function derivePropertyRule(
 function doesIndexSignatureApplyToProperty(
   indexInfo: ObjectRuleIndexValue,
   propertyKey: string | symbol,
-  interpolated: readonly unknown[],
+  interpolated: readonly InterpolatedValue[],
 ): boolean {
   const numericPropertyKey = typeof propertyKey === 'string' ? Number(propertyKey) : NaN;
   return (
@@ -232,7 +233,7 @@ function doesIndexSignatureApplyToProperty(
   );
 }
 
-function doesMatch(rule: Rule, target: unknown, interpolated: readonly unknown[]): boolean {
+function doesMatch(rule: Rule, target: unknown, interpolated: readonly InterpolatedValue[]): boolean {
   return !match(rule, target, interpolated, new LookupPath()).failed();
 }
 
