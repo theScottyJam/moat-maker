@@ -7,7 +7,7 @@ describe('union rules with arrays', () => {
     const act = (): any => v.assertMatches([true]);
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>[0] to be of type "number" but got type "boolean".',
         '  * Expected <receivedValue>[0] to be of type "string" but got type "boolean".',
       ].join('\n'),
@@ -25,7 +25,7 @@ describe('union rules with arrays', () => {
       const act = (): any => v.assertMatches([2]);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>[0] to be 0 but got 2.',
           '  * Expected <receivedValue>[0] to be 1 but got 2.',
         ].join('\n'),
@@ -47,7 +47,7 @@ describe('union rules with arrays', () => {
       const act = (): any => v.assertMatches([3]);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>[0] to be 0 but got 3.',
           '  * Expected <receivedValue>[0] to be 1 but got 3.',
           '  * Expected <receivedValue>[0] to be 2 but got 3.',
@@ -62,7 +62,7 @@ describe('union rules with arrays', () => {
       const act = (): any => v.assertMatches([0]);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>[0] to be 2 but got 0.',
           '  * Expected <receivedValue>[0] to be 3 but got 0.',
         ].join('\n'),

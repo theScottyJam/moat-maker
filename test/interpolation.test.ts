@@ -311,7 +311,7 @@ describe('interpolation', () => {
     const act = (): any => v.assertMatches({ x: 3 });
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>, which was [object Object], to fail',
         '  * Expected <receivedValue>.x to be 2 but got 3.',
       ].join('\n'),

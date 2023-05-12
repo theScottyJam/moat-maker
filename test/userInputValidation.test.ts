@@ -108,7 +108,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     const act = (): any => validator.from(42 as any);
     assert.throws(act, {
       message: [
-        'Received invalid "stringOrValidator" argument for validator.from(): Failed to match against any variant of a union.',
+        (
+          'Received invalid "stringOrValidator" argument for validator.from(): ' +
+          'One of the following issues needs to be resolved:'
+        ),
         '  * Expected <1st argument> to be of type "string" but got type "number".',
         '  * Expected <1st argument>, which was 42, to be a validator instance.',
       ].join('\n'),
@@ -163,7 +166,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       message: [
         (
           'validator.expectTo() received a bad "testExpectation" function: ' +
-          'Failed to match against any variant of a union.'
+          'One of the following issues needs to be resolved:'
         ),
         '  * Expected <testExpectation return value> to be of type "string" but got type "number".',
         '  * Expected <testExpectation return value> to be of type "null" but got type "number".',
@@ -232,7 +235,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         message: [
           (
             'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-            'Failed to match against any variant of a union.'
+            'One of the following issues needs to be resolved:'
           ),
           '  * Expected <1st argument>.rootRule.category to be "noop" but got "tuple".',
           '  * Expected <1st argument>.rootRule.category to be "array" but got "tuple".',
@@ -259,7 +262,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
           message: [
             (
               'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-              'Failed to match against any variant of a union.'
+              'One of the following issues needs to be resolved:'
             ),
             '  * Expected <1st argument>.rootRule.value to be of type "string" but got type "number".',
             '  * Expected <1st argument>.rootRule.value to be of type "bigint" but got type "number".',

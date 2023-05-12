@@ -138,7 +138,7 @@ describe('unions of different types', () => {
     const act = (): any => v.assertMatches([2, 4]);
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>[1] to be 2 but got 4.',
         '  * Expected <receivedValue>[1] to be 3 but got 4.',
       ].join('\n'),
@@ -207,7 +207,7 @@ describe('unions of different types', () => {
     const act = (): any => v.assertMatches(Object.assign([0, 0], { x: 2 }));
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * <receivedValue> is missing the required properties: "y"',
         '  * Expected the <receivedValue> array to have 1 entry, but found 2.',
       ].join('\n'),
@@ -222,7 +222,7 @@ describe('unions of different types', () => {
       const act = (): any => v.assertMatches(3);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue> to be 1 but got 3.',
           '  * Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
@@ -234,7 +234,7 @@ describe('unions of different types', () => {
       const act = (): any => v.assertMatches(1);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue> to be of type "string" but got type "number".',
           '  * Expected <receivedValue> to be 2 but got 1.',
         ].join('\n'),
@@ -262,7 +262,7 @@ describe('unions of different types', () => {
       const act = (): any => v.assertMatches(3);
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue> to be 1 but got 3.',
           '  * Expected <receivedValue> to be 2 but got 3.',
         ].join('\n'),
@@ -276,7 +276,7 @@ describe('unions of different types', () => {
       const act = (): any => v.assertMatches({});
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>, which was [object Object], to be empty.',
           '  * <receivedValue> is missing the required properties: "x"',
         ].join('\n'),
@@ -290,7 +290,7 @@ describe('unions of different types', () => {
       const act = (): any => v.assertMatches({});
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
           '  * Expected <receivedValue> to be of type "number" but got type "object".',
         ].join('\n'),

@@ -15,7 +15,7 @@ describe('union rules with objects', () => {
     const act = (): any => v.assertMatches({});
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * <receivedValue> is missing the required properties: "x"',
         '  * <receivedValue> is missing the required properties: "y"',
       ].join('\n'),
@@ -27,7 +27,7 @@ describe('union rules with objects', () => {
     const act = (): any => v.assertMatches({ x: true });
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>.x to be of type "number" but got type "boolean".',
         '  * Expected <receivedValue>.x to be of type "string" but got type "boolean".',
       ].join('\n'),
@@ -45,7 +45,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.x to be 0 but got 2.',
           '  * Expected <receivedValue>.x to be 1 but got 2.',
         ].join('\n'),
@@ -67,7 +67,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 3 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.x to be 0 but got 3.',
           '  * Expected <receivedValue>.x to be 1 but got 3.',
           '  * Expected <receivedValue>.x to be 2 but got 3.',
@@ -82,7 +82,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 0 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.x to be 2 but got 0.',
           '  * Expected <receivedValue>.x to be 3 but got 0.',
         ].join('\n'),
@@ -94,7 +94,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ sub: { y: 0 } });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.sub.y to be 2 but got 0.',
           '  * Expected <receivedValue>.sub.y to be 3 but got 0.',
         ].join('\n'),
@@ -124,7 +124,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ sub: { y: 0 }, sub2: { y: 0 } });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.sub.y to be 2 but got 0.',
           '  * Expected <receivedValue>.sub.y to be 3 but got 0.',
           '  * Expected <receivedValue>.sub2.y to be 2 but got 0.',
@@ -138,7 +138,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ sub: {}, sub2: {} });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * <receivedValue>.sub is missing the required properties: "x"',
           '  * <receivedValue>.sub2 is missing the required properties: "y"',
         ].join('\n'),
@@ -150,7 +150,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ sub: {}, sub2: {} });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * <receivedValue>.sub is missing the required properties: "x"',
           '  * <receivedValue>.sub2 is missing the required properties: "z"',
         ].join('\n'),
@@ -163,7 +163,7 @@ describe('union rules with objects', () => {
     const act = (): any => v.assertMatches({ a: 2 });
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>.a to be 0 but got 2.',
         '  * Expected <receivedValue>.a to be 1 but got 2.',
       ].join('\n'),
@@ -199,7 +199,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ myprop: { subobj: { y: 5 } } });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.myprop.subobj.y to be 1 but got 5.',
           '  * Expected <receivedValue>.myprop.subobj.y to be 2 but got 5.',
         ].join('\n'),
@@ -251,7 +251,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.y to be 2 but got 3.',
           '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
@@ -263,7 +263,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ sub: { x: 2, y: 3 } });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.sub.y to be 2 but got 3.',
           '  * Expected <receivedValue>.sub.x to be 3 but got 2.',
         ].join('\n'),
@@ -275,7 +275,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.y to be 2 but got 3.',
           '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
@@ -287,7 +287,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2, y: 3 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.y to be 2 but got 3.',
           '  * Expected <receivedValue>.x to be 3 but got 2.',
         ].join('\n'),
@@ -299,7 +299,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2, y: 3, z: 4 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.y to be 2 but got 3.',
           '  * Expected <receivedValue>.x to be 3 but got 2.',
           '  * Expected <receivedValue>.x to be 4 but got 2.',
@@ -312,7 +312,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: 2, y: 3, z: 3 });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.y to be 2 but got 3.',
           '  * Expected <receivedValue>.x to be 3 but got 2.',
           '  * Expected <receivedValue>.x to be 4 but got 2.',
@@ -325,7 +325,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ x: false, 0: 'B' });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>["0"] to be "A" but got "B".',
           '  * Expected <receivedValue>.x to be true but got false.',
         ].join('\n'),
@@ -338,7 +338,7 @@ describe('union rules with objects', () => {
       const act = (): any => v.assertMatches({ [mySymb]: 'A', 0: 'B' });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>["0"] to be "A" but got "B".',
           '  * Expected <receivedValue>[Symbol(test symbol)] to be "B" but got "A".',
         ].join('\n'),
@@ -351,7 +351,7 @@ describe('union rules with objects', () => {
     const act = (): any => v.assertMatches({});
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * <receivedValue> is missing the required properties: "x", "y"',
         '  * <receivedValue> is missing the required properties: "x", "z"',
       ].join('\n'),
@@ -363,7 +363,7 @@ describe('union rules with objects', () => {
     const act = (): any => v.assertMatches({ sub: { y: 1, z: 1 } });
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>.sub.y to be 0 but got 1.',
         '  * Expected <receivedValue>.sub.z to be 0 but got 1.',
       ].join('\n'),

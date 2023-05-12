@@ -14,7 +14,7 @@ describe('union rules', () => {
     const act = (): any => v.assertMatches(null);
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue> to be of type "number" but got type "null".',
         '  * Expected <receivedValue> to be of type "string" but got type "null".',
         '  * Expected <receivedValue> to be of type "undefined" but got type "null".',
@@ -29,7 +29,7 @@ describe('union rules', () => {
     const act = (): any => v.assertMatches(null);
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue> to be of type "number" but got type "null".',
         '  * Expected <receivedValue>, which was null, to throw',
         '    a multiline',
@@ -131,7 +131,7 @@ describe('union rules', () => {
     const act = (): any => v.assertMatches(null);
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue> to be of type "number" but got type "null".',
         '  * Expected <receivedValue> to be of type "string" but got type "null".',
         '  * Expected <receivedValue> to be of type "undefined" but got type "null".',
@@ -173,7 +173,7 @@ describe('union rules', () => {
     const act = (): any => v.assertMatches({ x: 0 });
     assert.throws(act, {
       message: [
-        'Failed to match against any variant of a union.',
+        'One of the following issues needs to be resolved:',
         '  * Expected <receivedValue>.x to be 2 but got 0.',
         '  * Expected <receivedValue>.x to be 3 but got 0.',
         '  * Expected <receivedValue>.x to be 4 but got 0.',

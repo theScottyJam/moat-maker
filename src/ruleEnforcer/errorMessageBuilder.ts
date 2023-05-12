@@ -290,7 +290,7 @@ export function buildUnionError(variantErrorMessages_: readonly string[]): strin
   }
 
   return (
-    'Failed to match against any variant of a union.\n' +
+    'One of the following issues needs to be resolved:\n' +
     variantErrorMessages
       .map(message => `  * ${indentMultilineString(message, 4).slice(4)}`)
       .join('\n')

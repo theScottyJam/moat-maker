@@ -106,7 +106,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: 2, str: 'x', another: true });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.another to be of type "string" but got type "boolean".',
           '  * Expected <receivedValue>.another to be of type "number" but got type "boolean".',
         ].join('\n'),
@@ -119,7 +119,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: true, str: 'x' });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.num to be of type "string" but got type "boolean".',
           '  * Expected <receivedValue>.num to be of type "number" but got type "boolean".',
         ].join('\n'),
@@ -132,7 +132,7 @@ describe('object rules', () => {
       const act = (): any => v.assertMatches({ num: 2, str: true });
       assert.throws(act, {
         message: [
-          'Failed to match against any variant of a union.',
+          'One of the following issues needs to be resolved:',
           '  * Expected <receivedValue>.str to be of type "string" but got type "boolean".',
           '  * Expected <receivedValue>.str to be of type "number" but got type "boolean".',
         ].join('\n'),
