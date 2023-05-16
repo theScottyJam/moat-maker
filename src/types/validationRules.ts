@@ -157,7 +157,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     value => Array.isArray(value) && value.length > 0 ? null : 'be non-empty.',
   );
 
-  const ruleRef = validator.createRef();
+  const lazyRuleCheck = validator.lazy(() => ruleCheck);
 
   const simpleTypeVariantCheck = validator`
     'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined'
@@ -184,12 +184,12 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const objectRuleContentValueCheck = validator`{
     optional: boolean
-    rule: ${ruleRef}
+    rule: ${lazyRuleCheck}
   }`;
 
   const objectRuleIndexValueCheck = validator`{
-    key: ${ruleRef}
-    value: ${ruleRef}
+    key: ${lazyRuleCheck}
+    value: ${lazyRuleCheck}
     label: string
   }`;
 
@@ -209,7 +209,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const arrayRuleCheck = validator`{
     category: 'array'
-    content: ${ruleRef}
+    content: ${lazyRuleCheck}
   }`;
 
   const andExpectProperTupleRule = validator.expectTo(value_ => {
@@ -223,26 +223,26 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const tupleRuleCheck = validator`{
     category: 'tuple'
-    content: ${ruleRef}[]
-    optionalContent: ${ruleRef}[]
-    rest: ${ruleRef} | null
+    content: ${lazyRuleCheck}[]
+    optionalContent: ${lazyRuleCheck}[]
+    rest: ${lazyRuleCheck} | null
     entryLabels: string[] | null
   } & ${andExpectProperTupleRule}`;
 
   const iterableRuleCheck = validator`{
     category: 'iterable'
-    iterableType: ${ruleRef}
-    entryType: ${ruleRef}
+    iterableType: ${lazyRuleCheck}
+    entryType: ${lazyRuleCheck}
   }`;
 
   const unionRuleCheck = validator`{
     category: 'union'
-    variants: ${ruleRef}[] & ${expectNonEmptyArray}
+    variants: ${lazyRuleCheck}[] & ${expectNonEmptyArray}
   }`;
 
   const intersectionRuleCheck = validator`{
     category: 'intersection'
-    variants: ${ruleRef}[] & ${expectNonEmptyArray}
+    variants: ${lazyRuleCheck}[] & ${expectNonEmptyArray}
   }`;
 
   const interpolationRuleCheck = validator`{
@@ -262,8 +262,6 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     | ${intersectionRuleCheck}
     | ${interpolationRuleCheck}
   `;
-
-  ruleRef.set(ruleCheck);
 
   return ruleCheck;
 }

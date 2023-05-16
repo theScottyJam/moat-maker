@@ -1,37 +1,6 @@
 import type { Ruleset } from './validationRules';
 import { packagePrivate } from '../packagePrivateAccess';
 
-// This is currently only used internally.
-// Perhaps some time in the future this feature will be publicly exported.
-// For now, to avoid risking publishing a feature that isn't properly polished up
-// it'll be kept as an internal detail.
-
-/**
- * The deriveValidator() callback will be called when with a value
- * being validated. The callback is expected to return a validator instance,
- * which will then be used to validate the value. The callback will only be called
- * at the point when validation is happening at that rule - this allows you to perform
- * other assertions first, to make sure the data conforms to a certain shape, before
- * the callback is ran.
- *
- * The point is to allow you to use data from the object you're validating against, to
- * control the behavior of the validator.
- */
-export interface LazyEvaluator {
-  readonly [packagePrivate]: {
-    readonly type: 'lazyEvaluator'
-    readonly deriveValidator: (value: unknown) => Validator
-  }
-}
-
-export interface ValidatorRef {
-  readonly [packagePrivate]: {
-    readonly type: 'ref'
-    readonly getValidator: () => Validator
-  }
-  readonly set: (validator: Validator) => void
-}
-
 export interface AssertMatchesOpts {
   readonly errorFactory?: undefined | ((...params: ConstructorParameters<typeof Error>) => Error)
   readonly at?: undefined | string
@@ -51,6 +20,13 @@ export interface Expectation {
   }
 }
 
+export interface LazyEvaluator {
+  readonly [packagePrivate]: {
+    readonly type: 'lazyEvaluator'
+    readonly deriveValidator: (value: unknown) => Validator
+  }
+}
+
 export interface Validator<T=unknown> {
   readonly [packagePrivate]: { readonly type: 'validator' }
   readonly matches: (value: unknown) => value is T
@@ -63,7 +39,7 @@ export interface Validator<T=unknown> {
 export interface ValidatorTemplateTagStaticFields {
   fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
   from: (unknownValue: string | Validator) => Validator
-  createRef: () => ValidatorRef
+  lazy: (deriveValidator: (value: unknown) => Validator) => LazyEvaluator
   expectTo: (callback: (valueBeingMatched: unknown) => string | null) => Expectation
 }
 
@@ -71,11 +47,10 @@ type Primitive = string | number | bigint | boolean | symbol | null | undefined;
 export type InterpolatedValue = (
   Primitive
   | Validator
-  | ValidatorRef
+  | LazyEvaluator
   | Expectation
   | RegExp
   | (new (...args: any) => any)
-  | LazyEvaluator // Only used internally
 );
 
 export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
@@ -87,10 +62,6 @@ export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
 
 export function isValidator(value: unknown): value is Validator {
   return Object(value)[packagePrivate]?.type === 'validator';
-}
-
-export function isRef(value: unknown): value is ValidatorRef {
-  return Object(value)[packagePrivate]?.type === 'ref';
 }
 
 export function isExpectation(value: unknown): value is Expectation {
@@ -106,10 +77,9 @@ export function createInterpolatedValueCheck(validator: ValidatorTemplateTag): V
   return validator`
     ${validator.expectTo(value => primitiveCheck.matches(value) ? null : 'be a primitive.')}
     | ${validator.expectTo(value => isValidator(value) ? null : 'be a Validator.')}
-    | ${validator.expectTo(value => isRef(value) ? null : 'be a ValidatorRef.')}
-    | ${validator.expectTo(value => isExpectation(value) ? null : 'be an Expectation.')}
-    | ${validator.expectTo(value => value instanceof RegExp ? null : 'be an instance of RegExp')}
-    | ${validator.expectTo(value => value instanceof Function ? null : 'be an instance of Function')}
-    | ${validator.expectTo(value => isLazyEvaluator(value) ? null : 'be an internally-used-only lazy evaluator.')}
+    | ${validator.expectTo(value => isExpectation(value) ? null : 'be an Expectation (from .expectTo()).')}
+    | ${validator.expectTo(value => isLazyEvaluator(value) ? null : 'be a LazyEvaluator (from .lazy()).')}
+    | ${validator.expectTo(value => value instanceof RegExp ? null : 'be an instance of RegExp.')}
+    | ${validator.expectTo(value => value instanceof Function ? null : 'be an instance of Function.')}
   `;
 }

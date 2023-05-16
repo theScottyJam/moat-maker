@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { validator, type Validator, type ValidatorRef } from '../src';
+import { validator } from '../src';
 
 describe('interpolation', () => {
-  // The main testing for interpolating ref and expectation instances is done elsewhere
+  // The main testing for interpolating lazy-evaluators and expectation instances is done elsewhere
 
   describe('misc', () => {
     test('produces the correct rule', () => {
@@ -157,11 +157,10 @@ describe('interpolation', () => {
             ),
             '  * Expected <2nd argument>, which was [object Object], to be a primitive.',
             '  * Expected <2nd argument>, which was [object Object], to be a Validator.',
-            '  * Expected <2nd argument>, which was [object Object], to be a ValidatorRef.',
-            '  * Expected <2nd argument>, which was [object Object], to be an Expectation.',
-            '  * Expected <2nd argument>, which was [object Object], to be an instance of RegExp',
-            '  * Expected <2nd argument>, which was [object Object], to be an instance of Function',
-            '  * Expected <2nd argument>, which was [object Object], to be an internally-used-only lazy evaluator.',
+            '  * Expected <2nd argument>, which was [object Object], to be an Expectation (from .expectTo()).',
+            '  * Expected <2nd argument>, which was [object Object], to be a LazyEvaluator (from .lazy()).',
+            '  * Expected <2nd argument>, which was [object Object], to be an instance of RegExp.',
+            '  * Expected <2nd argument>, which was [object Object], to be an instance of Function.',
           ].join('\n'),
         },
       );
@@ -183,11 +182,10 @@ describe('interpolation', () => {
             ),
             '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a primitive.',
             '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a Validator.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a ValidatorRef.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an Expectation.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of RegExp',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of Function',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an internally-used-only lazy evaluator.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an Expectation (from .expectTo()).',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a LazyEvaluator (from .lazy()).',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of RegExp.',
+            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of Function.',
           ].join('\n'),
         },
       );

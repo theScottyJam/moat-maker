@@ -6,7 +6,7 @@ them really matter. A lot of the logic in here is for trying to decide which err
 you don't want to prune too much, because you might accidentally prune the error the user cares about, but you also
 don't want to prune to little and flood the user with errors.
 
-We start with a tree structure who's nodes represent rules that were followed down, and who's leaves contains the error messages. Multiple branches can be traversed at once if the lookup paths and rule categories are the same. This, however, is a bit flakey - in the current implementation, doing something as simple as interpolating a validator could prevent this multi-branch-at-once behavior, because things aren't line up quite right anymore for it to work. There are ways to fix this, e.g. by looking up interpolated refs and validators first before trying to go deeper, but it's not a high priority issue.
+We start with a tree structure who's nodes represent rules that were followed down, and who's leaves contains the error messages. Multiple branches can be traversed at once if the lookup paths and rule categories are the same. This, however, is a bit flakey - in the current implementation, doing something as simple as interpolating a validator could prevent this multi-branch-at-once behavior, because things aren't line up quite right anymore for it to work. There are ways to fix this, e.g. by looking up interpolated lazy-evaluators and validators first before trying to go deeper, but it's not a high priority issue.
 
 When looking at a group of like-type rules at the same lookup path, we'll check what the highest "progress" value on them is. Any error that has a lower progress value will be discarded.
 
@@ -92,14 +92,6 @@ export function buildArgumentMatchError(
       return genericPrefix + message;
     }
   }
-
-  // <-- Write test for this behavior - this wsa the test case I used to trigger it:
-  /*
-  test.only('XXX', () => {
-      const act = (): any => validator`${41} | { [${{} as any}]: 42 }`;
-      act();
-    });
-    */
 
   // Gets the entry label at the index, and if it's out of bounds (undefined), we must be in a rest rule,
   // so we'll just grab the last entry label.

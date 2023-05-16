@@ -129,22 +129,24 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  test('validator.createRef()', () => {
-    const act = (): any => (validator.createRef as any)(42);
+  test('validator.lazy()', () => {
+    const act = (): any => (validator.lazy as any)(42);
     assert.throws(act, {
       message: (
-        'Received invalid arguments for validator.createRef(): ' +
-        'Expected the <argumentList> array to have 0 entries, but found 1.'
+        'Received invalid "deriveValidator" argument for validator.from(): ' +
+        'Expected <1st argument>, which was 42, to be an instance of `Function` (and not an instance of a subclass).'
       ),
     });
   });
 
-  test('validator.createRef().set()', () => {
-    const act = (): any => validator.createRef().set(42 as any);
+  test('validator.lazy() with bad deriveValidator callback', () => {
+    const badLazyEvaluator = (validator.lazy as any)(() => 42);
+    const v = validator`${badLazyEvaluator}`;
+    const act = (): any => v.matches(0);
     assert.throws(act, {
       message: (
-        'Received invalid "validator" argument for <validator ref>.set(): ' +
-        'Expected <1st argument>, which was 42, to be a validator instance.'
+        'validator.lazy() received a bad "deriveValidator" function: ' +
+        'Expected <deriveValidator return value>, which was 42, to be a validator instance.'
       ),
     });
   });

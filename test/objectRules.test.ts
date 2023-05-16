@@ -303,16 +303,15 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           (
-            'Received invalid "interpolated" argument for validator(): ' +
+            'Received invalid "interpolated" arguments for validator(): ' +
             'One of the following issues needs to be resolved:'
           ),
           '  * Expected <3rd argument>, which was [object String], to be a primitive.',
           '  * Expected <3rd argument>, which was [object String], to be a Validator.',
-          '  * Expected <3rd argument>, which was [object String], to be a ValidatorRef.',
-          '  * Expected <3rd argument>, which was [object String], to be an Expectation.',
-          '  * Expected <3rd argument>, which was [object String], to be an instance of RegExp',
-          '  * Expected <3rd argument>, which was [object String], to be an instance of Function',
-          '  * Expected <3rd argument>, which was [object String], to be an internally-used-only lazy evaluator.',
+          '  * Expected <3rd argument>, which was [object String], to be an Expectation (from .expectTo()).',
+          '  * Expected <3rd argument>, which was [object String], to be a LazyEvaluator (from .lazy()).',
+          '  * Expected <3rd argument>, which was [object String], to be an instance of RegExp.',
+          '  * Expected <3rd argument>, which was [object String], to be an instance of Function.',
         ].join('\n'),
       });
       assert.throws(act, TypeError);

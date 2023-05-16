@@ -3,7 +3,7 @@ import {
   type AssertMatchesOpts,
   createAssertMatchesOptsCheck,
   type Validator,
-  type ValidatorRef,
+  type LazyEvaluator,
   type ValidatorTemplateTagStaticFields,
   type ValidatorTemplateTag,
   type Expectation,
@@ -95,18 +95,20 @@ const staticFields: ValidatorTemplateTagStaticFields = {
       : unknownValue;
   },
 
-  createRef(): ValidatorRef {
-    uncheckedValidator`[]`.assertArgs('validator.createRef', arguments);
-    const ref = uncheckedValidator.createRef();
-    return Object.freeze({
-      [packagePrivate]: ref[packagePrivate],
-      set(validator_: Validator) {
-        !DISABLE_PARAM_VALIDATION && uncheckedValidator`[validator: ${expectValidator}]`
-          .assertArgs('<validator ref>.set', arguments);
+  lazy(deriveValidator_: (value: unknown) => Validator): LazyEvaluator {
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[deriveValidator: ${Function}]`
+      .assertArgs('validator.from', arguments);
 
-        ref.set(validator_);
-      },
-    });
+    const deriveValidator = (valueBeingMatched: unknown): Validator => {
+      const result = deriveValidator_(valueBeingMatched);
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`${expectValidator}`.assertMatches(result, {
+        errorPrefix: 'validator.lazy() received a bad "deriveValidator" function:',
+        at: '<deriveValidator return value>',
+      });
+      return result;
+    };
+
+    return uncheckedValidator.lazy(deriveValidator);
   },
 
   expectTo(testExpectation_: (valueBeingMatched: unknown) => string | null): Expectation {

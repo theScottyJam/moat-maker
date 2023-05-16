@@ -1,5 +1,5 @@
 import type { InterpolationRule } from '../types/validationRules';
-import { isExpectation, isLazyEvaluator, isRef, isValidator, type InterpolatedValue } from '../types/validator';
+import { isExpectation, isLazyEvaluator, isValidator, type InterpolatedValue } from '../types/validator';
 import { DEEP_LEVELS } from './deepnessTools';
 import { reprUnknownValue, UnreachableCaseError } from '../util';
 import { packagePrivate } from '../packagePrivateAccess';
@@ -26,21 +26,6 @@ export function interpolationCheck(
       interpolatedValue.ruleset.rootRule,
       target,
       interpolatedValue.ruleset.interpolated,
-      lookupPath,
-    );
-
-    if (validatorMatchResponse.failed()) {
-      return [{
-        matchResponse: validatorMatchResponse,
-        deep: 'INHERIT' as const,
-      }];
-    }
-  } else if (isRef(interpolatedValue)) {
-    const validator = interpolatedValue[packagePrivate].getValidator();
-    const validatorMatchResponse = match(
-      validator.ruleset.rootRule,
-      target,
-      validator.ruleset.interpolated,
       lookupPath,
     );
 

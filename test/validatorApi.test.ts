@@ -368,11 +368,10 @@ describe('validator behavior', () => {
     });
   });
 
-  describe('validator.createRef()', () => {
+  describe('validator.lazy()', () => {
     test('enables self-referencing patterns', () => {
-      const consRef = validator.createRef();
-      const v = validator`{ value: unknown, next: ${consRef} } | null`;
-      consRef.set(v);
+      const lazyCons = validator.lazy(() => v);
+      const v = validator`{ value: unknown, next: ${lazyCons} } | null`;
 
       expect(v.matches(null)).toBe(true);
       expect(v.matches({ value: 1, next: null })).toBe(true);
@@ -381,39 +380,28 @@ describe('validator behavior', () => {
       expect(v.matches({ value: 1, next: { value: 2, next: { value: 3, next: 'xyz' } } })).toBe(false);
     });
 
-    test('can not use a pattern with a ref until the ref has been set', () => {
-      const consRef = validator.createRef();
-      const v = validator`{ value: unknown, next: ${consRef} } | null`;
-
-      // Note that this doesn't trigger the error since it matches without the ref pattern needing to be checked
-      v.matches(null);
-
-      const act = (): any => v.matches({ value: 2, next: null });
-      assert.throws(act, (err: Error) => err.constructor === Error);
-      assert.throws(act, { message: 'Can not use a pattern with a ref until ref.set(...) has been called.' });
+    test('it receives the value being matched as an argument', () => {
+      let value;
+      const lazyError = validator.lazy(value_ => {
+        value = value_;
+        return validator`unknown`;
+      });
+      const v = validator`{ sub: ${lazyError} }`;
+      v.matches({ sub: 2 });
+      expect(value).toBe(2);
     });
 
-    test('able to use a pattern with an unset ref if the ref gets short-circuited during validation', () => {
-      const emptyRef = validator.createRef();
-      const v = validator`{ next: ${emptyRef} }`;
-      // The emptyRef's check never happens because this fails the is-this-an-object test first.
-      // If emptyRef's check did run, we'd get an error about how we haven't set the ref to anything yet.
-      v.matches(null);
+    test('it does not execute the callback if earlier validation checks failed', () => {
+      const lazyError = validator.lazy(() => {
+        throw new Error('I should not be called');
+      });
+      const v = validator`'I am this exact string' & ${lazyError}`;
+      v.matches('I am not the expected string');
     });
 
-    test('can not call ref.set() multiple times', () => {
-      const consRef = validator.createRef();
-      const v = validator`{ value: unknown, next: ${consRef} } | null`;
-      consRef.set(v);
-      const act = (): any => consRef.set(v);
-
-      assert.throws(act, (err: Error) => err.constructor === Error);
-      assert.throws(act, { message: 'Can not call ref.set(...) multiple times.' });
-    });
-
-    test('ref instance is frozen', () => {
-      const ref = validator.createRef();
-      expect(Object.isFrozen(ref)).toBe(true);
+    test('LazyEvaluator instance is frozen', () => {
+      const lazyValidator = validator.lazy(() => validator`0`);
+      expect(Object.isFrozen(lazyValidator)).toBe(true);
     });
   });
 
@@ -537,13 +525,13 @@ describe('validator behavior', () => {
     });
 
     test('internal uses of the type checker gets cached', () => {
-      expect(cacheApi.getCacheEntryFor`[]`.exists()).toBe(false);
+      expect(cacheApi.getCacheEntryFor`[testExpectation: ${null}]`.exists()).toBe(false);
 
-      // createRef() takes no arguments. Calling this function should
-      // run the type-checker against the empty tuple.
-      validator.createRef();
+      // expectTo() takes one function argument. Calling expectTo should
+      // run the type-checker against the empty the `[testExpectation: <function>]` tuple.
+      validator.expectTo(() => null);
 
-      expect(cacheApi.getCacheEntryFor`[]`.exists()).toBe(true);
+      expect(cacheApi.getCacheEntryFor`[testExpectation: ${null}]`.exists()).toBe(true);
     });
   });
 });

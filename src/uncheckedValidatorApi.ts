@@ -3,16 +3,15 @@
 // This is done because the real validator API is just a thin wrapper over this module, which uses this module,
 // both for its implementation and to validate the user-provided data.
 
-import { assert } from './util';
 import { parse } from './ruleParser';
 import { freezeRuleset } from './ruleFreezer';
 import { matchArgument, matchValue } from './ruleEnforcer';
 import { lookupCacheEntry } from './cacheControl';
-import type { Rule, Ruleset } from './types/validationRules';
+import type { Ruleset } from './types/validationRules';
 import type {
   AssertMatchesOpts,
   Validator,
-  ValidatorRef,
+  LazyEvaluator,
   ValidatorTemplateTag,
   ValidatorTemplateTagStaticFields,
   Expectation,
@@ -132,25 +131,13 @@ const staticFields: ValidatorTemplateTagStaticFields = {
       : unknownValue;
   },
 
-  createRef(): ValidatorRef {
-    let validator: Validator | null = null;
-    return {
+  lazy(deriveValidator: (value: unknown) => Validator): LazyEvaluator {
+    return Object.freeze({
       [packagePrivate]: {
-        type: 'ref',
-        getValidator(): Validator {
-          if (validator === null) {
-            throw new Error('Can not use a pattern with a ref until ref.set(...) has been called.');
-          }
-          return validator;
-        },
+        type: 'lazyEvaluator' as const,
+        deriveValidator,
       },
-      set(validator_: Validator) {
-        if (validator !== null) {
-          throw new Error('Can not call ref.set(...) multiple times.');
-        }
-        validator = validator_;
-      },
-    };
+    });
   },
 
   expectTo(testExpectation: (valueBeingMatched: unknown) => string | null): Expectation {
