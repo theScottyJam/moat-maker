@@ -303,7 +303,7 @@ describe('object rules', () => {
       assert.throws(act, {
         message: [
           (
-            'Received invalid "interpolated" arguments for validator(): ' +
+            'Received invalid "interpolated" arguments for validator`...`: ' +
             'One of the following issues needs to be resolved:'
           ),
           '  * Expected <3rd argument>, which was [object String], to be a primitive.',

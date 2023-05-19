@@ -160,7 +160,7 @@ describe('validator behavior', () => {
     test('gives the right error when failing to match against a tuple with named entries', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, myNumb: number]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
@@ -173,7 +173,7 @@ describe('validator behavior', () => {
     test('gives the right error when failing to match against a tuple without named entries', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[string, number]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[string, number]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
@@ -186,7 +186,7 @@ describe('validator behavior', () => {
     test('gives the right error when failing to match against an optional entry of a tuple with named entries', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, myNumb?: number]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, myNumb?: number]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
@@ -199,7 +199,7 @@ describe('validator behavior', () => {
     test('gives the right error when failing to match against the "rest" entries of a tuple with named entries (test 1)', () => {
       function fnWithValidation(a: any, b: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, ...myNumbs: number[]]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, ...myNumbs: number[]]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 'abc');
       assert.throws(act, {
@@ -212,7 +212,7 @@ describe('validator behavior', () => {
     test('gives the right error when failing to match against the "rest" entries of a tuple with named entries (test 2)', () => {
       function fnWithValidation(a: any, b: any, c: any, d: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, ...myNumbs: number[]]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, ...myNumbs: number[]]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 1, 2, 'abc');
       assert.throws(act, {
@@ -225,7 +225,7 @@ describe('validator behavior', () => {
     test('gives the right error when matching against a non-tuple', () => {
       function fnWithValidation(x: any, y: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`string[]`.assertArgs(fnWithValidation.name, arguments);
+        validator`string[]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 2);
       assert.throws(act, {
@@ -237,7 +237,7 @@ describe('validator behavior', () => {
 
     test('accepts any array-like object', () => {
       const v = validator`[myStr: string, myNumb: number]`;
-      const act = (): any => v.assertArgs('myModule.myFn', { 0: 'a', 1: 'b', length: 2 });
+      const act = (): any => v.assertArgs('myModule.myFn()', { 0: 'a', 1: 'b', length: 2 });
       assert.throws(act, {
         message: 'Received invalid "myNumb" argument for myModule.myFn(): ' +
         'Expected <2nd argument> to be of type "number" but got type "string".',
@@ -248,7 +248,7 @@ describe('validator behavior', () => {
     test('throws when given too many arguments', () => {
       function fnWithValidation(x: any, y: any, z: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, myNumb: number]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz', 2, 3);
       assert.throws(act, {
@@ -261,7 +261,7 @@ describe('validator behavior', () => {
     test('throws when given too few arguments', () => {
       function fnWithValidation(x: any, y?: any): void {
         // eslint-disable-next-line prefer-rest-params
-        validator`[myStr: string, myNumb: number]`.assertArgs(fnWithValidation.name, arguments);
+        validator`[myStr: string, myNumb: number]`.assertArgs('fnWithValidation()', arguments);
       }
       const act = (): any => fnWithValidation('xyz');
       assert.throws(act, {
@@ -274,7 +274,7 @@ describe('validator behavior', () => {
     test('The thrown error does not have too many unnecessary stack frames in the call stack', () => {
       // Using a nested tuple to force the error to be thrown from deeper, recursive logic.
       const v = validator`[[[[string]]]]`;
-      const myUniquelyNamedFn = (): any => v.assertArgs('myFn', [[[[2]]]]);
+      const myUniquelyNamedFn = (): any => v.assertArgs('myFn()', [[[[2]]]]);
       assert.throws(myUniquelyNamedFn, (error: Error) => {
         assert(error.stack !== undefined);
         return error.stack.split('\n').slice(0, 6).join('\n').includes('myUniquelyNamedFn');

@@ -19,7 +19,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     const act = (): any => validator(42 as any);
     assert.throws(act, {
       message: (
-        'Received invalid "parts" argument for validator(): ' +
+        'Received invalid "parts" argument for validator`...`: ' +
         'Expected <1st argument> to be an object but got 42.'
       ),
     });
@@ -63,7 +63,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
   });
 
   test('<validator instance>.assertArgs() (test 1)', () => {
-    const act = (): any => validator`string`.assertArgs('myFn', { length: 2.5 });
+    const act = (): any => validator`string`.assertArgs('myFn()', { length: 2.5 });
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
@@ -73,7 +73,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
   });
 
   test('<validator instance>.assertArgs() (test 2)', () => {
-    const act = (): any => validator`string`.assertArgs('myFn', { length: -2 });
+    const act = (): any => validator`string`.assertArgs('myFn()', { length: -2 });
     assert.throws(act, {
       message: (
         'Received invalid "args" argument for <validator instance>.assertArgs(): ' +
@@ -228,7 +228,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         {
           message: [
             (
-              'Received invalid "interpolated" arguments for validator(): ' +
+              'Received invalid "interpolated" arguments for validator`...`: ' +
               'One of the following issues needs to be resolved:'
             ),
             '  * Expected <2nd argument>, which was [object Object], to be a primitive.',

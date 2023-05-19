@@ -50,7 +50,7 @@ export function buildArgumentMatchError(
   rule: Rule,
   { whichFn }: BuildArgumentMatchErrorOpts,
 ): string {
-  const genericPrefix = `Received invalid arguments for ${whichFn}(): `;
+  const genericPrefix = `Received invalid arguments for ${whichFn}: `;
   const errorInfos = gatherErrorMessagesFor([matchResponse]);
   const message = buildUnionError(errorInfos.map(({ message }) => message));
 
@@ -100,7 +100,7 @@ export function buildArgumentMatchError(
   const isRestParam = rule.rest !== null && labelIndex >= rule.entryLabels.length - 1;
 
   return (
-    `Received invalid "${label}" argument${isRestParam ? 's' : ''} for ${whichFn}(): ` +
+    `Received invalid "${label}" argument${isRestParam ? 's' : ''} for ${whichFn}: ` +
     message
   );
 }

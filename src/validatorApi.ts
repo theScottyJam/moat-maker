@@ -43,7 +43,7 @@ export const validator = function validator<T=unknown>(
   ...interpolated: readonly InterpolatedValue[]
 ): Validator<T> {
   !DISABLE_PARAM_VALIDATION && uncheckedValidator`[parts: { raw: string[] }, ...interpolated: ${interpolatedValueCheck}[]]`
-    .assertArgs(validator.name, arguments);
+    .assertArgs('validator`...`', arguments);
 
   return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));
 } as ValidatorTemplateTag;
@@ -54,26 +54,26 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
       // TODO: I'm not validating the return value of opts.errorFactory
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
-        .assertArgs('<validator instance>.assertMatches', arguments);
+        .assertArgs('<validator instance>.assertMatches()', arguments);
 
       return unwrappedValidator.assertMatches(value, opts);
     },
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
       // TODO: I'm not validating the return value of opts.errorFactory
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
-        .assertArgs('<validator instance>.assertionTypeGuard', arguments);
+        .assertArgs('<validator instance>.assertionTypeGuard()', arguments);
 
       unwrappedValidator.assertionTypeGuard(value, opts);
     },
     assertArgs(whichFn: string, args: ArrayLike<unknown>) {
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[whichFn: string, args: ${expectArrayLike}]`
-        .assertArgs('<validator instance>.assertArgs', arguments);
+        .assertArgs('<validator instance>.assertArgs()', arguments);
 
       unwrappedValidator.assertArgs(whichFn, args);
     },
     matches(value: unknown): value is T {
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`
-        .assertArgs('<validator instance>.matches', arguments);
+        .assertArgs('<validator instance>.matches()', arguments);
 
       return unwrappedValidator.matches(value);
     },
@@ -84,14 +84,14 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
 const staticFields: ValidatorTemplateTagStaticFields = {
   fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[ruleset: ${rulesetCheck}]`
-      .assertArgs('validator.fromRuleset', arguments);
+      .assertArgs('validator.fromRuleset()', arguments);
 
     return wrapValidatorWithUserInputChecks(uncheckedValidator.fromRuleset<T>(ruleset));
   },
 
   from(unknownValue: string | Validator): Validator {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[stringOrValidator: string | ${expectValidator}]`
-      .assertArgs('validator.from', arguments);
+      .assertArgs('validator.from()', arguments);
 
     return typeof unknownValue === 'string'
       ? wrapValidatorWithUserInputChecks(uncheckedValidator.from(unknownValue))
@@ -100,7 +100,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
 
   lazy(deriveValidator_: (value: unknown) => Validator): LazyEvaluator {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[deriveValidator: ${expectDirectInstance(Function)}]`
-      .assertArgs('validator.lazy', arguments);
+      .assertArgs('validator.lazy()', arguments);
 
     const deriveValidator = (valueBeingMatched: unknown): Validator => {
       const result = deriveValidator_(valueBeingMatched);
@@ -116,7 +116,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
 
   expectTo(testExpectation_: (valueBeingMatched: unknown) => string | null): Expectation {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[testExpectation: ${expectDirectInstance(Function)}]`
-      .assertArgs('validator.expectTo', arguments);
+      .assertArgs('validator.expectTo()', arguments);
 
     const testExpectation = (valueBeingMatched: unknown): string | null => {
       const result = testExpectation_(valueBeingMatched);
