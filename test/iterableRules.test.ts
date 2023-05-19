@@ -16,7 +16,7 @@ describe('iterable rules', () => {
     const v = validator`${Array}@<number>`;
     const act = (): any => v.assertMatches('abc');
     assert.throws(act, {
-      message: 'Expected <receivedValue>, which was "abc", to be an instance of `Array` (and not an instance of a subclass).',
+      message: 'Expected <receivedValue>, which was "abc", to be an instance of `Array`.',
     });
     assert.throws(act, TypeError);
   });

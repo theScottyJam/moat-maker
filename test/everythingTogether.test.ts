@@ -248,10 +248,7 @@ describe('unions of different types', () => {
       const v = validator`[1, 2, 3] & ${MyArray} | [1, 2]`;
       const act = (): any => v.assertMatches([1, 2, 3]);
       assert.throws(act, {
-        message: (
-          'Expected <receivedValue>, which was [object Array], to be an instance of `MyArray` ' +
-          '(and not an instance of a subclass).'
-        ),
+        message: 'Expected <receivedValue>, which was [object Array], to be an instance of `MyArray`.',
       });
     });
 
@@ -291,7 +288,7 @@ describe('unions of different types', () => {
       assert.throws(act, {
         message: [
           'One of the following issues needs to be resolved:',
-          '  * Expected <receivedValue>, which was [object Object], to be an instance of `MyClass` (and not an instance of a subclass).',
+          '  * Expected <receivedValue>, which was [object Object], to be an instance of `MyClass`.',
           '  * Expected <receivedValue> to be of type "number" but got type "object".',
         ].join('\n'),
       });

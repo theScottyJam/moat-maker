@@ -1,7 +1,7 @@
 import type { InterpolationRule } from '../types/validationRules';
 import { isExpectation, isLazyEvaluator, isValidator, type InterpolatedValue } from '../types/validator';
 import { DEEP_LEVELS } from './deepnessTools';
-import { reprUnknownValue, UnreachableCaseError } from '../util';
+import { isBrandOf, isDirectInstanceOf, reprUnknownValue, UnreachableCaseError } from '../util';
 import { packagePrivate } from '../packagePrivateAccess';
 import { match, type CheckFnResponse } from './ruleMatcherTools';
 import type { LookupPath } from './LookupPath';
@@ -60,18 +60,17 @@ export function interpolationCheck(
       }];
     }
   } else if (typeof interpolatedValue === 'function') {
-    if (Object(target).constructor !== interpolatedValue || !(Object(target) instanceof interpolatedValue)) {
+    if (!isInstanceOf(target, interpolatedValue)) {
       return [{
         message: (
           `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, ` +
-          `to be an instance of ${reprUnknownValue(interpolatedValue)} ` +
-          '(and not an instance of a subclass).'
+          `to be an instance of ${reprUnknownValue(interpolatedValue)}.`
         ),
         lookupPath,
         deep: availableDeepLevels().nonRecursiveCheck,
       }];
     }
-  } else if (interpolatedValue instanceof RegExp) {
+  } else if (isDirectInstanceOf(interpolatedValue, RegExp)) {
     if (typeof target !== 'string') {
       return [{
         message: (
@@ -115,6 +114,32 @@ export function interpolationCheck(
 // ------------------------------
 
 const isObject = (value: unknown): value is object => Object(value) === value;
+
+/**
+ * Checks if `value` is an instance of `parentClass`, or an instance of a subclass of `parentClass`.
+ * Symbol.hasInstance is ignored.
+ * Brand checking is performed if the class is a built-in class.
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types
+function isInstanceOf(value: unknown, parentClass: Function): boolean {
+  const targetPrototype: object | null = parentClass.prototype;
+  // The `prototype` property is set to `null` on arrow functions.
+  if (targetPrototype === null) {
+    return false;
+  }
+
+  let currentPrototypeLink = Object.getPrototypeOf(value);
+  while (true) {
+    if (currentPrototypeLink === null) {
+      break;
+    }
+    if (currentPrototypeLink === targetPrototype || isBrandOf(currentPrototypeLink, parentClass)) {
+      return true;
+    }
+    currentPrototypeLink = Object.getPrototypeOf(currentPrototypeLink);
+  }
+  return false;
+}
 
 /** Compares two values using JavaScript's SameValueZero algorithm. */
 const sameValueZero = (x: unknown, y: unknown): boolean => (

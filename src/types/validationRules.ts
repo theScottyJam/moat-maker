@@ -12,6 +12,7 @@ import {
   createInterpolatedValueCheck,
 } from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
+import { expectDirectInstanceFactory } from '../validationHelpers';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -153,8 +154,9 @@ function checkDynamicObjectKey(
 }
 
 function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly InterpolatedValue[]): Validator {
-  const expectNonEmptyArray = validator.expectTo(
-    value => Array.isArray(value) && value.length > 0 ? null : 'be non-empty.',
+  const expectDirectInstance = expectDirectInstanceFactory(validator);
+  const andExpectNonEmptyArray = validator.expectTo(
+    value => (value as unknown[]).length > 0 ? null : 'be non-empty.',
   );
 
   const lazyRuleCheck = validator.lazy(() => ruleCheck);
@@ -199,8 +201,11 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const objectRuleCheck = validator`{
     category: 'object'
-    content: (${FrozenMap} | ${Map})@<[string, ${objectRuleContentValueCheck}]>
-    dynamicContent: (${FrozenMap} | ${Map})@<[
+    content: (${expectDirectInstance(FrozenMap)} | ${expectDirectInstance(Map)})@<[
+      string,
+      ${objectRuleContentValueCheck}
+    ]>
+    dynamicContent: (${expectDirectInstance(FrozenMap)} | ${expectDirectInstance(Map)})@<[
       number & ${andExpectValidDynamicObjectKey},
       ${objectRuleContentValueCheck}
     ]>
@@ -237,12 +242,12 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const unionRuleCheck = validator`{
     category: 'union'
-    variants: ${lazyRuleCheck}[] & ${expectNonEmptyArray}
+    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray}
   }`;
 
   const intersectionRuleCheck = validator`{
     category: 'intersection'
-    variants: ${lazyRuleCheck}[] & ${expectNonEmptyArray}
+    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray}
   }`;
 
   const interpolationRuleCheck = validator`{

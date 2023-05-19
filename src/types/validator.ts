@@ -1,5 +1,6 @@
 import type { Ruleset } from './validationRules';
 import { packagePrivate } from '../packagePrivateAccess';
+import { expectDirectInstanceFactory } from '../validationHelpers';
 
 export interface AssertMatchesOpts {
   readonly errorFactory?: undefined | ((...params: ConstructorParameters<typeof Error>) => Error)
@@ -7,11 +8,14 @@ export interface AssertMatchesOpts {
   readonly errorPrefix?: undefined | string
 }
 
-export const createAssertMatchesOptsCheck = (validator: ValidatorTemplateTag): Validator => validator`{
-  errorFactory?: undefined | ${Function}
-  at?: undefined | string
-  errorPrefix?: undefined | string
-}`;
+export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): Validator {
+  const expectDirectInstance = expectDirectInstanceFactory(validator);
+  return validator`{
+    errorFactory?: undefined | ${expectDirectInstance(Function)}
+    at?: undefined | string
+    errorPrefix?: undefined | string
+  }`;
+}
 
 export interface Expectation {
   readonly [packagePrivate]: {
@@ -50,7 +54,7 @@ export type InterpolatedValue = (
   | LazyEvaluator
   | Expectation
   | RegExp
-  | (new (...args: any) => any)
+  | (new (...params: any) => any)
 );
 
 export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
@@ -61,25 +65,38 @@ export type ValidatorTemplateTag = ValidatorTemplateTagStaticFields & (
 );
 
 export function isValidator(value: unknown): value is Validator {
-  return Object(value)[packagePrivate]?.type === 'validator';
+  return (
+    // Later on, once support is better, this can be replaced with Object.hasOwn()
+    Object.prototype.hasOwnProperty.call(value, packagePrivate) &&
+    Object(value)[packagePrivate]?.type === 'validator'
+  );
 }
 
 export function isExpectation(value: unknown): value is Expectation {
-  return Object(value)[packagePrivate]?.type === 'expectation';
+  return (
+    // Later on, once support is better, this can be replaced with Object.hasOwn()
+    Object.prototype.hasOwnProperty.call(value, packagePrivate) &&
+    Object(value)[packagePrivate]?.type === 'expectation'
+  );
 }
 
 export function isLazyEvaluator(value: unknown): value is LazyEvaluator {
-  return Object(value)[packagePrivate]?.type === 'lazyEvaluator';
+  return (
+    // Later on, once support is better, this can be replaced with Object.hasOwn()
+    Object.prototype.hasOwnProperty.call(value, packagePrivate) &&
+    Object(value)[packagePrivate]?.type === 'lazyEvaluator'
+  );
 }
 
 export function createInterpolatedValueCheck(validator: ValidatorTemplateTag): Validator {
+  const expectDirectInstance = expectDirectInstanceFactory(validator);
   const primitiveCheck = validator`string | number | bigint | boolean | symbol | null | undefined`;
   return validator`
     ${validator.expectTo(value => primitiveCheck.matches(value) ? null : 'be a primitive.')}
     | ${validator.expectTo(value => isValidator(value) ? null : 'be a Validator.')}
     | ${validator.expectTo(value => isExpectation(value) ? null : 'be an Expectation (from .expectTo()).')}
     | ${validator.expectTo(value => isLazyEvaluator(value) ? null : 'be a LazyEvaluator (from .lazy()).')}
-    | ${validator.expectTo(value => value instanceof RegExp ? null : 'be an instance of RegExp.')}
-    | ${validator.expectTo(value => value instanceof Function ? null : 'be an instance of Function.')}
+    | ${expectDirectInstance(RegExp)}
+    | ${Function}
   `;
 }

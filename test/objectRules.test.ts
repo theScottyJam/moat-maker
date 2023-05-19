@@ -310,8 +310,8 @@ describe('object rules', () => {
           '  * Expected <3rd argument>, which was [object String], to be a Validator.',
           '  * Expected <3rd argument>, which was [object String], to be an Expectation (from .expectTo()).',
           '  * Expected <3rd argument>, which was [object String], to be a LazyEvaluator (from .lazy()).',
-          '  * Expected <3rd argument>, which was [object String], to be an instance of RegExp.',
-          '  * Expected <3rd argument>, which was [object String], to be an instance of Function.',
+          '  * Expected <3rd argument>, which was [object String], to be a direct instance of `RegExp`.',
+          '  * Expected <3rd argument>, which was [object String], to be an instance of `Function`.',
         ].join('\n'),
       });
       assert.throws(act, TypeError);

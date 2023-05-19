@@ -366,6 +366,28 @@ describe('validator behavior', () => {
       assert.throws(act, { message: 'Expected <receivedValue> to be the value 2 but got "xyz".' });
       assert.throws(act, TypeError);
     });
+
+    test('able to create a validator from a complex ruleset', () => {
+      const v = validator`[
+        { x: 2, [${3}]: 4, [index: string]: 5 },
+        [a: 1, b?: 2, ...rest: 3[]],
+        4[],
+        2 & 3,
+        2 | 3,
+        ${validator`{}`},
+        ${validator.lazy(() => validator`{}`)},
+        ${validator.expectTo(() => null)},
+        ${Map},
+        ${2},
+        string@<string>,
+        number,
+        null,
+        object,
+        unknown,
+      ]`;
+
+      validator.fromRuleset(v.ruleset);
+    });
   });
 
   describe('validator.lazy()', () => {

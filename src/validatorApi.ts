@@ -9,19 +9,20 @@ import {
   type Expectation,
   type InterpolatedValue,
   createInterpolatedValueCheck,
+  isValidator,
 } from './types/validator';
 import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './packagePrivateAccess';
 import { DISABLE_PARAM_VALIDATION } from './config';
+import { expectDirectInstanceFactory } from './validationHelpers';
 
 const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
 const interpolatedValueCheck = createInterpolatedValueCheck(uncheckedValidator);
+const expectDirectInstance = expectDirectInstanceFactory(uncheckedValidator);
 
 const expectValidator = uncheckedValidator.expectTo(
-  (value: unknown) => Object(value)[packagePrivate]?.type === 'validator'
-    ? null
-    : 'be a validator instance.',
+  (value: unknown) => isValidator(value) ? null : 'be a validator instance.',
 );
 
 const expectArrayLike = uncheckedValidator.expectTo(
@@ -71,7 +72,9 @@ function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): 
       unwrappedValidator.assertArgs(whichFn, args);
     },
     matches(value: unknown): value is T {
-      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`.assertArgs('<validator instance>.matches', arguments);
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`
+        .assertArgs('<validator instance>.matches', arguments);
+
       return unwrappedValidator.matches(value);
     },
     ruleset: unwrappedValidator.ruleset,
@@ -96,8 +99,8 @@ const staticFields: ValidatorTemplateTagStaticFields = {
   },
 
   lazy(deriveValidator_: (value: unknown) => Validator): LazyEvaluator {
-    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[deriveValidator: ${Function}]`
-      .assertArgs('validator.from', arguments);
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[deriveValidator: ${expectDirectInstance(Function)}]`
+      .assertArgs('validator.lazy', arguments);
 
     const deriveValidator = (valueBeingMatched: unknown): Validator => {
       const result = deriveValidator_(valueBeingMatched);
@@ -112,7 +115,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
   },
 
   expectTo(testExpectation_: (valueBeingMatched: unknown) => string | null): Expectation {
-    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[testExpectation: ${Function}]`
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[testExpectation: ${expectDirectInstance(Function)}]`
       .assertArgs('validator.expectTo', arguments);
 
     const testExpectation = (valueBeingMatched: unknown): string | null => {

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-extraneous-class */
+
+import * as vm from 'node:vm';
 import { strict as assert } from 'node:assert';
 import { validator } from '../src';
 
@@ -140,59 +143,6 @@ describe('interpolation', () => {
     });
   });
 
-  describe('non-special object interpolation', () => {
-    // TODO: Eventually it would be nice to extend .assertArgs() to have, say, a fnType: ... parameter
-    // that you could configure to be things like 'normal', 'constructor', or 'templateTag'.
-    // In the case of 'templateTag', it can format errors, so instead of saying `<2nd argument>`, it says
-    // <1st interpolated value>.
-    test('forbids non-special objects (i.e. object types that do not have special interpolation behaviors) to be interpolated', () => {
-      const obj = { x: 2 };
-      const act = (): any => validator`${obj as any}`;
-      assert.throws(act,
-        {
-          message: [
-            (
-              'Received invalid "interpolated" arguments for validator(): ' +
-              'One of the following issues needs to be resolved:'
-            ),
-            '  * Expected <2nd argument>, which was [object Object], to be a primitive.',
-            '  * Expected <2nd argument>, which was [object Object], to be a Validator.',
-            '  * Expected <2nd argument>, which was [object Object], to be an Expectation (from .expectTo()).',
-            '  * Expected <2nd argument>, which was [object Object], to be a LazyEvaluator (from .lazy()).',
-            '  * Expected <2nd argument>, which was [object Object], to be an instance of RegExp.',
-            '  * Expected <2nd argument>, which was [object Object], to be an instance of Function.',
-          ].join('\n'),
-        },
-      );
-      assert.throws(act, TypeError);
-    });
-
-    test('forbids non-special objects to be interpolated in fromRuleset()', () => {
-      const obj = { x: 2 };
-      const act = (): any => validator.fromRuleset({
-        rootRule: { category: 'noop' },
-        interpolated: [{ invalid: 'object' } as any],
-      });
-      assert.throws(act,
-        {
-          message: [
-            (
-              'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
-              'One of the following issues needs to be resolved:'
-            ),
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a primitive.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a Validator.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an Expectation (from .expectTo()).',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be a LazyEvaluator (from .lazy()).',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of RegExp.',
-            '  * Expected <1st argument>.interpolated[0], which was [object Object], to be an instance of Function.',
-          ].join('\n'),
-        },
-      );
-      assert.throws(act, TypeError);
-    });
-  });
-
   describe('primitive class interpolation', () => {
     test('the Number class matches a numeric primitive', () => {
       const v = validator`${Number}`;
@@ -208,19 +158,36 @@ describe('interpolation', () => {
       const v = validator`${Number}`;
       const act = (): any => v.assertMatches('xyz');
       assert.throws(act, {
-        message: 'Expected <receivedValue>, which was "xyz", to be an instance of `Number` (and not an instance of a subclass).',
+        message: 'Expected <receivedValue>, which was "xyz", to be an instance of `Number`.',
       });
       assert.throws(act, TypeError);
     });
 
-    test('the Number class does not match an inherited boxed primitive', () => {
+    test('the Number class matches an inherited boxed primitive', () => {
       class MyNumber extends Number {}
       const v = validator`${Number}`;
-      const act = (): any => v.assertMatches(new MyNumber(3));
-      assert.throws(act, {
-        message: 'Expected <receivedValue>, which was [object MyNumber], to be an instance of `Number` (and not an instance of a subclass).',
-      });
-      assert.throws(act, TypeError);
+      v.assertMatches(new MyNumber(3));
+    });
+
+    // Symbol.hasInstance is ignored, because TypeScript technically ignores it as well
+    // when it is deciding if one thing is an instance of another.
+    test('ignores Symbol.hasInstance', () => {
+      class EverythingIsASubclassOfMe {
+        static [Symbol.hasInstance] = (): boolean => true;
+      }
+
+      assert({} instanceof EverythingIsASubclassOfMe);
+      expect(validator`${EverythingIsASubclassOfMe}`.matches({})).toBe(false);
+    });
+
+    // It's not very useful to do so, but you can do it.
+    test('you can interpolate function expressions', () => {
+      expect(validator`${(function() {}) as any}`.matches(() => {})).toBe(false);
+    });
+
+    // It's not very useful to do so, but you can do it.
+    test('you can interpolate arrow functions', () => {
+      expect(validator`${(() => {}) as any}`.matches(() => {})).toBe(false);
     });
   });
 
@@ -234,34 +201,72 @@ describe('interpolation', () => {
       const v = validator`${Map}`;
       const act = (): any => v.assertMatches({ x: 2 });
       assert.throws(act, {
-        message: (
-          'Expected <receivedValue>, which was [object Object], to be an instance of `Map` ' +
-          '(and not an instance of a subclass).'
-        ),
+        message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Map`.',
       });
       assert.throws(act, TypeError);
     });
 
-    describe('error formatting', () => {
-      test('the Map class does not match a null-prototype object', () => {
-        const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
-        assert.throws(act, {
-          message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Map` (and not an instance of a subclass).',
-        });
+    test('the Map class does not match a null-prototype object', () => {
+      const act = (): any => validator`${Map}`.assertMatches(Object.create(null));
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Map`.',
       });
+    });
 
-      test('the Map class does not match an inherited instance of Map', () => {
-        class MyMap extends Map {}
-        const act = (): any => validator`${Map}`.assertMatches(new MyMap());
-        assert.throws(act, {
-          message: 'Expected <receivedValue>, which was [object MyMap], to be an instance of `Map` (and not an instance of a subclass).',
-        });
-      });
+    test('the Map class matches an inherited instance of Map', () => {
+      class MyMap extends Map {}
+      validator`${Map}`.assertMatches(new MyMap());
+    });
 
-      test('Can not pretend to be an instance of a class by providing an object with a fake constructor field', () => {
-        const v = validator`${Map}`;
-        expect(v.matches({ constructor: Map })).toBe(false);
+    test('a Map class from one realm matches a Map instance from another', () => {
+      const RealmMap = vm.runInNewContext('Map');
+      validator`${RealmMap}`.assertMatches(new Map());
+    });
+
+    test('a Map class from one realm matches a derived Map instance from another', () => {
+      const RealmMap = vm.runInNewContext('Map');
+      class MyMap extends Map {}
+      validator`${RealmMap}`.assertMatches(new MyMap());
+    });
+
+    test('a Map class from one realm does not match a Set instance from another', () => {
+      const RealmMap = vm.runInNewContext('Map');
+      const act = (): any => validator`${RealmMap}`.assertMatches(new Set());
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which was [object Set], to be an instance of `Map`.',
       });
+    });
+  });
+
+  describe('userland class interpolation', () => {
+    test('a userland class matches its own instances', () => {
+      class Thing {}
+      const v = validator`${Thing}`;
+      v.assertMatches(new Thing());
+    });
+
+    test('a userland class does not match a normal object', () => {
+      class Thing {}
+      const v = validator`${Thing}`;
+      const act = (): any => v.assertMatches({ x: 2 });
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Thing`.',
+      });
+      assert.throws(act, TypeError);
+    });
+
+    test('a userland class does not match a null-prototype object', () => {
+      class Thing {}
+      const act = (): any => validator`${Thing}`.assertMatches(Object.create(null));
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which was [object Object], to be an instance of `Thing`.',
+      });
+    });
+
+    test('a userland class matches an inherited instance', () => {
+      class Thing {}
+      class DerivedThing extends Thing {}
+      validator`${Thing}`.assertMatches(new DerivedThing());
     });
   });
 
@@ -282,15 +287,6 @@ describe('interpolation', () => {
       const v = validator`${/^\d{3}$/g}`;
       const act = (): any => v.assertMatches(2345);
       assert.throws(act, { message: 'Expected <receivedValue>, which was 2345, to be a string that matches the regular expression /^\\d{3}$/g' });
-      assert.throws(act, TypeError);
-    });
-
-    test('can match against an inherited regular expression', () => {
-      class MyRegExp extends RegExp {}
-      const v = validator`${new MyRegExp(String.raw`^\d{3}$`, 'g')}`;
-      v.assertMatches('234');
-      const act = (): any => v.assertMatches('2345');
-      assert.throws(act, { message: 'Expected <receivedValue>, which was "2345", to match the regular expression /^\\d{3}$/g' });
       assert.throws(act, TypeError);
     });
 
