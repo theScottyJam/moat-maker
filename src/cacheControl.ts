@@ -1,6 +1,11 @@
 import { assert } from './util';
-import type { CacheEntry } from './types/cacheControl';
 import type { Rule } from './types/validationRules';
+
+interface CacheEntry {
+  readonly exists: () => boolean
+  readonly get: () => Rule
+  readonly set: (value: Rule) => void
+}
 
 interface CacheRecord {
   value: Rule | null
