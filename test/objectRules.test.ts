@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError, type Expectation } from '../src';
 import { FrozenMap } from '../src/util';
 
 describe('object rules', () => {
@@ -74,6 +74,66 @@ describe('object rules', () => {
     });
 
     assert.throws(act, { message: '<receivedValue> is missing the required properties: "secondProp"' });
+  });
+
+  // Users are not supposed to rely on the specific order that we evaluate object properties,
+  // but its still good to know when we've made a breaking change to the ordering.
+  test('object properties evaluate in a specific order', () => {
+    const ordering: string[] = [];
+    const recordOrder = (prefix: string = ''): Expectation => validator.expectTo(value => {
+      ordering.push(prefix + String(value));
+      return null;
+    });
+
+    // TODO: Commas are sometimes required to fix an ambiguity.
+    const v = validator`{
+      b: ${recordOrder()}
+      a: ${recordOrder()}
+      c: ${recordOrder()}
+      0: ${recordOrder()},
+      [index: number]: ${recordOrder('index: ')},
+      [${'d'}]: ${recordOrder()},
+      [${'e'}]: ${recordOrder('first: ')},
+      [${'f'}]: ${recordOrder('first: ')}
+      g: ${recordOrder()},
+      [${'e'}]: ${recordOrder('second: ')},
+      [${'f'}]: ${recordOrder('second: ')}
+      f: ${recordOrder('third: ')}
+      h: ${recordOrder()}
+    }`;
+
+    v.assertMatches({
+      h: 'h',
+      g: 'g',
+      f: 'f',
+      0: '0',
+      1: '1',
+      e: 'e',
+      d: 'd',
+      c: 'c',
+      b: 'b',
+      a: 'a',
+    });
+
+    // TODO: Why is the `index` ones being recorded twice?
+    expect(ordering).toEqual([
+      'index: 0',
+      'index: 1',
+      '0',
+      'index: 0',
+      'index: 1',
+      'h',
+      'g',
+      'third: f',
+      'first: f',
+      'second: f',
+      'first: e',
+      'second: e',
+      'd',
+      'c',
+      'b',
+      'a',
+    ]);
   });
 
   describe('object type checks', () => {
