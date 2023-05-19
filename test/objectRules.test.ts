@@ -85,18 +85,17 @@ describe('object rules', () => {
       return null;
     });
 
-    // TODO: Commas are sometimes required to fix an ambiguity.
     const v = validator`{
       b: ${recordOrder()}
       a: ${recordOrder()}
       c: ${recordOrder()}
-      0: ${recordOrder()},
-      [index: number]: ${recordOrder('index: ')},
-      [${'d'}]: ${recordOrder()},
-      [${'e'}]: ${recordOrder('first: ')},
+      0: ${recordOrder()}
+      [index: number]: ${recordOrder('index: ')}
+      [${'d'}]: ${recordOrder()}
+      [${'e'}]: ${recordOrder('first: ')}
       [${'f'}]: ${recordOrder('first: ')}
-      g: ${recordOrder()},
-      [${'e'}]: ${recordOrder('second: ')},
+      g: ${recordOrder()}
+      [${'e'}]: ${recordOrder('second: ')}
       [${'f'}]: ${recordOrder('second: ')}
       f: ${recordOrder('third: ')}
       h: ${recordOrder()}

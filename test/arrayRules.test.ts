@@ -113,7 +113,7 @@ describe('array rules', () => {
     });
   });
 
-  test('Gives the right error when the right `]` is missing', () => {
+  test('gives the right error when the right `]` is missing', () => {
     const act = (): any => validator`string[ | number`;
     assert.throws(act, {
       message: [
@@ -123,5 +123,38 @@ describe('array rules', () => {
       ].join('\n'),
     });
     assert.throws(act, ValidatorSyntaxError);
+  });
+
+  test('not allowed to place a "[" after a new line', () => {
+    const act = (): any => validator`
+      string
+      []
+    `;
+
+    assert.throws(act, {
+      message: [
+        'Expected EOF. (line 3, col 7)',
+        '   []',
+        '   ~',
+      ].join('\n'),
+    });
+
+    assert.throws(act, ValidatorSyntaxError);
+  });
+
+  test('no parsing ambiguities between array syntax and object index syntax', () => {
+    // The reason you can not place a new line between `<expression>` and `[]`
+    // is to avoid this parsing ambiguity.
+    // Otherwise, it could attempt to interpret this as `a: 1[..]`, then wonder
+    // why there's stuff between the brackets, and throw an error because of that.
+    const v = validator`{
+      a: 1
+      [index: number]: 2
+    }`;
+
+    v.assertMatches({
+      a: 1,
+      2: 2,
+    });
   });
 });

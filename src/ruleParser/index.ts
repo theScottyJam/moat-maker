@@ -82,7 +82,7 @@ function parseRuleAtPrecedence2(tokenStream: TokenStream): Rule {
         throw createValidatorSyntaxError('Expected a closing angled bracket (`>`).', tokenStream.originalText, tokenStream.peek().range);
       }
       tokenStream.next();
-    } else if (tokenStream.peek().value === '[') {
+    } else if (tokenStream.peek().value === '[' && !tokenStream.peek().afterNewline) {
       tokenStream.next();
       if (tokenStream.peek().value !== ']') {
         throw createValidatorSyntaxError('Expected a `]` to close the opening `[`.', tokenStream.originalText, tokenStream.peek().range);

@@ -1,7 +1,7 @@
 import type { TextRange } from '../ruleParser/TextPosition';
 import type { InterpolatedValue } from './validator';
 
-// Note that a number like "Infinity" get classified as an identifier,
+// Note that a number like "Infinity" gets classified as an identifier,
 export interface TextToken {
   readonly category: 'identifier' | 'number' | 'bigint' | 'specialChar' | 'eof' | 'beforeTextStart'
   readonly value: string
