@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError, type SimpleRule, type SimpleTypeVariant } from '../src';
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
@@ -103,25 +103,15 @@ describe('union rules', () => {
   });
 
   test('Flattens nested union errors', () => {
+    const createSimpleRule = (type: SimpleTypeVariant): SimpleRule => ({ category: 'simple' as const, type });
     const v = validator.fromRuleset({
       rootRule: {
         category: 'union',
         variants: [
-          {
-            category: 'simple',
-            type: 'number',
-          },
+          createSimpleRule('number'),
           {
             category: 'union',
-            variants: [
-              {
-                category: 'simple',
-                type: 'string',
-              }, {
-                category: 'simple',
-                type: 'undefined',
-              },
-            ],
+            variants: [createSimpleRule('string'), createSimpleRule('undefined')],
           },
         ],
       },

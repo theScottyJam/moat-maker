@@ -90,9 +90,8 @@ export function isLazyEvaluator(value: unknown): value is LazyEvaluator {
 
 export function createInterpolatedValueCheck(validator: ValidatorTemplateTag): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
-  const primitiveCheck = validator`string | number | bigint | boolean | symbol | null | undefined`;
   return validator`
-    ${validator.expectTo(value => primitiveCheck.matches(value) ? null : 'be a primitive.')}
+    ${validator.expectTo(value => validator`object`.matches(value) ? 'be a primitive.' : null)}
     | ${validator.expectTo(value => isValidator(value) ? null : 'be a Validator.')}
     | ${validator.expectTo(value => isExpectation(value) ? null : 'be an Expectation (from .expectTo()).')}
     | ${validator.expectTo(value => isLazyEvaluator(value) ? null : 'be a LazyEvaluator (from .lazy()).')}
