@@ -305,23 +305,6 @@ describe('documentation examples', () => {
       validator`true`.assertMatches(true); // ✓
     });
 
-    test('primitive literal rules - expectCloseTo()', () => {
-      // ✕ - Expected <receivedValue> to be 0.3 but got 0.30000000000000004.
-      assert.throws(() => {
-        validator`0.3`.assertMatches(0.1 + 0.1 + 0.1);
-      }, { message: 'Expected <receivedValue> to be 0.3 but got 0.30000000000000004.' });
-
-      const expectCloseTo = (target: any, { plusOrMinus }: any) => validator.expectTo(value =>
-        typeof value === 'number' && Math.abs(target - value) < plusOrMinus
-          ? null
-          : `be equal to ${target}±${plusOrMinus}`,
-      );
-
-      // ✓
-      validator`${expectCloseTo(0.3, { plusOrMinus: 1e-10 })}`
-        .assertMatches(0.1 + 0.1 + 0.1);
-    });
-
     test('any/unknown no-op rules', () => {
       validator`unknown`.assertMatches(2); // ✓
       validator`unknown`.assertMatches({ x: 2 }); // ✓
@@ -608,6 +591,95 @@ describe('documentation examples', () => {
       // Now TypeScript will let you use unknownValue as a string, because
       // we just proved it was.
       console.log(unknownValue.slice(3));
+    });
+  });
+
+  describe('recipes', () => {
+    test('expectRef()', () => {
+      function expectRef(expectedRef: object) {
+        return validator.expectTo((value: unknown) => {
+          return value === expectedRef
+            ? null
+            : `to be the same object as ${String(expectedRef)}`;
+        });
+      }
+
+      // Example usage
+      const myRef = {};
+      validator`${expectRef(myRef)}`.assertMatches(myRef); // ✓
+      assert.throws(() => {
+        validator`${expectRef(myRef)}`.assertMatches({}); // ✕
+      }, {
+        message: 'Expected <receivedValue>, which was [object Object], to to be the same object as [object Object]',
+      });
+    });
+
+    test('expectCloseTo()', () => {
+      // ✕ - Expected <receivedValue> to be 0.3
+      //     but got 0.30000000000000004.
+      assert.throws(() => {
+        validator`0.3`.assertMatches(0.1 + 0.1 + 0.1);
+      }, { message: 'Expected <receivedValue> to be 0.3 but got 0.30000000000000004.' });
+
+      function expectCloseTo(target: number, { plusOrMinus }: { plusOrMinus: number }) {
+        return validator.expectTo(value =>
+          typeof value === 'number' && Math.abs(target - value) < plusOrMinus
+            ? null
+            : `be equal to ${target}±${plusOrMinus}`,
+        );
+      }
+
+      // ✓
+      validator`${expectCloseTo(0.3, { plusOrMinus: 1e-10 })}`
+        .assertMatches(0.1 + 0.1 + 0.1);
+    });
+
+    test('expectDirectInstance() - how it behaves without it', () => {
+      class MyMap extends Map {}
+
+      validator`${Map}`.assertMatches(new Map()); // ✓
+      validator`${Map}`.assertMatches(new MyMap()); // ✓
+    });
+
+    test('expectDirectInstance()', () => {
+      function expectDirectInstance(TargetClass: (new (...params: any) => any)) {
+        return validator.expectTo((value: unknown) => {
+          const isDirectInstance = Object(value).constructor === TargetClass;
+          return isDirectInstance ? null : `be a direct instance of ${TargetClass.name}.`;
+        });
+      }
+
+      // Example usage
+      class MyMap extends Map {}
+      validator`${expectDirectInstance(Map)}`.assertMatches(new Map()); // ✓
+      assert.throws(() => {
+        validator`${expectDirectInstance(Map)}`.assertMatches(new MyMap()); // ✕
+      }, { message: 'Expected <receivedValue>, which was [object MyMap], to be a direct instance of Map.' });
+    });
+
+    test('expectNonSparse()', () => {
+      const expectNonSparse = validator.expectTo((array: unknown) => {
+        if (!Array.isArray(array)) return null;
+        for (let i = 0; i < array.length; i++) {
+          if (!(i in array)) {
+            return `not be a sparse array. Found a hole at index ${i}.`;
+          }
+        }
+
+        return null;
+      });
+
+      // Example usage
+      validator`${expectNonSparse}`.assertMatches([2, undefined, 3]); // ✓
+      assert.throws(() => {
+        // eslint-disable-next-line no-sparse-arrays
+        validator`${expectNonSparse}`.assertMatches([2, , 3]); // ✕
+      }, {
+        message: (
+          'Expected <receivedValue>, which was [object Array], to not be a sparse array. ' +
+          'Found a hole at index 1.'
+        ),
+      });
     });
   });
 
