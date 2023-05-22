@@ -37,7 +37,7 @@ export function objectCheck(
       message: `Expected ${lookupPath.asString()} to be an object but got ${reprUnknownValue(target)}.`,
       lookupPath,
       deep: availableDeepLevels().nonSpecificTypeCheck,
-      progress: -3,
+      progress: 0,
     }];
   }
 
@@ -48,44 +48,42 @@ export function objectCheck(
       message: maybeRequiredKeyMessage,
       lookupPath,
       deep: availableDeepLevels().immediateInfoCheck,
-      progress: -2,
+      progress: 1,
     }];
   }
 
-  // TODO: Merge the responses from failed index checks and other failed property value checks.
-  // One shouldn't take precedence over the other.
-  // i.e. give them the same progress number.
-
-  if (rule.index !== null) {
-    const indexMatcher = checkIfIndexSignatureIsSatisfied(rule.index, target, interpolated, lookupPath);
-    if (indexMatcher !== null) {
-      return [{
-        matchResponse: indexMatcher,
-        deep: availableDeepLevels().immediateInfoCheck,
-        progress: -1,
-      }];
-    }
-  }
-
-  // TODO: When an index type isn't being used, looping through each property like this isn't the most performant option.
-  for (const [key, propertyValue] of allObjectEntries(target)) {
-    const propertyRule = derivePropertyRule(objectRuleWithStaticKeys, key, interpolated);
-    if (propertyRule === null) {
+  for (const [key, propertyRules] of objectRuleWithStaticKeys.content) {
+    if (!(key in target)) {
+      // It was an optional key. We've already done checks above
+      // to make sure all required keys are present.
       continue;
     }
 
-    const elementMatchResponse = match(
-      propertyRule,
-      propertyValue,
-      interpolated,
-      lookupPath.thenAccessProperty(key),
-    );
+    for (const propertyRuleInfo of propertyRules) {
+      const elementMatchResponse = match(
+        propertyRuleInfo.rule,
+        (target as any)[key],
+        interpolated,
+        lookupPath.thenAccessProperty(key),
+      );
 
-    if (elementMatchResponse.failed()) {
+      if (elementMatchResponse.failed()) {
+        return [{
+          matchResponse: elementMatchResponse,
+          deep: availableDeepLevels().recurseInwardsCheck,
+          progress: 2,
+        }];
+      }
+    }
+  }
+
+  if (objectRuleWithStaticKeys.index !== null) {
+    const indexMatcher = checkIfIndexSignatureIsSatisfied(objectRuleWithStaticKeys.index, target, interpolated, lookupPath);
+    if (indexMatcher !== null) {
       return [{
-        matchResponse: elementMatchResponse,
+        matchResponse: indexMatcher,
         deep: availableDeepLevels().recurseInwardsCheck,
-        progress: 0,
+        progress: 2,
       }];
     }
   }
@@ -171,52 +169,6 @@ function checkIfIndexSignatureIsSatisfied(
   }
 
   return null;
-}
-
-/**
- * Takes a type like `{ x: number, y: string } | { x: boolean }`
- * and a property name like "x", and returns all variants that it must
- * conform to, like `number | boolean`.
- * Or, an example with index signatures, you can go from
- * `{ [n: number]: boolean } | { 0: string }` with the property `0`
- * to `boolean | string`;
- */
-function derivePropertyRule(
-  ruleWithStaticKeys: ObjectRuleWithStaticKeys,
-  key: string | symbol,
-  interpolated: readonly InterpolatedValue[],
-): null | Rule {
-  const intersectionRules = [];
-
-  // Helps to convert stuff like `{ x: A, ['x']: B }` to `{ x: A & B }`
-  const duplicateKeysToIntersection = (intersectionRules: readonly ObjectRuleContentValue[]): Rule => {
-    // The array should have at least one item in it.
-    assert(intersectionRules[0] !== undefined);
-
-    return intersectionRules.length === 1
-      ? intersectionRules[0].rule
-      : {
-          category: 'intersection' as const,
-          variants: intersectionRules.map(expectation => expectation.rule),
-        };
-  };
-
-  if (ruleWithStaticKeys.content.has(key)) {
-    intersectionRules.push(...ruleWithStaticKeys.content.get(key) as ObjectRuleContentValue[]);
-  }
-
-  if (
-    ruleWithStaticKeys.index !== null &&
-    doesIndexSignatureApplyToProperty(ruleWithStaticKeys.index, key, interpolated)
-  ) {
-    intersectionRules.push({ optional: true, rule: ruleWithStaticKeys.index.value });
-  }
-
-  if (intersectionRules.length === 0) {
-    return null;
-  }
-
-  return duplicateKeysToIntersection(intersectionRules);
 }
 
 function doesIndexSignatureApplyToProperty(

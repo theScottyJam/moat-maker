@@ -180,7 +180,7 @@ describe('union rules with objects', () => {
       const v = validator`{ type: 'A', [index: number]: number } | { type: 'B', 0: string }`;
       const act = (): any => v.assertMatches({ type: 'A', 0: 'xyz' });
       assert.throws(act, {
-        message: 'Expected <receivedValue>.type to be "B" but got "A".',
+        message: 'Expected <receivedValue>["0"] to be of type "number" but got type "string".',
       });
     });
 
@@ -222,9 +222,8 @@ describe('union rules with objects', () => {
     test('merging index types with other properties on the same union variant (test 3)', () => {
       const v = validator`{ type: 'A', [index: number]: { x: 2 }, 0: { y: 3 } } | { type: 'B', 0: string }`;
       const act = (): any => v.assertMatches({ type: 'A', 0: { y: 3 } });
-      // TODO: Perhaps it's worth investigating why it's only showing one union variant error
       assert.throws(act, {
-        message: 'Expected <receivedValue>["0"] to be of type "string" but got type "object".',
+        message: '<receivedValue>["0"] is missing the required properties: "x"',
       });
     });
 
@@ -240,7 +239,11 @@ describe('union rules with objects', () => {
       const v = validator`{ [index: number]: 1 } | { a: 'b' }`;
       const act = (): any => v.assertMatches({ 0: 2, a: 'a' });
       assert.throws(act, {
-        message: 'Expected <receivedValue>.a to be "b" but got "a".',
+        message: [
+          'One of the following issues needs to be resolved:',
+          '  * Expected <receivedValue>["0"] to be 1 but got 2.',
+          '  * Expected <receivedValue>.a to be "b" but got "a".',
+        ].join('\n'),
       });
     });
   });

@@ -114,24 +114,21 @@ describe('object rules', () => {
       a: 'a',
     });
 
-    // TODO: Why is the `index` ones being recorded twice?
     expect(ordering).toEqual([
-      'index: 0',
-      'index: 1',
+      'b',
+      'a',
+      'c',
       '0',
-      'index: 0',
-      'index: 1',
-      'h',
       'g',
       'third: f',
       'first: f',
       'second: f',
+      'h',
+      'd',
       'first: e',
       'second: e',
-      'd',
-      'c',
-      'b',
-      'a',
+      'index: 0',
+      'index: 1',
     ]);
   });
 
