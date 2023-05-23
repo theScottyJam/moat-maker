@@ -132,6 +132,17 @@ describe('object rules', () => {
     ]);
   });
 
+  test('object rules can check for inherited properties', () => {
+    const v = validator`
+      {
+        map: ${Function}
+        filter?: ${Function}
+      }
+    `;
+
+    v.assertMatches([]);
+  });
+
   describe('object type checks', () => {
     test('accepts an array', () => {
       validator`{}`.assertMatches([2]);
@@ -293,6 +304,17 @@ describe('object rules', () => {
       const v = validator`{ [index: (((string)))]: number }`;
       v.assertMatches({ num: 2, 123: 4 });
       expect(v.matches({ str: 'x' })).toBe(false);
+    });
+
+    test('index signatures do not apply to inherited properties', () => {
+      const v = validator`{ [index: string]: string }`;
+
+      class MyThing {
+        x = 'abc'; // non-inherited
+        fn(): void {} // inherited (it's on the prototype chain)
+      }
+
+      v.assertMatches(new MyThing());
     });
   });
 
