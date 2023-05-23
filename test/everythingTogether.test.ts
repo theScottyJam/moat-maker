@@ -119,7 +119,11 @@ describe('unions of different types', () => {
     const v = validator`{ x: 2 } | 3`;
     const act = (): any => v.assertMatches(4);
     assert.throws(act, {
-      message: 'Expected <receivedValue> to be 3 but got 4.',
+      message: [
+        'One of the following issues needs to be resolved:',
+        '  * <receivedValue> is missing the required properties: "x"',
+        '  * Expected <receivedValue> to be 3 but got 4.',
+      ].join('\n'),
     });
   });
 

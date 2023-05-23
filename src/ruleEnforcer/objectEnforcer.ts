@@ -32,17 +32,21 @@ export function objectCheck(
   interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
 ): CheckFnResponse {
-  if (!isObject(target)) {
+  if (target === undefined || target === null) {
     return [{
-      message: `Expected ${lookupPath.asString()} to be an object but got ${reprUnknownValue(target)}.`,
+      message: `Expected ${lookupPath.asString()} to not be ${String(target)}.`,
       lookupPath,
       deep: availableDeepLevels().nonSpecificTypeCheck,
       progress: 0,
     }];
   }
 
+  // Ensures the value is an object, so we can do `x in y` checks on it.
+  // This does mean `target` may be a boxed primitive.
+  const targetObj = Object(target) as Record<string | symbol, unknown>;
+
   const objectRuleWithStaticKeys = validateAndApplyDynamicKeys(rule, interpolated);
-  const maybeRequiredKeyMessage = assertRequiredKeysArePresent(objectRuleWithStaticKeys, target, lookupPath);
+  const maybeRequiredKeyMessage = assertRequiredKeysArePresent(objectRuleWithStaticKeys, targetObj, lookupPath);
   if (maybeRequiredKeyMessage !== null) {
     return [{
       message: maybeRequiredKeyMessage,
@@ -53,7 +57,7 @@ export function objectCheck(
   }
 
   for (const [key, propertyRules] of objectRuleWithStaticKeys.content) {
-    if (!(key in target)) {
+    if (!(key in targetObj)) {
       // It was an optional key. We've already done checks above
       // to make sure all required keys are present.
       continue;
@@ -62,7 +66,7 @@ export function objectCheck(
     for (const propertyRuleInfo of propertyRules) {
       const elementMatchResponse = match(
         propertyRuleInfo.rule,
-        (target as any)[key],
+        targetObj[key],
         interpolated,
         lookupPath.thenAccessProperty(key),
       );
@@ -78,7 +82,7 @@ export function objectCheck(
   }
 
   if (objectRuleWithStaticKeys.index !== null) {
-    const indexMatcher = checkIfIndexSignatureIsSatisfied(objectRuleWithStaticKeys.index, target, interpolated, lookupPath);
+    const indexMatcher = checkIfIndexSignatureIsSatisfied(objectRuleWithStaticKeys.index, targetObj, interpolated, lookupPath);
     if (indexMatcher !== null) {
       return [{
         matchResponse: indexMatcher,

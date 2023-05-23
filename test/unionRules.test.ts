@@ -143,10 +143,10 @@ describe('union rules', () => {
   });
 
   test('removes identical error messages (test 1)', () => {
-    const v = validator`{ x: 2 } | { y: 3 }`;
+    const v = validator`[2] | [3]`;
     const act = (): any => v.assertMatches('bad value');
     assert.throws(act, {
-      message: 'Expected <receivedValue> to be an object but got "bad value".',
+      message: 'Expected <receivedValue> to be an array but got "bad value".',
     });
   });
 

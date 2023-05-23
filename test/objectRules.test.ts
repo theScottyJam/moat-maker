@@ -18,13 +18,6 @@ describe('object rules', () => {
     v.assertMatches({});
   });
 
-  test('rejects a primitive', () => {
-    const v = validator`{ str: string }`;
-    const act = (): any => v.assertMatches('xyz');
-    assert.throws(act, { message: 'Expected <receivedValue> to be an object but got "xyz".' });
-    assert.throws(act, TypeError);
-  });
-
   test('rejects an object missing a required property', () => {
     const v = validator`{ str: string, "numb\"": number, bool: boolean }`;
     const act = (): any => v.assertMatches({ str: '' });
@@ -54,10 +47,10 @@ describe('object rules', () => {
   });
 
   test('rejects when a nested object property does not match the expected type', () => {
-    const v = validator`{ sub: { "sub 2": { value: {} } } }`;
+    const v = validator`{ sub: { "sub 2": { value: { missingProp: true } } } }`;
     const act = (): any => v.assertMatches({ sub: { 'sub 2': { value: 2 } } });
     assert.throws(act, {
-      message: 'Expected <receivedValue>.sub["sub 2"].value to be an object but got 2.',
+      message: '<receivedValue>.sub["sub 2"].value is missing the required properties: "missingProp"',
     });
     assert.throws(act, TypeError);
   });
@@ -143,22 +136,35 @@ describe('object rules', () => {
     v.assertMatches([]);
   });
 
-  describe('object type checks', () => {
+  describe('object rules on different value types', () => {
+    test('accepts a plain, empty object', () => {
+      validator`{ toString: ${Function} }`.assertMatches({});
+    });
+
     test('accepts an array', () => {
-      validator`{}`.assertMatches([2]);
+      validator`{ map: ${Function} }`.assertMatches([2]);
     });
 
     test('accepts a function', () => {
-      validator`{}`.assertMatches(() => {});
+      validator`{ length: number }`.assertMatches(() => {});
     });
 
     test('accepts a boxed primitive', () => {
-      validator`{}`.assertMatches(new Number(2)); // eslint-disable-line no-new-wrappers
+      validator`{ toFixed: ${Function} }`.assertMatches(new Number(2)); // eslint-disable-line no-new-wrappers
     });
 
-    test('rejects a symbol', () => {
-      const act = (): any => validator`{}`.assertMatches(Symbol('mySymb'));
-      assert.throws(act, { message: 'Expected <receivedValue> to be an object but got Symbol(mySymb).' });
+    test('accepts an unboxed primitive', () => {
+      validator`{ toFixed: ${Function} }`.assertMatches(2);
+    });
+
+    test('rejects undefined', () => {
+      const act = (): any => validator`{}`.assertMatches(undefined);
+      assert.throws(act, { message: 'Expected <receivedValue> to not be undefined.' });
+    });
+
+    test('rejects null', () => {
+      const act = (): any => validator`{}`.assertMatches(null);
+      assert.throws(act, { message: 'Expected <receivedValue> to not be null.' });
     });
   });
 

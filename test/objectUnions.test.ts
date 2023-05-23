@@ -105,7 +105,7 @@ describe('union rules with objects', () => {
       const v = validator`{ x: 2 } | { sub: { y: 2 } } | { sub: { y: 3 } }`;
       const act = (): any => v.assertMatches({ sub: 'bad value' });
       assert.throws(act, {
-        message: 'Expected <receivedValue>.sub to be an object but got "bad value".',
+        message: '<receivedValue>.sub is missing the required properties: "y"',
       });
     });
 
