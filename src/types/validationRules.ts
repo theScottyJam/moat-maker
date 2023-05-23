@@ -36,24 +36,24 @@ export interface NoopRule {
   readonly category: 'noop'
 }
 
-export interface ObjectRuleContentValue {
+export interface PropertyRuleContentValue {
   readonly optional: boolean
   readonly rule: Rule
 }
 
-export interface ObjectRuleIndexValue {
+export interface PropertyRuleIndexValue {
   readonly key: Rule
   readonly value: Rule
   readonly label: string
 }
 
-export interface ObjectRule {
-  readonly category: 'object'
+export interface PropertyRule {
+  readonly category: 'property'
   // We only ever return rules with frozen maps, but we accept rules of type map,
   // which is the reason for this union type.
-  readonly content: FrozenMap<string, ObjectRuleContentValue> | Map<string, ObjectRuleContentValue>
-  readonly dynamicContent: FrozenMap<number, ObjectRuleContentValue> | Map<number, ObjectRuleContentValue>
-  readonly index: ObjectRuleIndexValue | null
+  readonly content: FrozenMap<string, PropertyRuleContentValue> | Map<string, PropertyRuleContentValue>
+  readonly dynamicContent: FrozenMap<number, PropertyRuleContentValue> | Map<number, PropertyRuleContentValue>
+  readonly index: PropertyRuleIndexValue | null
 }
 
 export interface ArrayRule {
@@ -94,7 +94,7 @@ export type Rule = (
   SimpleRule
   | PrimitiveLiteralRule
   | NoopRule
-  | ObjectRule
+  | PropertyRule
   | ArrayRule
   | TupleRule
   | IterableRule
@@ -114,7 +114,7 @@ function createLazyEvaluator(deriveValidator: (value: unknown) => Validator): La
   };
 }
 
-function checkDynamicObjectKey(
+function checkDynamicPropertyName(
   interpolationIndex: number,
   interpolated: readonly InterpolatedValue[],
   { expectationErrorMessage = false }: { expectationErrorMessage?: boolean } = {},
@@ -138,13 +138,13 @@ function checkDynamicObjectKey(
       return (
         // Expected it to...
         'index into the interpolated array to a valid value. ' +
-        'Since this index is for a dynamic object key, the corresponding ' +
+        'Since this index is for a dynamic property name, the corresponding ' +
         'interpolated value should be of type string, symbol, or number. ' +
         `Got ${reprUnknownValue(key)}.`
       );
     } else {
       return (
-        `The ${asOrdinal(interpolationIndex + 1)} interpolated value corresponds to a dynamic object key, ` +
+        `The ${asOrdinal(interpolationIndex + 1)} interpolated value corresponds to a dynamic property name, ` +
         'and as such, it must be either of type string, symbol, or number. ' +
         `Got ${reprUnknownValue(key)}.`
       );
@@ -184,32 +184,32 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     category: 'noop'
   }`;
 
-  const objectRuleContentValueCheck = validator`{
+  const propertyRuleContentValueCheck = validator`{
     optional: boolean
     rule: ${lazyRuleCheck}
   }`;
 
-  const objectRuleIndexValueCheck = validator`{
+  const propertyRuleIndexValueCheck = validator`{
     key: ${lazyRuleCheck}
     value: ${lazyRuleCheck}
     label: string
   }`;
 
-  const andExpectValidDynamicObjectKey = validator.expectTo(interpolationIndex => {
-    return checkDynamicObjectKey(interpolationIndex as number, interpolated, { expectationErrorMessage: true });
+  const andExpectValidDynamicPropertyName = validator.expectTo(interpolationIndex => {
+    return checkDynamicPropertyName(interpolationIndex as number, interpolated, { expectationErrorMessage: true });
   });
 
-  const objectRuleCheck = validator`{
-    category: 'object'
+  const propertyRuleCheck = validator`{
+    category: 'property'
     content: (${expectDirectInstance(FrozenMap)} | ${expectDirectInstance(Map)})@<[
       string,
-      ${objectRuleContentValueCheck}
+      ${propertyRuleContentValueCheck}
     ]>
     dynamicContent: (${expectDirectInstance(FrozenMap)} | ${expectDirectInstance(Map)})@<[
-      number & ${andExpectValidDynamicObjectKey},
-      ${objectRuleContentValueCheck}
+      number & ${andExpectValidDynamicPropertyName},
+      ${propertyRuleContentValueCheck}
     ]>
-    index: ${objectRuleIndexValueCheck} | null
+    index: ${propertyRuleIndexValueCheck} | null
   }`;
 
   const arrayRuleCheck = validator`{
@@ -259,7 +259,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     ${simpleRuleCheck}
     | ${primitiveLiteralRuleCheck}
     | ${noopRuleCheck}
-    | ${objectRuleCheck}
+    | ${propertyRuleCheck}
     | ${arrayRuleCheck}
     | ${tupleRuleCheck}
     | ${iterableRuleCheck}
@@ -286,5 +286,5 @@ function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
 }
 
 export const _validationRulesInternals = {
-  [packagePrivate]: { allSimpleTypes, createRulesetCheck, checkDynamicObjectKey },
+  [packagePrivate]: { allSimpleTypes, createRulesetCheck, checkDynamicPropertyName },
 };

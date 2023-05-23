@@ -6,7 +6,7 @@
 
 import { availableDeepLevels as availableDeepLevelsForSimple } from './simpleEnforcer';
 import { availableDeepLevels as availableDeepLevelsForPrimitiveLiteral } from './privitiveLiteralEnforcer';
-import { availableDeepLevels as availableDeepLevelsForObject } from './objectEnforcer';
+import { availableDeepLevels as availableDeepLevelsForObject } from './propertyEnforcer';
 import { availableDeepLevels as availableDeepLevelsForArray } from './arrayEnforcer';
 import { availableDeepLevels as availableDeepLevelsForTuple } from './tupleEnforcer';
 import { availableDeepLevels as availableDeepLevelsForIterable } from './iterableEnforcer';
@@ -61,7 +61,7 @@ export function getMaxDeepnessLevelOf(rule: Rule): DeepRange {
     return maxDeepRange(Object.values(availableDeepLevelsForPrimitiveLiteral()));
   } else if (rule.category === 'noop') {
     return DEEP_LEVELS.min;
-  } else if (rule.category === 'object') {
+  } else if (rule.category === 'property') {
     return maxDeepRange(Object.values(availableDeepLevelsForObject()));
   } else if (rule.category === 'array') {
     return maxDeepRange(Object.values(availableDeepLevelsForArray()));

@@ -315,7 +315,7 @@ describe('documentation examples', () => {
       validator`any`.assertMatches(new Date()); // ✓
     });
 
-    test('object rules', () => {
+    test('property rules', () => {
       // ✓
       validator`{
         myNumb: number
@@ -323,7 +323,7 @@ describe('documentation examples', () => {
       }`.assertMatches({ myNumb: 4, extraProp: true });
     });
 
-    test('object rules - property separators', () => {
+    test('property rules - property separators', () => {
       // ✓
       validator`{
         a: 1
@@ -332,7 +332,7 @@ describe('documentation examples', () => {
       }`.assertMatches({ a: 1, b: 2, c: 3 });
     });
 
-    test('object rules - special keys', () => {
+    test('property rules - special keys', () => {
       const mySymbol = Symbol();
 
       // ✓
@@ -342,7 +342,7 @@ describe('documentation examples', () => {
       }`.assertMatches({ 'special key': 1, [mySymbol]: 2 });
     });
 
-    test('object rules - index signature', () => {
+    test('property rules - index signature', () => {
       validator`{ [dimension: string]: number }`
         .assertMatches({ x: 2, y: 3 }); // ✓
 

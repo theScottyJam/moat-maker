@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { validator, ValidatorSyntaxError, type Expectation } from '../src';
 import { FrozenMap } from '../src/util';
 
-describe('object rules', () => {
+describe('property rules', () => {
   test('accepts an object with matching properties', () => {
     const v = validator`{ "str!": string, numb?: number }`;
     v.assertMatches({ numb: 2, 'str!': '' });
@@ -125,7 +125,7 @@ describe('object rules', () => {
     ]);
   });
 
-  test('object rules can check for inherited properties', () => {
+  test('property rules can check for inherited properties', () => {
     const v = validator`
       {
         map: ${Function}
@@ -136,7 +136,7 @@ describe('object rules', () => {
     v.assertMatches([]);
   });
 
-  describe('object rules on different value types', () => {
+  describe('property rules on different value types', () => {
     test('accepts a plain, empty object', () => {
       validator`{ toString: ${Function} }`.assertMatches({});
     });
@@ -374,7 +374,7 @@ describe('object rules', () => {
       const act = (): any => validator`{ [${true}]: 42 }`;
       assert.throws(act, {
         message: (
-          'The 1st interpolated value corresponds to a dynamic object key, ' +
+          'The 1st interpolated value corresponds to a dynamic property name, ' +
           'and as such, it must be either of type string, symbol, or number. Got true.'
         ),
       });
@@ -404,7 +404,7 @@ describe('object rules', () => {
     test('rejects boolean dynamic keys in fromRuleset()', () => {
       const act = (): any => validator.fromRuleset({
         rootRule: {
-          category: 'object' as const,
+          category: 'property' as const,
           content: new Map([]),
           dynamicContent: new Map([[0, { optional: false, rule: { category: 'noop' } }]]),
           index: null,
@@ -416,7 +416,7 @@ describe('object rules', () => {
           'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
           'Expected [...<1st argument>.rootRule.dynamicContent][0][0], which was 0, ' +
           'to index into the interpolated array to a valid value. ' +
-          'Since this index is for a dynamic object key, the corresponding interpolated value ' +
+          'Since this index is for a dynamic property name, the corresponding interpolated value ' +
           'should be of type string, symbol, or number. Got true.'
         ),
       });
@@ -436,7 +436,7 @@ describe('object rules', () => {
     test('rejects out-of-range dynamic keys in fromRuleset()', () => {
       const act = (): any => validator.fromRuleset({
         rootRule: {
-          category: 'object' as const,
+          category: 'property' as const,
           content: new Map([]),
           dynamicContent: new Map([[0, { optional: false, rule: { category: 'noop' } }]]),
           index: null,
@@ -484,7 +484,7 @@ describe('object rules', () => {
   test('produces the correct rule', () => {
     const v = validator`{ "numKey\n": number, strKey?: string, [${42}]: boolean, [${43}]?: undefined }`;
     expect(v.ruleset.interpolated).toMatchObject([42, 43]);
-    assert(v.ruleset.rootRule.category === 'object');
+    assert(v.ruleset.rootRule.category === 'property');
 
     // v.ruleset.rootRule.content
     expect(v.ruleset.rootRule.content).toBeInstanceOf(FrozenMap);
@@ -538,7 +538,7 @@ describe('object rules', () => {
   test('produces the correct rule with an indexed type', () => {
     const v = validator`{ alwaysPresentKey: string, [index: symbol]: string }`;
     expect(v.ruleset.interpolated).toMatchObject([]);
-    assert(v.ruleset.rootRule.category === 'object');
+    assert(v.ruleset.rootRule.category === 'property');
 
     // v.ruleset.rootRule.content
     expect(v.ruleset.rootRule.content).toBeInstanceOf(FrozenMap);
@@ -578,7 +578,7 @@ describe('object rules', () => {
 
   test('works with funky whitespace', () => {
     const v = validator`{x :string ,y ? :number, [ index :symbol ] :string ,[ ${'z'} ] ? : 2}`;
-    assert(v.ruleset.rootRule.category === 'object');
+    assert(v.ruleset.rootRule.category === 'property');
     expect(v.ruleset.rootRule.content.size).toBe(2);
     expect(v.ruleset.rootRule.content.get('x')).toMatchObject({
       optional: false,

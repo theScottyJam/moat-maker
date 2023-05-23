@@ -71,7 +71,6 @@ describe('union rules with arrays', () => {
 
     // In addition to ignoring errors from sibling rules with invalid lengths,
     // only the errors related to the right-most failed entry in the array are shown.
-    // This is similar behavior to object rules, where only errors for one object property ever get shown.
     test('earlier array entry failures are ignored, in favor of only showing errors for later entries', () => {
       const v = validator`1[] | 2[]`;
       const act = (): any => v.assertMatches([1, 2]);

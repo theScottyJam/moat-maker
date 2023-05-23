@@ -1,4 +1,4 @@
-import type { ObjectRuleContentValue, ObjectRuleIndexValue, Rule, Ruleset } from './types/validationRules';
+import type { PropertyRuleContentValue, PropertyRuleIndexValue, Rule, Ruleset } from './types/validationRules';
 import { UnreachableCaseError, FrozenMap } from './util';
 
 interface FreezeRuleSetOpts {
@@ -29,12 +29,12 @@ function freezeRule(rule: Rule): Rule {
     return f({
       category: rule.category,
     });
-  } else if (rule.category === 'object') {
-    const freezeContentValue = (contentValue: ObjectRuleContentValue): ObjectRuleContentValue => f({
+  } else if (rule.category === 'property') {
+    const freezeContentValue = (contentValue: PropertyRuleContentValue): PropertyRuleContentValue => f({
       optional: contentValue.optional,
       rule: freezeRule(contentValue.rule),
     });
-    const freezeIndexValue = (indexValue: ObjectRuleIndexValue): ObjectRuleIndexValue => f({
+    const freezeIndexValue = (indexValue: PropertyRuleIndexValue): PropertyRuleIndexValue => f({
       key: freezeRule(indexValue.key),
       value: freezeRule(indexValue.value),
       label: indexValue.label,

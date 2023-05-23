@@ -89,7 +89,7 @@ describe('union rules with objects', () => {
       });
     });
 
-    test('sibling object rule errors with missing keys are ignored (test 1)', () => {
+    test('sibling property rule errors with missing keys are ignored (test 1)', () => {
       const v = validator`{ x: 2 } | { sub: { y: 2 } } | { sub: { y: 3 } }`;
       const act = (): any => v.assertMatches({ sub: { y: 0 } });
       assert.throws(act, {
@@ -101,7 +101,7 @@ describe('union rules with objects', () => {
       });
     });
 
-    test('sibling object rule errors with missing keys are ignored (test 2)', () => {
+    test('sibling property rule errors with missing keys are ignored (test 2)', () => {
       const v = validator`{ x: 2 } | { sub: { y: 2 } } | { sub: { y: 3 } }`;
       const act = (): any => v.assertMatches({ sub: 'bad value' });
       assert.throws(act, {

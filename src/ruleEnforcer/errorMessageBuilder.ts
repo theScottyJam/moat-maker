@@ -206,7 +206,7 @@ interface FailureInfo {
  */
 function filterByVariantIdentifyingProperty(failureInfos: readonly FailureInfo[]): readonly FailureInfo[] {
   const firstFailureInfo = failureInfos[0] ?? throwIndexOutOfBounds();
-  if (firstFailureInfo.originResult.rule.category !== 'object') {
+  if (firstFailureInfo.originResult.rule.category !== 'property') {
     return failureInfos;
   }
 
@@ -216,7 +216,7 @@ function filterByVariantIdentifyingProperty(failureInfos: readonly FailureInfo[]
       .map(key => [key, new Set([])]),
   );
   for (const { originResult } of failureInfos) {
-    assert(originResult.rule.category === 'object');
+    assert(originResult.rule.category === 'property');
     for (const key of candidateProperties.keys()) {
       const propertyRuleInfo = originResult.rule.content.get(key);
       const isCanidate = (
@@ -266,7 +266,7 @@ function filterByVariantIdentifyingProperty(failureInfos: readonly FailureInfo[]
       return failureInfos;
     }
 
-    assert(originResult.rule.category === 'object');
+    assert(originResult.rule.category === 'property');
     const propertyRuleInfo = originResult.rule.content.get(variantIdentifyingKey);
     assert(propertyRuleInfo !== undefined);
     assert(propertyRuleInfo.rule.category === 'primitiveLiteral');

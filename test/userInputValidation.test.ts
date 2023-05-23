@@ -2,7 +2,7 @@
 
 import * as vm from 'node:vm';
 import { strict as assert } from 'node:assert';
-import { validator, type ObjectRule, type Ruleset } from '../src';
+import { validator, type PropertyRule, type Ruleset } from '../src';
 import { DISABLE_PARAM_VALIDATION } from '../src/config';
 
 // These are not meant to be comprehensive tests, rather,
@@ -408,10 +408,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       });
     }
 
-    function createObjectRulesetWithContentOf(content: any): Ruleset {
+    function createPropertyRulesetWithContentOf(content: any): Ruleset {
       return {
         rootRule: {
-          category: 'object' as const,
+          category: 'property' as const,
           content,
           dynamicContent: new Map(),
           index: null,
@@ -420,10 +420,10 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       };
     }
 
-    test('object rules can not have derived map instances', () => {
+    test('property rules can not have derived map instances', () => {
       class MyMap extends Map {}
       const act = (): any => validator.fromRuleset(
-        createObjectRulesetWithContentOf(new MyMap()),
+        createPropertyRulesetWithContentOf(new MyMap()),
       );
 
       expect(act).toThrow('<1st argument>.rootRule.content');
@@ -431,23 +431,23 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       expect(act).toThrow('to be a direct instance of `Map`');
     });
 
-    test('object rules can have derived map instances from other realms', () => {
+    test('property rules can have derived map instances from other realms', () => {
       const RealmMap = vm.runInNewContext('Map');
       assert(RealmMap !== Map);
 
       validator.fromRuleset(
-        createObjectRulesetWithContentOf(new RealmMap()),
+        createPropertyRulesetWithContentOf(new RealmMap()),
       );
     });
 
-    test('object rules can not have derived FrozenMap instances', () => {
+    test('property rules can not have derived FrozenMap instances', () => {
       // No one better be doing anything this convoluted to get at the internal FrozenMap class.
-      const frozenMapInstance = (validator`{}`.ruleset.rootRule as ObjectRule).content;
+      const frozenMapInstance = (validator`{}`.ruleset.rootRule as PropertyRule).content;
       const FrozenMap = frozenMapInstance.constructor;
       class MyFrozenMap extends (FrozenMap as any) {}
 
       const act = (): any => -validator.fromRuleset(
-        createObjectRulesetWithContentOf(new MyFrozenMap()),
+        createPropertyRulesetWithContentOf(new MyFrozenMap()),
       );
 
       expect(act).toThrow('<1st argument>.rootRule.content');
@@ -455,12 +455,12 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       expect(act).toThrow('to be a direct instance of `Map`');
     });
 
-    test('object rules can not have derived map instances from other realms', () => {
+    test('property rules can not have derived map instances from other realms', () => {
       const RealmMap = vm.runInNewContext('Map');
       class MyRealmMap extends RealmMap {}
 
       const act = (): any => validator.fromRuleset(
-        createObjectRulesetWithContentOf(new MyRealmMap()),
+        createPropertyRulesetWithContentOf(new MyRealmMap()),
       );
 
       expect(act).toThrow('<1st argument>.rootRule.content');

@@ -1,4 +1,4 @@
-import type { ObjectRule, ObjectRuleContentValue, ObjectRuleIndexValue, Rule } from '../types/validationRules';
+import type { PropertyRule, PropertyRuleContentValue, PropertyRuleIndexValue, Rule } from '../types/validationRules';
 import { assert, reprUnknownValue } from '../util';
 import { DEEP_LEVELS } from './deepnessTools';
 import { type MatchResponse, type CheckFnResponse, match } from './ruleMatcherTools';
@@ -16,18 +16,18 @@ export const availableDeepLevels = () => ({
 /**
  * Not a real rule,
  * rather, this data was derived from rule data.
- * This type is similar to ObjectRule, but all dynamic keys have been accounted for,
+ * This type is similar to PropertyRule, but all dynamic keys have been accounted for,
  * and added to this value, as if they were static keys all along.
  */
-export interface ObjectRuleWithStaticKeys {
+export interface PropertyRuleWithStaticKeys {
   // In the case of `{ x: 1, [${'x'}]: 2 }`, the key `x` will have multiple values,
   // which is why this maps keys to lists of values.
-  readonly content: Map<string | symbol, readonly ObjectRuleContentValue[]>
-  readonly index: ObjectRuleIndexValue | null
+  readonly content: Map<string | symbol, readonly PropertyRuleContentValue[]>
+  readonly index: PropertyRuleIndexValue | null
 }
 
-export function objectCheck(
-  rule: ObjectRule,
+export function propertyCheck(
+  rule: PropertyRule,
   target: unknown,
   interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
@@ -45,8 +45,8 @@ export function objectCheck(
   // This does mean `target` may be a boxed primitive.
   const targetObj = Object(target) as Record<string | symbol, unknown>;
 
-  const objectRuleWithStaticKeys = validateAndApplyDynamicKeys(rule, interpolated);
-  const maybeRequiredKeyMessage = assertRequiredKeysArePresent(objectRuleWithStaticKeys, targetObj, lookupPath);
+  const propertyRuleWithStaticKeys = validateAndApplyDynamicKeys(rule, interpolated);
+  const maybeRequiredKeyMessage = assertRequiredKeysArePresent(propertyRuleWithStaticKeys, targetObj, lookupPath);
   if (maybeRequiredKeyMessage !== null) {
     return [{
       message: maybeRequiredKeyMessage,
@@ -56,7 +56,7 @@ export function objectCheck(
     }];
   }
 
-  for (const [key, propertyRules] of objectRuleWithStaticKeys.content) {
+  for (const [key, propertyRules] of propertyRuleWithStaticKeys.content) {
     if (!(key in targetObj)) {
       // It was an optional key. We've already done checks above
       // to make sure all required keys are present.
@@ -81,8 +81,8 @@ export function objectCheck(
     }
   }
 
-  if (objectRuleWithStaticKeys.index !== null) {
-    const indexMatcher = checkIfIndexSignatureIsSatisfied(objectRuleWithStaticKeys.index, targetObj, interpolated, lookupPath);
+  if (propertyRuleWithStaticKeys.index !== null) {
+    const indexMatcher = checkIfIndexSignatureIsSatisfied(propertyRuleWithStaticKeys.index, targetObj, interpolated, lookupPath);
     if (indexMatcher !== null) {
       return [{
         matchResponse: indexMatcher,
@@ -100,10 +100,10 @@ export function objectCheck(
  * then transforms the data into a more accessible form.
  */
 function validateAndApplyDynamicKeys(
-  rule: ObjectRule,
+  rule: PropertyRule,
   interpolated: readonly InterpolatedValue[],
-): ObjectRuleWithStaticKeys {
-  const content = new Map<string | symbol, ObjectRuleContentValue[]>(
+): PropertyRuleWithStaticKeys {
+  const content = new Map<string | symbol, PropertyRuleContentValue[]>(
     [...rule.content.entries()]
       .map(([key, value]) => [key, [value]]),
   );
@@ -132,7 +132,7 @@ function validateAndApplyDynamicKeys(
 }
 
 function assertRequiredKeysArePresent(
-  ruleWithStaticKeys: ObjectRuleWithStaticKeys,
+  ruleWithStaticKeys: PropertyRuleWithStaticKeys,
   target: object,
   lookupPath: LookupPath,
 ): string | null {
@@ -152,7 +152,7 @@ function assertRequiredKeysArePresent(
 }
 
 function checkIfIndexSignatureIsSatisfied(
-  indexInfo: ObjectRuleIndexValue,
+  indexInfo: PropertyRuleIndexValue,
   target: object,
   interpolated: readonly InterpolatedValue[],
   lookupPath: LookupPath,
@@ -176,7 +176,7 @@ function checkIfIndexSignatureIsSatisfied(
 }
 
 function doesIndexSignatureApplyToProperty(
-  indexInfo: ObjectRuleIndexValue,
+  indexInfo: PropertyRuleIndexValue,
   propertyKey: string | symbol,
   interpolated: readonly InterpolatedValue[],
 ): boolean {
@@ -200,7 +200,8 @@ function doesMatch(rule: Rule, target: unknown, interpolated: readonly Interpola
 /**
  * Returns all object entries, regardless of if they're enumerable or have symbol keys.
  */
-function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
+function * allObjectEntries(obj_: object): Generator<[string | symbol, unknown]> {
+  const obj = obj_ as Record<string | symbol, unknown>;
   for (const key of Object.getOwnPropertyNames(obj)) {
     yield [key, obj[key]];
   }
@@ -208,5 +209,3 @@ function * allObjectEntries(obj: any): Generator<[string | symbol, unknown]> {
     yield [symb, obj[symb]];
   }
 }
-
-const isObject = (value: unknown): value is object => Object(value) === value;

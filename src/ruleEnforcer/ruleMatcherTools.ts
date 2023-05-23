@@ -6,7 +6,7 @@ import { interpolationCheck } from './interpolationEnforcer';
 import { intersectionCheck } from './intersectionEnforcer';
 import { iterableCheck } from './iterableEnforcer';
 import { noopCheck } from './noopEnforcer';
-import { objectCheck } from './objectEnforcer';
+import { propertyCheck } from './propertyEnforcer';
 import { primitiveLiteralCheck } from './privitiveLiteralEnforcer';
 import { simpleCheck } from './simpleEnforcer';
 import { tupleCheck } from './tupleEnforcer';
@@ -82,7 +82,7 @@ export function match(
   if (rule.category === 'simple') return doMatch(rule, simpleCheck);
   else if (rule.category === 'primitiveLiteral') return doMatch(rule, primitiveLiteralCheck);
   else if (rule.category === 'noop') return doMatch(rule, noopCheck);
-  else if (rule.category === 'object') return doMatch(rule, objectCheck);
+  else if (rule.category === 'property') return doMatch(rule, propertyCheck);
   else if (rule.category === 'array') return doMatch(rule, arrayCheck);
   else if (rule.category === 'tuple') return doMatch(rule, tupleCheck);
   else if (rule.category === 'iterable') return doMatch(rule, iterableCheck);

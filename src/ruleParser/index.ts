@@ -3,16 +3,16 @@ import { createTokenStream, isIdentifier } from './tokenStream';
 import { packagePrivate } from '../packagePrivateAccess';
 import {
   type Rule,
-  type ObjectRuleContentValue,
+  type PropertyRuleContentValue,
   type SimpleTypeVariant,
-  type ObjectRuleIndexValue,
+  type PropertyRuleIndexValue,
   _validationRulesInternals,
 } from '../types/validationRules';
 import type { TokenStream } from '../types/tokenizer';
 import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from '../util';
 import type { InterpolatedValue } from '../types/validator';
 
-const { allSimpleTypes, checkDynamicObjectKey } = _validationRulesInternals[packagePrivate];
+const { allSimpleTypes, checkDynamicPropertyName } = _validationRulesInternals[packagePrivate];
 
 export { isIdentifier, ValidatorSyntaxError };
 
@@ -158,7 +158,7 @@ function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
     }
     return rule;
   } else if (token.value === '{') {
-    return parseObject(tokenStream);
+    return parsePropertyRule(tokenStream);
   } else if (token.value === '[') {
     return parseTuple(tokenStream);
   } else {
@@ -185,13 +185,13 @@ function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
   }
 }
 
-function parseObject(tokenStream: TokenStream): Rule {
+function parsePropertyRule(tokenStream: TokenStream): Rule {
   assert(tokenStream.next().value === '{');
   const ruleTemplate = {
-    category: 'object' as const,
-    contentEntries: [] as Array<[string, ObjectRuleContentValue]>,
-    dynamicContentEntries: [] as Array<[number, ObjectRuleContentValue]>,
-    index: null as ObjectRuleIndexValue | null,
+    category: 'property' as const,
+    contentEntries: [] as Array<[string, PropertyRuleContentValue]>,
+    dynamicContentEntries: [] as Array<[number, PropertyRuleContentValue]>,
+    index: null as PropertyRuleIndexValue | null,
   };
   const foundKeys = new Set<string>();
 
@@ -227,7 +227,7 @@ function parseObject(tokenStream: TokenStream): Rule {
       };
     } else if ('keyInterpolationIndex' in keyInfo) {
       const { keyInterpolationIndex, optional } = keyInfo;
-      const maybeErrorMessage = checkDynamicObjectKey(keyInterpolationIndex, tokenStream.interpolated);
+      const maybeErrorMessage = checkDynamicPropertyName(keyInterpolationIndex, tokenStream.interpolated);
       if (maybeErrorMessage !== null) {
         throw new TypeError(maybeErrorMessage);
       }
@@ -256,7 +256,7 @@ function parseObject(tokenStream: TokenStream): Rule {
   }
 
   return {
-    category: 'object' as const,
+    category: 'property' as const,
     content: new FrozenMap(ruleTemplate.contentEntries),
     dynamicContent: new FrozenMap(ruleTemplate.dynamicContentEntries),
     index: ruleTemplate.index,
