@@ -52,6 +52,24 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
+  test('<validator instance>.assertMatches() with bad a bad errorFactory()', () => {
+    const act = (): any => validator`boolean`.assertMatches('bad value', {
+      errorFactory: () => 42 as any,
+    });
+
+    assert.throws(act, {
+      message: [
+        (
+          '<validator instance>.assertMatches() received a bad "errorFactory" function: ' +
+          'Expected <errorFactory return value>, which was 42, to be an instance of `Error`.'
+        ),
+        '',
+        'The errorFactory() callback was supposed to build an error instance for the following error:',
+        'Expected <receivedValue> to be of type "boolean" but got type "string".',
+      ].join('\n'),
+    });
+  });
+
   test('<validator instance>.assertionTypeGuard()', () => {
     const act = (): any => (validator`string`.assertionTypeGuard as any)('someValue', 42);
     assert.throws(act, {
@@ -59,6 +77,24 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         'Received invalid "opts" argument for <validator instance>.assertionTypeGuard(): ' +
         'Expected <2nd argument>, which was 42, to be a direct instance of `Object`.'
       ),
+    });
+  });
+
+  test('<validator instance>.assertionTypeGuard() with bad a bad errorFactory()', () => {
+    const act = (): any => validator`boolean`.assertionTypeGuard('bad value', {
+      errorFactory: () => 42 as any,
+    });
+
+    assert.throws(act, {
+      message: [
+        (
+          '<validator instance>.assertionTypeGuard() received a bad "errorFactory" function: ' +
+          'Expected <errorFactory return value>, which was 42, to be an instance of `Error`.'
+        ),
+        '',
+        'The errorFactory() callback was supposed to build an error instance for the following error:',
+        'Expected <receivedValue> to be of type "boolean" but got type "string".',
+      ].join('\n'),
     });
   });
 
@@ -450,7 +486,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       const act = (): any => validator.fromRuleset(ruleset);
 
       // TODO: This error isn't ideal.
-      // The fact that it is recommending some rules like noop and array, both of which aren't the real problem
+      // It is recommending some rules like noop and array, both of which aren't the real problem
       // in this case. I don't know if there's really a good fix for that issue.
       assert.throws(act, {
         message: [

@@ -53,7 +53,7 @@ describe('validator behavior', () => {
       assert.throws(act, TypeError);
     });
 
-    test('able to control the error type used with the errorFactory parameter', () => {
+    test('able to provide an error subclass with the errorFactory parameter', () => {
       class MyError extends Error {}
       const v = validator`string`;
       const act = (): any => v.assertMatches(2, { errorFactory: (...args: any) => new MyError(...args) });
@@ -61,7 +61,22 @@ describe('validator behavior', () => {
       assert.throws(act, MyError);
     });
 
-    test('able to explicitly supply undefined to "at" and "errorFactory" parameters', () => {
+    test('able to provide a modified error object with the errorFactory parameter', () => {
+      const v = validator`string`;
+      const act = (): any => v.assertMatches(2, {
+        errorFactory: (...args: any) => {
+          const error = new Error(...args);
+          (error as any).key = 'MY_KEY';
+          return error;
+        },
+      });
+      assert.throws(act, {
+        message: 'Expected <receivedValue> to be of type "string" but got type "number".',
+        key: 'MY_KEY',
+      });
+    });
+
+    test('able to explicitly supply undefined "at" and "errorFactory" parameters', () => {
       const v = validator`string`;
       const act = (): any => v.assertMatches(2, { at: undefined, errorPrefix: undefined, errorFactory: undefined });
       assert.throws(act, { message: 'Expected <receivedValue> to be of type "string" but got type "number".' });

@@ -1,11 +1,14 @@
 import type { Ruleset } from './validationRules';
 import { packagePrivate } from '../packagePrivateAccess';
 import { expectDirectInstanceFactory, expectKeysFromFactory } from '../validationHelpers';
+import { DISABLE_PARAM_VALIDATION } from '../config';
+
+type ErrorFactoryFn = ((...params: ConstructorParameters<typeof Error>) => Error);
 
 export interface AssertMatchesOpts {
-  readonly errorFactory?: undefined | ((...params: ConstructorParameters<typeof Error>) => Error)
-  readonly at?: undefined | string
-  readonly errorPrefix?: undefined | string
+  readonly errorFactory?: ErrorFactoryFn | undefined
+  readonly at?: string | undefined
+  readonly errorPrefix?: string | undefined
 }
 
 export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): Validator {
@@ -21,6 +24,32 @@ export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): V
     at?: undefined | string
     errorPrefix?: undefined | (string & ${andExpectEndsWithColon})
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['errorFactory', 'at', 'errorPrefix'])}`;
+}
+
+export function wrapErrorFactoryFnWithAssertions(
+  errorFactory: ErrorFactoryFn,
+  fnName: string,
+  validator: ValidatorTemplateTag,
+): ErrorFactoryFn {
+  return function errorFactoryAssertionWrapper(...args: ConstructorParameters<typeof Error>) {
+    const result = errorFactory(...args);
+
+    !DISABLE_PARAM_VALIDATION && validator`${Error}`.assertMatches(result, {
+      errorFactory: (message_, ...etc) => {
+        const message = [
+          message_,
+          '',
+          'The errorFactory() callback was supposed to build an error instance for the following error:',
+          args[0],
+        ].join('\n');
+        return new TypeError(message, ...etc);
+      },
+      errorPrefix: `${fnName} received a bad "errorFactory" function:`,
+      at: '<errorFactory return value>',
+    });
+
+    return result;
+  };
 }
 
 export interface Expectation {

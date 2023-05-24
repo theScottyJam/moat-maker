@@ -1,21 +1,21 @@
 import { type Ruleset, _validationRulesInternals } from './types/validationRules';
 import {
-  type AssertMatchesOpts,
   createAssertMatchesOptsCheck,
+  createInterpolatedValueCheck,
+  isValidator,
+  wrapErrorFactoryFnWithAssertions,
+  type AssertMatchesOpts,
   type Validator,
   type LazyEvaluator,
   type ValidatorTemplateTagStaticFields,
   type ValidatorTemplateTag,
   type Expectation,
   type InterpolatedValue,
-  createInterpolatedValueCheck,
-  isValidator,
 } from './types/validator';
 import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './packagePrivateAccess';
 import { DISABLE_PARAM_VALIDATION } from './config';
 import { expectDirectInstanceFactory } from './validationHelpers';
-import { isDirectInstanceOf } from './util';
 
 const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
@@ -55,17 +55,31 @@ export const validator = function validator<T=unknown>(
 function wrapValidatorWithUserInputChecks<T>(unwrappedValidator: Validator<T>): Validator<T> {
   return Object.freeze({
     [packagePrivate]: { type: 'validator' as const },
-    assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
-      // TODO: I'm not validating the return value of opts.errorFactory
+    assertMatches(value: unknown, opts_?: AssertMatchesOpts): T {
+      const fnName = '<validator instance>.assertMatches()';
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
-        .assertArgs('<validator instance>.assertMatches()', arguments);
+        .assertArgs(fnName, arguments);
+
+      const opts = {
+        ...opts_ ?? {},
+        errorFactory: opts_?.errorFactory === undefined
+          ? undefined
+          : wrapErrorFactoryFnWithAssertions(opts_.errorFactory, fnName, validator),
+      };
 
       return unwrappedValidator.assertMatches(value, opts);
     },
-    assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
-      // TODO: I'm not validating the return value of opts.errorFactory
+    assertionTypeGuard(value: unknown, opts_?: AssertMatchesOpts): asserts value is T {
+      const fnName = '<validator instance>.assertionTypeGuard()';
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown, opts?: ${createAssertMatchesOptsCheck(uncheckedValidator)}]`
-        .assertArgs('<validator instance>.assertionTypeGuard()', arguments);
+        .assertArgs(fnName, arguments);
+
+      const opts = {
+        ...opts_ ?? {},
+        errorFactory: opts_?.errorFactory === undefined
+          ? undefined
+          : wrapErrorFactoryFnWithAssertions(opts_.errorFactory, fnName, validator),
+      };
 
       unwrappedValidator.assertionTypeGuard(value, opts);
     },
