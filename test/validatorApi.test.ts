@@ -40,7 +40,16 @@ describe('validator behavior', () => {
     test('the error prefix must end with ":"', () => {
       const v = validator`any`;
       const act = (): any => v.assertMatches('xyz', { errorPrefix: 'Error in some place.' });
-      assert.throws(act, { message: 'The assertMatches() errorPrefix string must end with a colon.' });
+      assert.throws(act, {
+        message: [
+          (
+            'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
+            'One of the following issues needs to be resolved:'
+          ),
+          '  * Expected <2nd argument>.errorPrefix to be of type "undefined" but got type "string".',
+          '  * Expected <2nd argument>.errorPrefix, which was "Error in some place.", to end with a colon.',
+        ].join('\n'),
+      });
       assert.throws(act, TypeError);
     });
 
@@ -113,7 +122,16 @@ describe('validator behavior', () => {
     test('the error prefix must end with ":"', () => {
       const v = validator`any`;
       const act = (): any => v.assertionTypeGuard('xyz', { errorPrefix: 'Error in some place.' });
-      assert.throws(act, { message: 'The assertionTypeGuard() errorPrefix string must end with a colon.' });
+      assert.throws(act, {
+        message: [
+          (
+            'Received invalid "opts" argument for <validator instance>.assertionTypeGuard(): ' +
+            'One of the following issues needs to be resolved:'
+          ),
+          '  * Expected <2nd argument>.errorPrefix to be of type "undefined" but got type "string".',
+          '  * Expected <2nd argument>.errorPrefix, which was "Error in some place.", to end with a colon.',
+        ].join('\n'),
+      });
       assert.throws(act, TypeError);
     });
 

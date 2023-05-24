@@ -11,10 +11,15 @@ export interface AssertMatchesOpts {
 export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
   const expectKeysFrom = expectKeysFromFactory(validator);
+  const andExpectEndsWithColon = validator.expectTo(value => {
+    return (value as string).endsWith(':')
+      ? null
+      : 'end with a colon.';
+  });
   return validator`{
     errorFactory?: undefined | ${expectDirectInstance(Function)}
     at?: undefined | string
-    errorPrefix?: undefined | string
+    errorPrefix?: undefined | (string & ${andExpectEndsWithColon})
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['errorFactory', 'at', 'errorPrefix'])}`;
 }
 

@@ -44,10 +44,6 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
   return Object.freeze({
     [packagePrivate]: { type: 'validator' as const },
     assertMatches(value: unknown, opts?: AssertMatchesOpts): T {
-      if (opts?.errorPrefix?.endsWith(':') === false) {
-        throw new TypeError('The assertMatches() errorPrefix string must end with a colon.');
-      }
-
       const matched = matchValue(
         ruleset.rootRule,
         value,
@@ -74,10 +70,6 @@ function fromRuleset<T=unknown>(ruleset: Ruleset): Validator<T> {
     // return a value, which is why this is placed in a separate function.
     // If you're not using TypeScript, its recommended to simply ignore this.
     assertionTypeGuard(value: unknown, opts?: AssertMatchesOpts): asserts value is T {
-      if (opts?.errorPrefix?.endsWith(':') === false) {
-        throw new TypeError('The assertionTypeGuard() errorPrefix string must end with a colon.');
-      }
-
       const matched = matchValue(
         ruleset.rootRule,
         value,
