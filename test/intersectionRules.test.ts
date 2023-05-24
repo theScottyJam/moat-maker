@@ -1,5 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError, type Validator } from '../src';
+
+const createValidator = (content: string): Validator => validator(
+  Object.assign([], { raw: [content] }) as any,
+);
 
 describe('intersection rules', () => {
   test('accepts a value that matches all variants of the intersection', () => {
@@ -45,7 +49,7 @@ describe('intersection rules', () => {
   });
 
   test('works with funky whitespace', () => {
-    const v = validator({ raw: [' \tnumber&string \t&\t undefined \t'] } as any);
+    const v = createValidator(' \tnumber&string \t&\t undefined \t');
     expect(v.ruleset).toMatchObject({
       rootRule: {
         category: 'intersection',

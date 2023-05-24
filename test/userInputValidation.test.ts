@@ -15,24 +15,22 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     assert.throws(act, TypeError);
   });
 
-  // TODO: This implementation needs to be fixed.
-  test.skip('validator template tag', () => {
+  test('validator template tag', () => {
     const act = (): any => validator(42 as any);
     assert.throws(act, {
       message: (
         'Received invalid "parts" argument for validator`...`: ' +
-        'Expected <1st argument> to be an object but got 42.'
+        '<1st argument> is missing the required properties: "raw"'
       ),
     });
   });
 
-  // TODO: This implementation needs to be fixed.
-  test.skip('<validator instance>.assertMatches()', () => {
+  test('<validator instance>.assertMatches()', () => {
     const act = (): any => (validator`string`.assertMatches as any)('someValue', 42);
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertMatches(): ' +
-        'Expected <2nd argument> to be an object but got 42.'
+        'Expected <2nd argument>, which was 42, to be a direct instance of `Object`.'
       ),
     });
   });
@@ -54,13 +52,12 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
   });
 
-  // TODO: This implementation needs to be fixed.
-  test.skip('<validator instance>.assertionTypeGuard()', () => {
+  test('<validator instance>.assertionTypeGuard()', () => {
     const act = (): any => (validator`string`.assertionTypeGuard as any)('someValue', 42);
     assert.throws(act, {
       message: (
         'Received invalid "opts" argument for <validator instance>.assertionTypeGuard(): ' +
-        'Expected <2nd argument> to be an object but got 42.'
+        'Expected <2nd argument>, which was 42, to be a direct instance of `Object`.'
       ),
     });
   });
@@ -220,6 +217,95 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
         'Received invalid "testExpectation" argument for validator.expectTo(): ' +
         'Expected <1st argument>, which was `anonymous`, to be a direct instance of `Function`.'
       ),
+    });
+  });
+
+  // This tests expectations that are applied to every user-supplied object and array that gets validated.
+  describe('object and array restrictions', () => {
+    test('can not supply an inherited object where a plain object is expected', () => {
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
+      class MyThing {}
+      const act = (): any => validator.fromRuleset(Object.assign(new MyThing(), {
+        rootRule: { category: 'noop' as const },
+        interpolated: [],
+      }));
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>, which was [object MyThing], to be a direct instance of `Object`.'
+        ),
+      });
+    });
+
+    test('can not supply an object with extra properties', () => {
+      const act = (): any => validator.fromRuleset({
+        rootRule: { category: 'noop' },
+        interpolated: [],
+        'extra key': true,
+      } as any);
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>, which was [object Object], to have only known keys. "extra key" is not recognized as a valid key.'
+        ),
+      });
+    });
+
+    test('can not supply an object with extra properties, even if the property is non-enumerable', () => {
+      const ruleset = {
+        rootRule: { category: 'noop' as const },
+        interpolated: [],
+      };
+      Object.defineProperty(ruleset, 'extra key', { enumerable: false, value: true });
+      const act = (): any => validator.fromRuleset(ruleset);
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>, which was [object Object], to have only known keys. "extra key" is not recognized as a valid key.'
+        ),
+      });
+    });
+
+    test('can supply an object with extra, unknown symbol properties', () => {
+      // No error should be thrown.
+      validator.fromRuleset({
+        rootRule: { category: 'noop' as const },
+        interpolated: [],
+        [Symbol('extra key')]: true,
+      });
+    });
+
+    test('can not supply an inherited array where a plain array is expected', () => {
+      class MyArray extends Array {}
+      const act = (): any => validator.fromRuleset({
+        rootRule: { category: 'noop' },
+        interpolated: new MyArray(),
+      });
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>.interpolated, which was [object MyArray], to be a direct instance of `Array`.'
+        ),
+      });
+    });
+
+    test('can not supply sparse arrays', () => {
+      const act = (): any => validator.fromRuleset({
+        rootRule: { category: 'noop' },
+        interpolated: [2, , 3], // eslint-disable-line no-sparse-arrays
+      });
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>.interpolated, which was [object Array], to ' +
+          'not be a sparse array. Found a hole at index 1.'
+        ),
+      });
     });
   });
 

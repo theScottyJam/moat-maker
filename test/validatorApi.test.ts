@@ -245,6 +245,27 @@ describe('validator behavior', () => {
       assert.throws(act, TypeError);
     });
 
+    test('accepts sparse arrays array-like objects', () => {
+      const act = (): any => validator`[string, number, string]`.assertArgs('myFn()', { 0: 'x', 2: 'y', length: 3 });
+      assert.throws(act, {
+        message: (
+          'Received invalid arguments for myFn(): ' +
+          'Expected <2nd argument> to be of type "number" but got type "undefined".'
+        ),
+      });
+    });
+
+    test('accepts sparse arrays', () => {
+      // eslint-disable-next-line no-sparse-arrays
+      const act = (): any => validator`[string, number, string]`.assertArgs('myFn()', ['x', , 'y']);
+      assert.throws(act, {
+        message: (
+          'Received invalid arguments for myFn(): ' +
+          'Expected <2nd argument> to be of type "number" but got type "undefined".'
+        ),
+      });
+    });
+
     test('throws when given too many arguments', () => {
       function fnWithValidation(x: any, y: any, z: any): void {
         // eslint-disable-next-line prefer-rest-params

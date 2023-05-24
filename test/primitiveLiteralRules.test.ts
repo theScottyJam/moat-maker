@@ -1,7 +1,11 @@
 /* eslint-disable no-new-wrappers */
 
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError, type Validator } from '../src';
+
+const createValidator = (content: string): Validator => validator(
+  Object.assign([], { raw: [content] }) as any,
+);
 
 describe('primitive literal rules', () => {
   describe('boolean', () => {
@@ -209,7 +213,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\x must have exactly two characters afterwards (test 1)', () => {
-          const act = (): any => validator({ raw: ['"\\x9"'] } as any);
+          const act = (): any => createValidator('"\\x9"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
@@ -221,7 +225,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\x must have exactly two characters afterwards (test 2)', () => {
-          const act = (): any => validator({ raw: ['"\\x"'] } as any);
+          const act = (): any => createValidator('"\\x"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly two hexadecimal digits to follow the "\\x". (line 1, col 2)',
@@ -233,7 +237,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u must have exactly four characters afterwards (test 1)', () => {
-          const act = (): any => validator({ raw: ['"\\u9"'] } as any);
+          const act = (): any => createValidator('"\\u9"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
@@ -245,7 +249,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u must have exactly four characters afterwards (test 2)', () => {
-          const act = (): any => validator({ raw: ['"\\u"'] } as any);
+          const act = (): any => createValidator('"\\u"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly four hexadecimal digits to follow the "\\u". (line 1, col 2)',
@@ -257,7 +261,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u{...} must contain no more than 6 characters', () => {
-          const act = (): any => validator({ raw: ['"\\u{1234567}"'] } as any);
+          const act = (): any => createValidator('"\\u{1234567}"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -269,7 +273,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u{...} must be formatted properly (test 1)', () => {
-          const act = (): any => validator({ raw: ['"\\u{123456"'] } as any);
+          const act = (): any => createValidator('"\\u{123456"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -281,7 +285,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u{...} must be formatted properly (test 2)', () => {
-          const act = (): any => validator({ raw: ['"\\u{g}"'] } as any);
+          const act = (): any => createValidator('"\\u{g}"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -293,7 +297,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u{...} must be formatted properly (test 3)', () => {
-          const act = (): any => validator({ raw: ['"\\u{"'] } as any);
+          const act = (): any => createValidator('"\\u{"');
           assert.throws(act, {
             message: [
               'Invalid unicode escape sequence: Expected exactly six hexadecimal digits between "\\u{" and "}". (line 1, col 2)',
@@ -305,7 +309,7 @@ describe('primitive literal rules', () => {
         });
 
         test('\\u{...} can not contain invalid code points', () => {
-          const act = (): any => validator({ raw: ['"\\u{123456}"'] } as any);
+          const act = (): any => createValidator('"\\u{123456}"');
           assert.throws(act, {
             message: [
               'Invalid code point "0x123456". (line 1, col 2)',
@@ -335,7 +339,7 @@ describe('primitive literal rules', () => {
       });
 
       test('encounter EOF after backslash before closing quote', () => {
-        const act = (): any => validator({ raw: ['"xyz\\'] } as any);
+        const act = (): any => createValidator('"xyz\\');
         assert.throws(act, {
           message: [
             'Expected to find a quote to end the string literal. (line 1, col 1)',
@@ -409,7 +413,7 @@ describe('primitive literal rules', () => {
 
     describe('syntax', () => {
       test('handles negative numbers', () => {
-        const v = validator({ raw: ['- \t\n2'] } as any);
+        const v = createValidator('- \t\n2');
         expect(v.matches(-2)).toBe(true);
         expect(validator`-23_45`.matches(-2345)).toBe(true);
         assert.throws((): any => validator`-_2345`, ValidatorSyntaxError);
@@ -417,7 +421,7 @@ describe('primitive literal rules', () => {
       });
 
       test('ignores positive sign', () => {
-        const v = validator({ raw: ['+ \t\n2'] } as any);
+        const v = createValidator('+ \t\n2');
         expect(v.matches(2)).toBe(true);
         expect(validator`+23_45`.matches(2345)).toBe(true);
         assert.throws((): any => validator`+_2345`, ValidatorSyntaxError);

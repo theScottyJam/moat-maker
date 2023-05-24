@@ -426,7 +426,7 @@ describe('property rules', () => {
     test('rejects out-of-range dynamic keys', () => {
       // It's technically impossible to reach this scenario, unless you're
       // improperly using the validator template tag as a function instead of a tag.
-      const act = (): any => validator({ raw: ['{ [', ']: any }'] } as any);
+      const act = (): any => validator(Object.assign([], { raw: ['{ [', ']: any }'] }) as any);
       assert.throws(act, {
         message: 'The 1st interpolated value corresponds to an out-of-bounds index in the interpolation array.',
       });

@@ -2,12 +2,14 @@ import { strict as assert } from 'node:assert';
 import { validator, type Validator } from '../src';
 import type { InterpolatedValue } from '../src/types/validator';
 
-const createValidator = (content: string): Validator => validator({ raw: [content] } as any);
+const createValidator = (content: string): Validator => validator(
+  Object.assign([], { raw: [content] }) as any,
+);
 
 const createInterpolatedValidator = (valuesToInterpolate: InterpolatedValue[], content: string): Validator => {
-  return validator({
+  return validator(Object.assign([], {
     raw: content.split('<INTERPOLATE>'),
-  } as any, ...valuesToInterpolate);
+  }) as any, ...valuesToInterpolate);
 };
 
 describe('error formatting', () => {

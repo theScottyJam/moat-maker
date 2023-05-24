@@ -1,5 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError, type SimpleRule, type SimpleTypeVariant } from '../src';
+import { validator, ValidatorSyntaxError, type SimpleRule, type SimpleTypeVariant, type Validator } from '../src';
+
+const createValidator = (content: string): Validator => validator(
+  Object.assign([], { raw: [content] }) as any,
+);
 
 describe('union rules', () => {
   test('accepts all variants of a union', () => {
@@ -65,7 +69,7 @@ describe('union rules', () => {
   });
 
   test('works with funky whitespace', () => {
-    const v = validator({ raw: [' \tnumber|string \t|\t undefined \t'] } as any);
+    const v = createValidator(' \tnumber|string \t|\t undefined \t');
     expect(v.ruleset).toMatchObject({
       rootRule: {
         category: 'union',

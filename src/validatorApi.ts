@@ -15,6 +15,7 @@ import { uncheckedValidator } from './uncheckedValidatorApi';
 import { packagePrivate } from './packagePrivateAccess';
 import { DISABLE_PARAM_VALIDATION } from './config';
 import { expectDirectInstanceFactory } from './validationHelpers';
+import { isDirectInstanceOf } from './util';
 
 const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);
@@ -42,7 +43,10 @@ export const validator = function validator<T=unknown>(
   parts: TemplateStringsArray,
   ...interpolated: readonly InterpolatedValue[]
 ): Validator<T> {
-  !DISABLE_PARAM_VALIDATION && uncheckedValidator`[parts: { raw: string[] }, ...interpolated: ${interpolatedValueCheck}[]]`
+  !DISABLE_PARAM_VALIDATION && uncheckedValidator`[
+    parts: { raw: string[] } & ${expectDirectInstance(Array)},
+    ...interpolated: ${interpolatedValueCheck}[]
+  ]`
     .assertArgs('validator`...`', arguments);
 
   return wrapValidatorWithUserInputChecks(uncheckedValidator(parts, ...interpolated));

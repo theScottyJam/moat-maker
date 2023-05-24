@@ -12,7 +12,7 @@ import {
   createInterpolatedValueCheck,
 } from './validator';
 import { packagePrivate } from '../packagePrivateAccess';
-import { expectDirectInstanceFactory } from '../validationHelpers';
+import { expectDirectInstanceFactory, expectKeysFromFactory, expectNonSparseFactory } from '../validationHelpers';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 
@@ -155,6 +155,9 @@ function checkDynamicPropertyName(
 
 function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly InterpolatedValue[]): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
+  const expectKeysFrom = expectKeysFromFactory(validator);
+  const expectNonSparse = expectNonSparseFactory(validator);
+  const expectNormalArray = validator`${expectDirectInstance(Array)} & ${expectNonSparse}`;
   const andExpectNonEmptyArray = validator.expectTo(
     value => (value as unknown[]).length > 0 ? null : 'be non-empty.',
   );
@@ -168,7 +171,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
   const simpleRuleCheck = validator`{
     category: 'simple'
     type: ${simpleTypeVariantCheck}
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'type'])}`;
 
   const andExpectNotNaN = validator.expectTo(value => Number.isNaN(value) ? 'not be NaN.' : null);
   const andExpectNotInfinity = validator.expectTo(value => !Number.isFinite(value) ? 'be finite.' : null);
@@ -178,22 +181,22 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     value: string | bigint | boolean | (
       number & ${andExpectNotNaN} & ${andExpectNotInfinity}
     )
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'value'])}`;
 
   const noopRuleCheck = validator`{
     category: 'noop'
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category'])}`;
 
   const propertyRuleContentValueCheck = validator`{
     optional: boolean
     rule: ${lazyRuleCheck}
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['optional', 'rule'])}`;
 
   const propertyRuleIndexValueCheck = validator`{
     key: ${lazyRuleCheck}
     value: ${lazyRuleCheck}
     label: string
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['key', 'value', 'label'])}`;
 
   const andExpectValidDynamicPropertyName = validator.expectTo(interpolationIndex => {
     return checkDynamicPropertyName(interpolationIndex as number, interpolated, { expectationErrorMessage: true });
@@ -210,12 +213,12 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
       ${propertyRuleContentValueCheck}
     ]>
     index: ${propertyRuleIndexValueCheck} | null
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'content', 'dynamicContent', 'index'])}`;
 
   const arrayRuleCheck = validator`{
     category: 'array'
     content: ${lazyRuleCheck}
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'content'])}`;
 
   const andExpectProperTupleRule = validator.expectTo(value_ => {
     const value = value_ as TupleRule;
@@ -228,32 +231,34 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 
   const tupleRuleCheck = validator`{
     category: 'tuple'
-    content: ${lazyRuleCheck}[]
-    optionalContent: ${lazyRuleCheck}[]
+    content: ${lazyRuleCheck}[] & ${expectNormalArray}
+    optionalContent: ${lazyRuleCheck}[] & ${expectNormalArray}
     rest: ${lazyRuleCheck} | null
-    entryLabels: string[] | null
-  } & ${andExpectProperTupleRule}`;
+    entryLabels: (string[] & ${expectNormalArray}) | null
+  } & ${andExpectProperTupleRule}
+    & ${expectDirectInstance(Object)}
+    & ${expectKeysFrom(['category', 'content', 'optionalContent', 'rest', 'entryLabels'])}`;
 
   const iterableRuleCheck = validator`{
     category: 'iterable'
     iterableType: ${lazyRuleCheck}
     entryType: ${lazyRuleCheck}
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'iterableType', 'entryType'])}`;
 
   const unionRuleCheck = validator`{
     category: 'union'
-    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray}
-  }`;
+    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray} & ${expectNormalArray}
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'variants'])}`;
 
   const intersectionRuleCheck = validator`{
     category: 'intersection'
-    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray}
-  }`;
+    variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray} & ${expectNormalArray}
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'variants'])}`;
 
   const interpolationRuleCheck = validator`{
     category: 'interpolation'
     interpolationIndex: number
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'interpolationIndex'])}`;
 
   const ruleCheck = validator`
     ${simpleRuleCheck}
@@ -272,14 +277,21 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
 }
 
 function createRulesetCheck(validator: ValidatorTemplateTag): Validator {
+  const expectDirectInstance = expectDirectInstanceFactory(validator);
+  const expectKeysFrom = expectKeysFromFactory(validator);
+  const expectNonSparse = expectNonSparseFactory(validator);
   const interpolatedValueCheck = createInterpolatedValueCheck(validator);
   const rulesetCheck = validator`
-    { interpolated: ${interpolatedValueCheck}[] } &
+    {
+      interpolated: ${interpolatedValueCheck}[] & ${expectDirectInstance(Array)} & ${expectNonSparse}
+    } &
     ${createLazyEvaluator((target_: any) => {
       const target = target_ as { interpolated: InterpolatedValue[] };
       const interpolated = target.interpolated;
       return validator`{ rootRule: ${createRuleCheck(validator, interpolated)} }`;
-    })}
+    })} &
+    ${expectDirectInstance(Object)} &
+    ${expectKeysFrom(['interpolated', 'rootRule'])}
   `;
 
   return rulesetCheck;

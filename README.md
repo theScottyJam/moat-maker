@@ -43,7 +43,7 @@ This project strives to follow a number of code-quality standards to keep the to
 * **Lightweight:** To keep out the bloat this project will be careful about what dependencies it chooses to drag in. Currently, this means it has zero dependencies. In the future, if there's demand for it, this project may be split up into smaller components that can be plugged together, allowing you to leave out the code from features you don't use.
 * **Stable:** Breaking changes are taken seriously. If, for whatever reason your codebase breaks after an update, please [submit an issue](https://github.com/theScottyJam/moat-maker/issues/new) so it can be addressed.
 * **Fast:** The results of parsing a template string will be cached, so you don't have to worry about the the performance penalty of defining your validators inside of functions vs outside. Attention has also been given to many other aspects of the validation process to try and keep it running smoothly. If you find validation to ever be the cause of significant performance issues in your application, please [file an issue](https://github.com/theScottyJam/moat-maker/issues/new) so it can be addressed.
-* **Supported:** Bugs, feature suggestions, or questions? Please leave your thoughts in a [github issue](https://github.com/theScottyJam/moat-maker/issues/new).
+* **Supported:** Bugs, feature suggestions, or questions? Go ahead and [start a discussion](https://github.com/theScottyJam/moat-maker/issues/new).
 * **Open Source:** This project is licensed under the [MIT](https://github.com/theScottyJam/moat-maker/blob/main/LICENSE) license. Feel free to do with it as you wish.
 
 ## Why Moat Maker?

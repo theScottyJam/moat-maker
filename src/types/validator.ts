@@ -1,6 +1,6 @@
 import type { Ruleset } from './validationRules';
 import { packagePrivate } from '../packagePrivateAccess';
-import { expectDirectInstanceFactory } from '../validationHelpers';
+import { expectDirectInstanceFactory, expectKeysFromFactory } from '../validationHelpers';
 
 export interface AssertMatchesOpts {
   readonly errorFactory?: undefined | ((...params: ConstructorParameters<typeof Error>) => Error)
@@ -10,11 +10,12 @@ export interface AssertMatchesOpts {
 
 export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
+  const expectKeysFrom = expectKeysFromFactory(validator);
   return validator`{
     errorFactory?: undefined | ${expectDirectInstance(Function)}
     at?: undefined | string
     errorPrefix?: undefined | string
-  }`;
+  } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['errorFactory', 'at', 'errorPrefix'])}`;
 }
 
 export interface Expectation {
