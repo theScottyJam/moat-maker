@@ -485,6 +485,17 @@ describe('validator behavior', () => {
       const expectation = validator.expectTo(() => null);
       expect(Object.isFrozen(expectation)).toBe(true);
     });
+
+    test('Passed-in values that are long strings will be truncated in error messages', () => {
+      const v = validator`${validator.expectTo(x => 'fail.')}`;
+      const act = (): any => v.assertMatches(
+        'abcdefghijklmnopqrstuvwzyz ABCDEFGHIJKLMNOPQRSTUVWZYZ 1234567890' +
+        'abcdefghijklmnopqrstuvwzyz ABCDEFGHIJKLMNOPQRSTUVWZYZ 1234567890',
+      );
+      assert.throws(act, {
+        message: 'Expected <receivedValue>, which was "abcdefghijklmnopqrstuvwzyz ABCDEFGHIJKLMNOPQRSTUVW…", to fail.',
+      });
+    });
   });
 
   test('forbids outside users from instantiating ValidatorSyntaxError', () => {
