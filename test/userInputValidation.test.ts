@@ -553,5 +553,33 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
       expect(act).toThrow('to be a direct instance of `FrozenMap`');
       expect(act).toThrow('to be a direct instance of `Map`');
     });
+
+    test('interpolation rules can not use out-of-bound indices', () => {
+      const act = (): any => validator.fromRuleset({
+        rootRule: {
+          category: 'interpolation',
+          interpolationIndex: 2,
+        },
+        interpolated: ['x'],
+      });
+
+      assert.throws(act, {
+        message: (
+          'Received invalid "ruleset" argument for validator.fromRuleset(): ' +
+          'Expected <1st argument>.rootRule.interpolationIndex, which was 2, to be an in-bounds ' +
+          'interpolation index. Received 1 interpolated value(s).'
+        ),
+      });
+    });
+
+    // This behavior is useful with type-transformers, where you might be passing along
+    // an interpolated array, without bothering to remove unnecessary stuff from it.
+    test('there can be more interpolated values than rules that use them', () => {
+      // No error.
+      validator.fromRuleset({
+        rootRule: { category: 'noop' },
+        interpolated: ['x', 'y'],
+      });
+    });
   });
 });

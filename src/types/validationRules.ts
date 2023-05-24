@@ -255,9 +255,18 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray} & ${expectNormalArray}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'variants'])}`;
 
+  const andExpectValidInterpolationIndex = validator.expectTo(index_ => {
+    const index = index_ as number;
+    if (!(index in interpolated)) {
+      return `be an in-bounds interpolation index. Received ${interpolated.length} interpolated value(s).`;
+    }
+
+    return null;
+  });
+
   const interpolationRuleCheck = validator`{
     category: 'interpolation'
-    interpolationIndex: number
+    interpolationIndex: number & ${andExpectValidInterpolationIndex}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'interpolationIndex'])}`;
 
   const ruleCheck = validator`
