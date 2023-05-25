@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable consistent-return */
 /* eslint-disable symbol-description */
 
 // Each example found in the documentation has a corresponding test case in here,
@@ -85,11 +86,11 @@ describe('documentation examples', () => {
     test('expectTo() examples', () => {
       // If a string is returned, it'll be used as part of the error message.
       // The strings should complete the sentence: "Expected the value to ..."
-      const expectGreaterThanZero = validator.expectTo(
-        value => typeof value === 'number' && value > 0
-          ? null
-          : 'be a number greater than zero.',
-      );
+      const expectGreaterThanZero = validator.expectTo(value => {
+        if (typeof value !== 'number' || value <= 0) {
+          return 'be a number greater than zero.';
+        }
+      });
 
       const validatePositivePoint = validator`{
         x: ${expectGreaterThanZero}
@@ -500,11 +501,11 @@ describe('documentation examples', () => {
     });
 
     test('validator.expectTo()', () => {
-      const expectNonEmptyArray = validator.expectTo(
-        unknownValue => Array.isArray(unknownValue) && unknownValue.length > 0
-          ? null
-          : 'be an empty array.',
-      );
+      const expectNonEmptyArray = validator.expectTo(unknownValue => {
+        if (!Array.isArray(unknownValue) || unknownValue.length === 0) {
+          return 'be an empty array.';
+        }
+      });
 
       const parentValidator = validator`{
         name: string
@@ -532,11 +533,11 @@ describe('documentation examples', () => {
       // validated that the value is an array. If you don't,
       // this expectation may throw, because it will try to access
       // a `length` property that may not exist on the value.
-      const andExpectNonEmptyArray = validator.expectTo(
-        (array: any) => array.length > 0
-          ? null
-          : 'be an empty array.',
-      );
+      const andExpectNonEmptyArray = validator.expectTo((array: any) => {
+        if (array.length === 0) {
+          return 'be an empty array.';
+        }
+      });
 
       const parentValidator = validator`{
         name: string
@@ -597,10 +598,10 @@ describe('documentation examples', () => {
   describe('recipes', () => {
     test('expectRef()', () => {
       function expectRef(expectedRef: object) {
-        return validator.expectTo((value: unknown) => {
-          return value === expectedRef
-            ? null
-            : `to be the same object as ${String(expectedRef)}`;
+        return validator.expectTo(value => {
+          if (value !== expectedRef) {
+            return `to be the same object as ${String(expectedRef)}`;
+          }
         });
       }
 
@@ -622,11 +623,11 @@ describe('documentation examples', () => {
       }, { message: 'Expected <receivedValue> to be 0.3 but got 0.30000000000000004.' });
 
       function expectCloseTo(target: number, { plusOrMinus }: { plusOrMinus: number }) {
-        return validator.expectTo(value =>
-          typeof value === 'number' && Math.abs(target - value) < plusOrMinus
-            ? null
-            : `be equal to ${target}±${plusOrMinus}`,
-        );
+        return validator.expectTo(value => {
+          if (typeof value !== 'number' || Math.abs(target - value) > plusOrMinus) {
+            return `be equal to ${target}±${plusOrMinus}`;
+          }
+        });
       }
 
       // ✓
@@ -645,7 +646,7 @@ describe('documentation examples', () => {
       function expectDirectInstance(TargetClass: (new (...params: any) => any)) {
         return validator.expectTo((value: unknown) => {
           const isDirectInstance = Object(value).constructor === TargetClass;
-          return isDirectInstance ? null : `be a direct instance of ${TargetClass.name}.`;
+          return isDirectInstance ? undefined : `be a direct instance of ${TargetClass.name}.`;
         });
       }
 
@@ -659,14 +660,12 @@ describe('documentation examples', () => {
 
     test('expectNonSparse()', () => {
       const expectNonSparse = validator.expectTo((array: unknown) => {
-        if (!Array.isArray(array)) return null;
+        if (!Array.isArray(array)) return undefined;
         for (let i = 0; i < array.length; i++) {
           if (!(i in array)) {
             return `not be a sparse array. Found a hole at index ${i}.`;
           }
         }
-
-        return null;
       });
 
       // Example usage
@@ -687,7 +686,7 @@ describe('documentation examples', () => {
     test('with .lazy()', () => {
       const andExpectKeysToBePresent = (keys: string[]) => validator.expectTo((object: any) => {
         const invalidKey = keys.find(key => !(key in object));
-        return invalidKey === undefined ? null : `have the key ${invalidKey}.`;
+        return invalidKey === undefined ? undefined : `have the key ${invalidKey}.`;
       });
 
       const csvDataValidator = validator`
@@ -724,11 +723,11 @@ describe('documentation examples', () => {
           count: number
         }
         entries: object[]
-      } & ${validator.expectTo(
-        (csvData: any) => csvData.entries.length === csvData.metadata.count
-          ? null
-          : "have an '.entries' property with a length equal to '.metadata.count'.",
-      )}`;
+      } & ${validator.expectTo((csvData: any) => {
+        if (csvData.entries.length !== csvData.metadata.count) {
+          return "have an '.entries' property with a length equal to '.metadata.count'.";
+        }
+      })}`;
 
       // -- extra assertions --
 

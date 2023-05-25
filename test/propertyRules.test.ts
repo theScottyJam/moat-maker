@@ -75,7 +75,7 @@ describe('property rules', () => {
     const ordering: string[] = [];
     const recordOrder = (prefix: string = ''): Expectation => validator.expectTo(value => {
       ordering.push(prefix + String(value));
-      return null;
+      return undefined;
     });
 
     const v = validator`{

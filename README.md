@@ -115,11 +115,11 @@ Finally, if you need a custom validation behavior that isn't supported by this l
 ```javascript
 // If a string is returned, it'll be used as part of the error message.
 // The strings should complete the sentence: "Expect the value to ..."
-const expectGreaterThanZero = validator.expectTo(
-  value => typeof value === 'number' && value > 0
-    ? null
-    : 'be a number greater than zero.'
-);
+const expectGreaterThanZero = validator.expectTo(value => {
+  if (typeof value !== 'number' || value <= 0) {
+    return 'be a number greater than zero.';
+  }
+});
 
 const validatePositivePoint = validator`{
   x: ${expectGreaterThanZero}

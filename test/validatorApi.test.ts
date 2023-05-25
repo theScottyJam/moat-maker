@@ -430,7 +430,7 @@ describe('validator behavior', () => {
         2 | 3,
         ${validator`{}`},
         ${validator.lazy(() => validator`{}`)},
-        ${validator.expectTo(() => null)},
+        ${validator.expectTo(() => undefined)},
         ${Map},
         ${2},
         string@<string>,
@@ -483,12 +483,12 @@ describe('validator behavior', () => {
 
   describe('validator.expectTo()', () => {
     test('accepts a value that conforms to the custom expectation', () => {
-      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? null : 'be positive.')}`;
+      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? undefined : 'be positive.')}`;
       v.assertMatches(2);
     });
 
     test('rejects a value that does not conform to the custom expectation', () => {
-      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? null : 'be positive.')}`;
+      const v = validator`${validator.expectTo(x => typeof x === 'number' && x >= 0 ? undefined : 'be positive.')}`;
       const act = (): any => v.assertMatches(-2);
       assert.throws(act, {
         message: 'Expected <receivedValue>, which was -2, to be positive.',
@@ -497,7 +497,7 @@ describe('validator behavior', () => {
     });
 
     test('expectation instance is frozen', () => {
-      const expectation = validator.expectTo(() => null);
+      const expectation = validator.expectTo(() => undefined);
       expect(Object.isFrozen(expectation)).toBe(true);
     });
 
@@ -616,7 +616,7 @@ describe('validator behavior', () => {
 
       // expectTo() takes one argument. Calling expectTo should
       // run the type-checker against the empty the `[testExpectation: <function>]` tuple.
-      validator.expectTo(() => null);
+      validator.expectTo(() => undefined);
 
       expect(cacheApi.getCacheEntryFor`[testExpectation: ${null}]`.exists()).toBe(true);
     });

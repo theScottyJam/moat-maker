@@ -2,9 +2,9 @@ import type { Expectation, ValidatorTemplateTag } from './types/validator';
 import { isDirectInstanceOf, reprUnknownValue } from './util';
 
 export function expectDirectInstanceFactory(validator: ValidatorTemplateTag) {
-  return (targetClass: new (...params: any[]) => any) => validator.expectTo((value): string | null => {
+  return (targetClass: new (...params: any[]) => any) => validator.expectTo((value) => {
     return isDirectInstanceOf(value, targetClass)
-      ? null
+      ? undefined
       : `be a direct instance of ${reprUnknownValue(targetClass)}.`;
   });
 }
@@ -18,14 +18,14 @@ export function expectNonSparseFactory(validator: ValidatorTemplateTag): Expecta
       }
     }
 
-    return null;
+    return undefined;
   });
 }
 
 export function expectKeysFromFactory(validator: ValidatorTemplateTag) {
   return (keys_: readonly string[]) => {
     const keys = new Set(keys_);
-    return validator.expectTo((object): string | null => {
+    return validator.expectTo((object) => {
       // Loops through all enumerable and non-enumerable own properties.
       // Does not check symbols - unrecognized symbols can slide.
       for (const key of Object.getOwnPropertyNames(object)) {
@@ -34,7 +34,7 @@ export function expectKeysFromFactory(validator: ValidatorTemplateTag) {
         }
       }
 
-      return null;
+      return undefined;
     });
   };
 }

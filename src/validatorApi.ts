@@ -23,7 +23,7 @@ const interpolatedValueCheck = createInterpolatedValueCheck(uncheckedValidator);
 const expectDirectInstance = expectDirectInstanceFactory(uncheckedValidator);
 
 const expectValidator = uncheckedValidator.expectTo(
-  (value: unknown) => isValidator(value) ? null : 'be a validator instance.',
+  (value: unknown) => isValidator(value) ? undefined : 'be a validator instance.',
 );
 
 const expectArrayLike = uncheckedValidator.expectTo(
@@ -35,7 +35,7 @@ const expectArrayLike = uncheckedValidator.expectTo(
       Math.floor((value as any).length) === (value as any).length
     );
 
-    return isArrayLike ? null : 'be array-like.';
+    return isArrayLike ? undefined : 'be array-like.';
   },
 );
 
@@ -132,13 +132,13 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     return uncheckedValidator.lazy(deriveValidator);
   },
 
-  expectTo(testExpectation_: (valueBeingMatched: unknown) => string | null): Expectation {
+  expectTo(testExpectation_: (valueBeingMatched: unknown) => string | undefined): Expectation {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[testExpectation: ${expectDirectInstance(Function)}]`
       .assertArgs('validator.expectTo()', arguments);
 
-    const testExpectation = (valueBeingMatched: unknown): string | null => {
+    const testExpectation = (valueBeingMatched: unknown): string | undefined => {
       const result = testExpectation_(valueBeingMatched);
-      !DISABLE_PARAM_VALIDATION && uncheckedValidator`string | null`.assertMatches(result, {
+      !DISABLE_PARAM_VALIDATION && uncheckedValidator`string | undefined`.assertMatches(result, {
         errorPrefix: 'validator.expectTo() received a bad "testExpectation" function:',
         at: '<testExpectation return value>',
       });

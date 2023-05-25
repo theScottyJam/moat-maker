@@ -240,7 +240,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
           'One of the following issues needs to be resolved:'
         ),
         '  * Expected <testExpectation return value> to be of type "string" but got type "number".',
-        '  * Expected <testExpectation return value> to be of type "null" but got type "number".',
+        '  * Expected <testExpectation return value> to be of type "undefined" but got type "number".',
       ].join('\n'),
     });
   });
@@ -424,7 +424,7 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config';
     });
 
     test('can not interpolate a derived expectation', () => {
-      const myExpectation = validator.expectTo(() => null);
+      const myExpectation = validator.expectTo(() => undefined);
       const myDerivedExpectation = Object.create(myExpectation);
       const act = (): any => validator`${myDerivedExpectation}`;
       expect(act).toThrow('* Expected <2nd argument>, which was [object Object], to be an Expectation (from .expectTo()).');

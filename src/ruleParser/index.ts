@@ -228,7 +228,7 @@ function parsePropertyRule(tokenStream: TokenStream): Rule {
     } else if ('keyInterpolationIndex' in keyInfo) {
       const { keyInterpolationIndex, optional } = keyInfo;
       const maybeErrorMessage = checkDynamicPropertyName(keyInterpolationIndex, tokenStream.interpolated);
-      if (maybeErrorMessage !== null) {
+      if (maybeErrorMessage !== undefined) {
         throw new TypeError(maybeErrorMessage);
       }
       ruleTemplate.dynamicContentEntries.push([keyInterpolationIndex, {

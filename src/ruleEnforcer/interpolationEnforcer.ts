@@ -52,7 +52,7 @@ export function interpolationCheck(
     }
   } else if (isExpectation(interpolatedValue)) {
     const maybeErrorMessage = interpolatedValue[packagePrivate].testExpectation(target);
-    if (maybeErrorMessage !== null) {
+    if (maybeErrorMessage !== undefined) {
       return [{
         message: `Expected ${lookupPath.asString()}, which was ${reprUnknownValue(target)}, to ${maybeErrorMessage}`,
         lookupPath,

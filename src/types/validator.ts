@@ -16,7 +16,7 @@ export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): V
   const expectKeysFrom = expectKeysFromFactory(validator);
   const andExpectEndsWithColon = validator.expectTo(value => {
     return (value as string).endsWith(':')
-      ? null
+      ? undefined
       : 'end with a colon.';
   });
   return validator`{
@@ -55,7 +55,7 @@ export function wrapErrorFactoryFnWithAssertions(
 export interface Expectation {
   readonly [packagePrivate]: {
     readonly type: 'expectation'
-    readonly testExpectation: (valueBeingMatched: unknown) => string | null
+    readonly testExpectation: (valueBeingMatched: unknown) => string | undefined
   }
 }
 
@@ -79,7 +79,7 @@ export interface ValidatorTemplateTagStaticFields {
   fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
   from: (unknownValue: string | Validator) => Validator
   lazy: (deriveValidator: (value: unknown) => Validator) => LazyEvaluator
-  expectTo: (callback: (valueBeingMatched: unknown) => string | null) => Expectation
+  expectTo: (callback: (valueBeingMatched: unknown) => string | undefined) => Expectation
 }
 
 type Primitive = string | number | bigint | boolean | symbol | null | undefined;
@@ -126,10 +126,10 @@ export function isLazyEvaluator(value: unknown): value is LazyEvaluator {
 export function createInterpolatedValueCheck(validator: ValidatorTemplateTag): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
   return validator`
-    ${validator.expectTo(value => validator`object`.matches(value) ? 'be a primitive.' : null)}
-    | ${validator.expectTo(value => isValidator(value) ? null : 'be a Validator.')}
-    | ${validator.expectTo(value => isExpectation(value) ? null : 'be an Expectation (from .expectTo()).')}
-    | ${validator.expectTo(value => isLazyEvaluator(value) ? null : 'be a LazyEvaluator (from .lazy()).')}
+    ${validator.expectTo(value => validator`object`.matches(value) ? 'be a primitive.' : undefined)}
+    | ${validator.expectTo(value => isValidator(value) ? undefined : 'be a Validator.')}
+    | ${validator.expectTo(value => isExpectation(value) ? undefined : 'be an Expectation (from .expectTo()).')}
+    | ${validator.expectTo(value => isLazyEvaluator(value) ? undefined : 'be a LazyEvaluator (from .lazy()).')}
     | ${expectDirectInstance(RegExp)}
     | ${Function}
   `;

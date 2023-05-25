@@ -272,7 +272,7 @@ describe('unions of different types', () => {
 
     test('interpolation (test 1)', () => {
       class MyClass {} // eslint-disable-line @typescript-eslint/no-extraneous-class
-      const andExpectEmptyObject = validator.expectTo((x: any) => Object.keys(x).length === 0 ? 'be empty.' : null);
+      const andExpectEmptyObject = validator.expectTo((x: any) => Object.keys(x).length === 0 ? 'be empty.' : undefined);
       const v = validator`${andExpectEmptyObject} & ${MyClass} | { x: 2 }`;
       const act = (): any => v.assertMatches({});
       assert.throws(act, {
@@ -286,7 +286,7 @@ describe('unions of different types', () => {
 
     test('interpolation (test 2)', () => {
       class MyClass {} // eslint-disable-line @typescript-eslint/no-extraneous-class
-      const expectObject = validator.expectTo((x: any) => Object(x) === x ? null : 'be an object.');
+      const expectObject = validator.expectTo((x: any) => Object(x) === x ? undefined : 'be an object.');
       const v = validator`${expectObject} & ${MyClass} | number`;
       const act = (): any => v.assertMatches({});
       assert.throws(act, {

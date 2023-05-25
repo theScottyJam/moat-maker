@@ -118,7 +118,7 @@ function checkDynamicPropertyName(
   interpolationIndex: number,
   interpolated: readonly InterpolatedValue[],
   { expectationErrorMessage = false }: { expectationErrorMessage?: boolean } = {},
-): string | null {
+): string | undefined {
   if (interpolationIndex >= interpolated.length) {
     if (expectationErrorMessage) {
       // Expected it to...
@@ -150,7 +150,7 @@ function checkDynamicPropertyName(
       );
     }
   }
-  return null;
+  return undefined;
 }
 
 function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly InterpolatedValue[]): Validator {
@@ -159,7 +159,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
   const expectNonSparse = expectNonSparseFactory(validator);
   const expectNormalArray = validator`${expectDirectInstance(Array)} & ${expectNonSparse}`;
   const andExpectNonEmptyArray = validator.expectTo(
-    value => (value as unknown[]).length > 0 ? null : 'be non-empty.',
+    value => (value as unknown[]).length > 0 ? undefined : 'be non-empty.',
   );
 
   const lazyRuleCheck = validator.lazy(() => ruleCheck);
@@ -173,8 +173,8 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     type: ${simpleTypeVariantCheck}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'type'])}`;
 
-  const andExpectNotNaN = validator.expectTo(value => Number.isNaN(value) ? 'not be NaN.' : null);
-  const andExpectNotInfinity = validator.expectTo(value => !Number.isFinite(value) ? 'be finite.' : null);
+  const andExpectNotNaN = validator.expectTo(value => Number.isNaN(value) ? 'not be NaN.' : undefined);
+  const andExpectNotInfinity = validator.expectTo(value => !Number.isFinite(value) ? 'be finite.' : undefined);
 
   const primitiveLiteralRuleCheck = validator`{
     category: 'primitiveLiteral'
@@ -226,7 +226,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     if (value.entryLabels !== null && value.entryLabels.length !== allowedLabelCount) {
       return `have exactly ${allowedLabelCount} label(s) but found ${value.entryLabels.length}.`;
     }
-    return null;
+    return undefined;
   });
 
   const tupleRuleCheck = validator`{
@@ -255,13 +255,10 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray} & ${expectNormalArray}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'variants'])}`;
 
-  const andExpectValidInterpolationIndex = validator.expectTo(index_ => {
-    const index = index_ as number;
-    if (!(index in interpolated)) {
-      return `be an in-bounds interpolation index. Received ${interpolated.length} interpolated value(s).`;
-    }
-
-    return null;
+  const andExpectValidInterpolationIndex = validator.expectTo(index => {
+    return index as number in interpolated
+      ? undefined
+      : `be an in-bounds interpolation index. Received ${interpolated.length} interpolated value(s).`;
   });
 
   const interpolationRuleCheck = validator`{

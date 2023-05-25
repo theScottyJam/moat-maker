@@ -175,7 +175,7 @@ describe('tuple rules', () => {
       let calledWith: any = null;
       const myExpectation = validator.expectTo(value => {
         calledWith = value;
-        return null;
+        return undefined;
       });
       const v = validator`[string, number?, ...${myExpectation}]`;
       v.assertMatches(['xyz']);
