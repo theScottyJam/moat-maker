@@ -19,6 +19,7 @@ Just make sure to use title case for section headings. I'm prone to forgetting t
 # Publishing to NPM
 
 The workflow for publishing will generally go as follows:
+* Run `nvm use` to make sure you're on the correct version of Node.
 * Run `npm run prepublishOnly` to make sure everything will be able to publish without issue.
 * Update the version number in package.json.
 * Add information about this release to releaseNotes.md.
@@ -28,12 +29,11 @@ The workflow for publishing will generally go as follows:
 
 # Managing the Node version
 
-Stick to JavaScript features that are available in [any version of Node that's currently in maintenance](https://github.com/nodejs/release#release-schedule). The version of Node this package currently uses is found in two places in package.json - under the "engines" key, and in the "prepublishOnly" script hook - if you ever need to bump the supported Node version number, you can update those two locations.
+Stick to JavaScript features that are available in [any version of Node that's currently in maintenance](https://github.com/nodejs/release#release-schedule). The version of Node this package currently supports is found in package.json under the "engines" key as well as .nvmrc - if you ever need to bump the supported Node version number, you can update those two locations.
 
 To test that the project is working properly in the oldest supported version of node, make sure you have `nvm` installed then run:
 
 ```sh
-nvm exec <version number> npm test
+nvm use # Use the version found in .nvmrc
+npm test
 ```
-
-where `<version number>` is the supported Node version as found in package.json. This is also the command that is used in the "prepublishOnly" hook in package.json to make sure broken code doesn't slip into the NPM repository. The command is only found in the prepublish hook as opposed to `npm test`, because it depends on a specific computer set-up to work (you must have `nvm` installed, and before the command executes, some unix-specific commands run to ensure `nvm` is available to be used).

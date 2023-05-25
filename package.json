@@ -17,7 +17,7 @@
   ],
   "main": "build/index.js",
   "scripts": {
-    "prepublishOnly": "source $HOME/.nvm/nvm.sh && npm run lint && nvm exec 16 npm test && npm run build",
+    "prepublishOnly": "source $HOME/.nvm/nvm.sh && npm run lint && npm test && npm run build",
     "build": "rm -rf ./build && npx tsc --build tsconfig.json",
     "test": "npx jest -c jest.config.js --maxWorkers=1",
     "test:watch": "npx jest -c jest.config.js --maxWorkers=1 --watch",
