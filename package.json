@@ -1,6 +1,6 @@
 {
   "name": "moat-maker",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Validate your runtime data with easy to pick up, TypeScript-inspired syntax.",
   "author": "Scotty Jamison",
   "keywords": [
