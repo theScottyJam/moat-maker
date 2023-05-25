@@ -1,5 +1,7 @@
 # Moat Maker
 
+[Release Notes](https://github.com/theScottyJam/moat-maker/blob/main/releaseNotes.md)
+
 **Beta Warning:** The project is almost stable, but there are also some minor changes that will happen around some edge-case behaviors.
 
 Validate your runtime JavaScript data with easy to pick up, TypeScript-inspired syntax. It's as easy as:
