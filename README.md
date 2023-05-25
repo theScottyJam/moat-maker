@@ -136,7 +136,7 @@ validatePositivePoint.assertMatches({
 
 Please refer to [the docs](https://thescottyjam.gitbook.io/moat-maker/) for a more complete reference of what's possible. In the complete docs, you'll find information about what syntax is supported, what utility functions are provided, how you can customize parts of the error message if needed, and other, more-advance techniques this tool supports.
 
-# A Note on CommonJS
+## A Note on CommonJS
 
 You must use ES import syntax to use this package (`import { validator } from 'moat-maker';`). CommonJS imports are not supported (i.e. no using `require()` to import this package). There's a few different reasons for this:
 * Unlike many other NPM packages, this package is fairly new, and isn't bound by backwards-compatibility requirements to provide support for CommonJS. If support were added for CommonJS, this package will forever be bound to continuously support it (support would not get removed in the future in order to keep newer versions of this package backwards compatible with older versions).
