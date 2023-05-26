@@ -68,17 +68,70 @@ export interface LazyEvaluator {
 
 export interface Validator<T=unknown> {
   readonly [packagePrivate]: { readonly type: 'validator' }
+  /**
+   * Expects any value as a parameter. Returns true if the provided value matches the validator.
+   */
   readonly matches: (value: unknown) => value is T
+  /**
+   * Expects any value as a parameter. Throws a TypeError if the value fails to match the validator.
+   * Returns the supplied argument as-is.
+   */
   readonly assertMatches: (value: unknown, opts?: AssertMatchesOpts) => T
+  /**
+   * This function behaves exactly like validatorInstance.assertMatches(),
+   * with the only exception being that it does not return anything.
+   *
+   * This function was given a different TypeScript type signature than .assertMatches().
+   * .assertionTypeGuard() is declared with TypeScript's asserts keyword, allowing it to be used
+   * for type-narrowing purposes. Keep in mind that there is a handful of restrictions on how
+   * TypeScript assert functions can be used and what they can return, which is why this is
+   * provided as a separate function.
+   *
+   * If you need type narrowing, use this function, if you don't, or if you're
+   * not using TypeScript, use .assertMatches().
+   */
   readonly assertionTypeGuard: (value: unknown, opts?: AssertMatchesOpts) => asserts value is T
+  /**
+   * When you wish to validate user input to your API functions, it is recommended to use this function,
+   * as it is capable of providing more descriptive error messages than .assertMatches().
+   */
   readonly assertArgs: (whichFn: string, args: ArrayLike<unknown>) => void
+  /**
+   * This contains the ruleset that the validator follows as it validates data.
+   * This ruleset is generally the result of parsing the text provided in the validator template tag.
+   */
   readonly ruleset: Ruleset
 }
 
 export interface ValidatorTemplateTagStaticFields {
+  /**
+   * This function expects a ruleset as a parameter and returns a new validator instance.
+   */
   fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
+  /**
+   * If a validator instance is passed in, the same validator instance is returned.
+   * If a string is passed in, the string will be parsed as a string containing validation rules,
+   * and a new validator instance will be returned.
+   */
   from: (unknownValue: string | Validator) => Validator
+  /**
+   * This function allows you to lazily fetch or build a validator instance at the moment it's needed.
+   * It expects a callback to be provided and will return a lazy evaluator (of type LazyEvaluator),
+   * which can be interpolated into new validators.
+   *
+   * The callback accepts, as a parameter, the value it's in charge of validating.
+   * It should return a validator instance, which will be used to validate the data.
+   */
   lazy: (deriveValidator: (value: unknown) => Validator) => LazyEvaluator
+  /**
+   * The validator.expectTo() function makes it easy to supply custom validation logic.
+   * It expects a callback that returns an error string or null, depending on if your custom
+   * condition is satisfied. validator.expectTo() returns an expectation instance (of type Expectation),
+   * which can then be interpolated into a validator template.
+   *
+   * The error message string you return is expected to complete the sentence "Expect [the value] to ...".
+   * End the phrase with a period, and if needed, you can add additional sentences afterward.
+   */
   expectTo: (callback: (valueBeingMatched: unknown) => string | undefined) => Expectation
 }
 

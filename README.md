@@ -136,12 +136,12 @@ validatePositivePoint.assertMatches({
 
 Please refer to [the docs](https://thescottyjam.gitbook.io/moat-maker/) for a more complete reference of what's possible. In the complete docs, you'll find information about what syntax is supported, what utility functions are provided, how you can customize parts of the error message if needed, and other, more-advance techniques this tool supports.
 
-## A Note on CommonJS
+## A Note About CommonJS
 
 You must use ES import syntax to use this package (`import { validator } from 'moat-maker';`). CommonJS imports are not supported (i.e. no using `require()` to import this package). There's a few different reasons for this:
 * Unlike many other NPM packages, this package is fairly new, and isn't bound by backwards-compatibility requirements to provide support for CommonJS. If support were added for CommonJS, this package will forever be bound to continuously support it (support would not get removed in the future in order to keep newer versions of this package backwards compatible with older versions).
 * Adding support for CommonJS creates bloat. The most common way to support CommonJS is by creating and publishing two builds of your project in a single NPM package. This means every time you do an `npm install` on your project, you're going to have to effectively download this package twice even though you're only ever going to use half of the package.
-* CommonJS is limiting. There are various features that ES modules provides that CommonJS modules can not. Adding support for CommonJS will forever limit how modules can be used internally.
+* CommonJS is limiting. There are various features that ES modules provides that CommonJS modules can not. Adding support for CommonJS will limit how modules can be used internally.
 * In general, the JavaScript community is trying to move away from CommonJS. It would be a shame to bind this project to a dying module system.
 
 If you're stuck with CommonJS for whatever reason, the only option available would be to fork the GitHub repo and modify it with CommonJS support. This will (hopefully) require nothing more than tweaking some TypeScript build settings and config options in package.json. Feel free to host your modified package on MDN, and you can even drop a link to it [in a GitHub issue](https://github.com/theScottyJam/moat-maker/issues/new), so I can have this README link to it.

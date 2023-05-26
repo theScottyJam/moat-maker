@@ -39,6 +39,10 @@ const expectArrayLike = uncheckedValidator.expectTo(
   },
 );
 
+/**
+ * You can provide TypeScript-like syntax to this template tag. Returns a Validator instance which
+ * contains various methods you can use to validate that data implements the expected type.
+ */
 export const validator = function validator<T=unknown>(
   parts: TemplateStringsArray,
   ...interpolated: readonly InterpolatedValue[]

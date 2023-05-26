@@ -4,6 +4,9 @@ import { generateMessageWithPosition } from './errorFormatter';
 
 const ExceptionConstructionKey = Symbol('exception constructor key');
 
+/**
+ * An instance of this error is thrown whenever there's an issue in the syntax of your validation rules.
+ */
 export class ValidatorSyntaxError extends Error {
   name = 'ValidatorSyntaxError';
   constructor(
