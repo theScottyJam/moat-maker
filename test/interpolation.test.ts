@@ -2,7 +2,7 @@
 
 import * as vm from 'node:vm';
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { validator } from '../src/index.js';
 
 describe('interpolation', () => {
   // The main testing for interpolating lazy-evaluators and expectation instances is done elsewhere

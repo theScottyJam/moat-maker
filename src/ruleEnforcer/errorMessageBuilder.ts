@@ -21,12 +21,12 @@ that's set to unique strings (or in some cases, numbers). An attempt is made to 
 - There's only one such property that follows the above rules.
 */
 
-import type { LookupPath, PathSegment } from './LookupPath';
-import type { Rule } from '../types/validationRules';
-import { assert, group, indentMultilineString, throwIndexOutOfBounds } from '../util';
-import { calcCheckResponseDeepness, type CheckFnResponse, type MatchResponse } from './ruleMatcherTools';
-import { comparePrimitiveLiterals } from './privitiveLiteralEnforcer';
-import { isExpectation } from '../types/validator';
+import type { LookupPath, PathSegment } from './LookupPath.js';
+import type { Rule } from '../types/validationRules.js';
+import { assert, group, indentMultilineString, throwIndexOutOfBounds } from '../util.js';
+import { calcCheckResponseDeepness, type CheckFnResponse, type MatchResponse } from './ruleMatcherTools.js';
+import { comparePrimitiveLiterals } from './privitiveLiteralEnforcer.js';
+import { isExpectation } from '../types/validator.js';
 
 export interface BuildValueMatchErrorOpts {
   readonly errorPrefix?: string | undefined

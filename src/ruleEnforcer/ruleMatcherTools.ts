@@ -1,18 +1,18 @@
-import type { Rule } from '../types/validationRules';
-import { assert, UnreachableCaseError } from '../util';
-import type { DeepRange } from './deepnessTools';
-import { arrayCheck } from './arrayEnforcer';
-import { interpolationCheck } from './interpolationEnforcer';
-import { intersectionCheck } from './intersectionEnforcer';
-import { iterableCheck } from './iterableEnforcer';
-import { noopCheck } from './noopEnforcer';
-import { propertyCheck } from './propertyEnforcer';
-import { primitiveLiteralCheck } from './privitiveLiteralEnforcer';
-import { simpleCheck } from './simpleEnforcer';
-import { tupleCheck } from './tupleEnforcer';
-import { unionCheck } from './unionEnforcer';
-import type { LookupPath } from './LookupPath';
-import type { InterpolatedValue } from '../types/validator';
+import type { Rule } from '../types/validationRules.js';
+import { assert, UnreachableCaseError } from '../util.js';
+import type { DeepRange } from './deepnessTools.js';
+import { arrayCheck } from './arrayEnforcer.js';
+import { interpolationCheck } from './interpolationEnforcer.js';
+import { intersectionCheck } from './intersectionEnforcer.js';
+import { iterableCheck } from './iterableEnforcer.js';
+import { noopCheck } from './noopEnforcer.js';
+import { propertyCheck } from './propertyEnforcer.js';
+import { primitiveLiteralCheck } from './privitiveLiteralEnforcer.js';
+import { simpleCheck } from './simpleEnforcer.js';
+import { tupleCheck } from './tupleEnforcer.js';
+import { unionCheck } from './unionEnforcer.js';
+import type { LookupPath } from './LookupPath.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 // With both progress values and deepness values, these numbers should either stay the same
 // or increase as you get further into a check algorithm. They should never decrease.

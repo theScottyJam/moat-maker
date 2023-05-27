@@ -1,4 +1,4 @@
-import { validator } from '../src';
+import { validator } from '../src/index.js';
 
 describe('noop rules', () => {
   describe('unknown', () => {

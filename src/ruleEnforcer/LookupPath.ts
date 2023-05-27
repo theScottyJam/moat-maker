@@ -1,5 +1,5 @@
-import { assert, UnreachableCaseError } from '../util';
-import { isIdentifier } from '../ruleParser';
+import { assert, UnreachableCaseError } from '../util.js';
+import { isIdentifier } from '../ruleParser/index.js';
 
 export type PathSegment =
   { category: 'accessProperty', propertyKey: string | symbol }

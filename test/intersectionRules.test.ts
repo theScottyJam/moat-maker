@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError, type Validator } from '../src';
+import { validator, ValidatorSyntaxError, type Validator } from '../src/index.js';
 
 const createValidator = (content: string): Validator => validator(
   Object.assign([], { raw: [content] }) as any,

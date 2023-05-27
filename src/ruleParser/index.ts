@@ -1,16 +1,16 @@
-import { createValidatorSyntaxError, ValidatorSyntaxError } from './parseExceptions';
-import { createTokenStream, isIdentifier } from './tokenStream';
-import { packagePrivate } from '../packagePrivateAccess';
+import { createValidatorSyntaxError, ValidatorSyntaxError } from './parseExceptions.js';
+import { createTokenStream, isIdentifier } from './tokenStream.js';
+import { packagePrivate } from '../packagePrivateAccess.js';
 import {
   type Rule,
   type PropertyRuleContentValue,
   type SimpleTypeVariant,
   type PropertyRuleIndexValue,
   _validationRulesInternals,
-} from '../types/validationRules';
-import type { TokenStream } from '../types/tokenizer';
-import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from '../util';
-import type { InterpolatedValue } from '../types/validator';
+} from '../types/validationRules.js';
+import type { TokenStream } from '../types/tokenizer.js';
+import { assert, UnreachableCaseError, FrozenMap, reprUnknownValue } from '../util.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 const { allSimpleTypes, checkDynamicPropertyName } = _validationRulesInternals[packagePrivate];
 

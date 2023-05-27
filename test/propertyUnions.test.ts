@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { validator } from '../src/index.js';
 
 describe('union rules with objects', () => {
   test('fails to match both union variants (test 1)', () => {

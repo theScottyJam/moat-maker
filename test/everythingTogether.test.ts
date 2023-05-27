@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { validator } from '../src/index.js';
 
 describe('order of operations', () => {
   test('intersection syntax has a higher precedence than union syntax (test 1)', () => {

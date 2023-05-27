@@ -1,7 +1,7 @@
-import type { LookupPath } from './LookupPath';
-import type { NoopRule } from '../types/validationRules';
-import type { CheckFnResponse } from './ruleMatcherTools';
-import type { InterpolatedValue } from '../types/validator';
+import type { LookupPath } from './LookupPath.js';
+import type { NoopRule } from '../types/validationRules.js';
+import type { CheckFnResponse } from './ruleMatcherTools.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 // What did you expect?
 // This module did have no-op in its name after all :)

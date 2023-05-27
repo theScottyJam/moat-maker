@@ -1,5 +1,5 @@
-import type { PropertyRuleContentValue, PropertyRuleIndexValue, Rule, Ruleset } from './types/validationRules';
-import { UnreachableCaseError, FrozenMap } from './util';
+import type { PropertyRuleContentValue, PropertyRuleIndexValue, Rule, Ruleset } from './types/validationRules.js';
+import { UnreachableCaseError, FrozenMap } from './util.js';
 
 interface FreezeRuleSetOpts {
   readonly assumeRootRuleIsDeepFrozen: boolean

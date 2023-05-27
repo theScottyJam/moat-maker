@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src/index.js';
 
 describe('comments', () => {
   test('ignores block comments between tokens', () => {

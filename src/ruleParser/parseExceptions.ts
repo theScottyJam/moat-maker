@@ -1,6 +1,6 @@
-import { assert } from '../util';
-import type { TextRange } from './TextPosition';
-import { generateMessageWithPosition } from './errorFormatter';
+import { assert } from '../util.js';
+import type { TextRange } from './TextPosition.js';
+import { generateMessageWithPosition } from './errorFormatter.js';
 
 const ExceptionConstructionKey = Symbol('exception constructor key');
 

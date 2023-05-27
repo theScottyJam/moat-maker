@@ -3,11 +3,11 @@
 // This is done because the real validator API is just a thin wrapper over this module, which uses this module,
 // both for its implementation and to validate the user-provided data.
 
-import { parse } from './ruleParser';
-import { freezeRuleset } from './ruleFreezer';
-import { matchArgument, matchValue } from './ruleEnforcer';
-import { lookupCacheEntry } from './cacheControl';
-import type { Ruleset } from './types/validationRules';
+import { parse } from './ruleParser/index.js';
+import { freezeRuleset } from './ruleFreezer.js';
+import { matchArgument, matchValue } from './ruleEnforcer/index.js';
+import { lookupCacheEntry } from './cacheControl.js';
+import type { Ruleset } from './types/validationRules.js';
 import type {
   AssertMatchesOpts,
   Validator,
@@ -16,8 +16,8 @@ import type {
   ValidatorTemplateTagStaticFields,
   Expectation,
   InterpolatedValue,
-} from './types/validator';
-import { packagePrivate } from './packagePrivateAccess';
+} from './types/validator.js';
+import { packagePrivate } from './packagePrivateAccess.js';
 
 export const uncheckedValidator = function uncheckedValidator<T=unknown>(
   parts: TemplateStringsArray,

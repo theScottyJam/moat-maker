@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError, type Expectation } from '../src';
-import { FrozenMap } from '../src/util';
+import { validator, ValidatorSyntaxError, type Expectation } from '../src/index.js';
+import { FrozenMap } from '../src/util.js';
 
 describe('property rules', () => {
   test('accepts an object with matching properties', () => {

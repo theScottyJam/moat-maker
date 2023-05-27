@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
-import { testableHelpers as cacheApi } from '../src/cacheControl';
+import { validator, ValidatorSyntaxError } from '../src/index.js';
+import { testableHelpers as cacheApi } from '../src/cacheControl.js';
 
 describe('validator behavior', () => {
   test('a validator instance is a frozen object', () => {

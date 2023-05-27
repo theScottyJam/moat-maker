@@ -1,8 +1,8 @@
-import { createValidatorSyntaxError, type ValidatorSyntaxError } from './parseExceptions';
-import { TextPosition, type TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition';
-import type { Token, TokenStream } from '../types/tokenizer';
-import { assert, throwIndexOutOfBounds, UnreachableCaseError } from '../util';
-import type { InterpolatedValue } from '../types/validator';
+import { createValidatorSyntaxError, type ValidatorSyntaxError } from './parseExceptions.js';
+import { TextPosition, type TextRange, END_OF_TEXT, INTERPOLATION_POINT } from './TextPosition.js';
+import type { Token, TokenStream } from '../types/tokenizer.js';
+import { assert, throwIndexOutOfBounds, UnreachableCaseError } from '../util.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 // The regex is stateful with the sticky flag, so we create a new one each time
 // we need one.

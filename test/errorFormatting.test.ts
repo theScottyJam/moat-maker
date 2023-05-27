@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
-import { validator, type Validator } from '../src';
-import type { InterpolatedValue } from '../src/types/validator';
+import { validator, type Validator } from '../src/index.js';
+import type { InterpolatedValue } from '../src/types/validator.js';
 
 const createValidator = (content: string): Validator => validator(
   Object.assign([], { raw: [content] }) as any,

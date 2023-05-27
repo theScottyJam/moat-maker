@@ -1,10 +1,10 @@
-import type { InterpolationRule } from '../types/validationRules';
-import { isExpectation, isLazyEvaluator, isValidator, type InterpolatedValue } from '../types/validator';
-import { DEEP_LEVELS } from './deepnessTools';
-import { isBrandOf, isDirectInstanceOf, reprUnknownValue, UnreachableCaseError } from '../util';
-import { packagePrivate } from '../packagePrivateAccess';
-import { match, type CheckFnResponse } from './ruleMatcherTools';
-import type { LookupPath } from './LookupPath';
+import type { InterpolationRule } from '../types/validationRules.js';
+import { isExpectation, isLazyEvaluator, isValidator, type InterpolatedValue } from '../types/validator.js';
+import { DEEP_LEVELS } from './deepnessTools.js';
+import { isBrandOf, isDirectInstanceOf, reprUnknownValue, UnreachableCaseError } from '../util.js';
+import { packagePrivate } from '../packagePrivateAccess.js';
+import { match, type CheckFnResponse } from './ruleMatcherTools.js';
+import type { LookupPath } from './LookupPath.js';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type

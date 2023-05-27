@@ -4,14 +4,14 @@
 // only error that we need to show the user, is that the `x` property should have been `2`, not `5`. We
 // don't need to explain the alternative option of dropping the whole object and replacing it with `null`.
 
-import { availableDeepLevels as availableDeepLevelsForSimple } from './simpleEnforcer';
-import { availableDeepLevels as availableDeepLevelsForPrimitiveLiteral } from './privitiveLiteralEnforcer';
-import { availableDeepLevels as availableDeepLevelsForObject } from './propertyEnforcer';
-import { availableDeepLevels as availableDeepLevelsForArray } from './arrayEnforcer';
-import { availableDeepLevels as availableDeepLevelsForTuple } from './tupleEnforcer';
-import { availableDeepLevels as availableDeepLevelsForIterable } from './iterableEnforcer';
-import { availableDeepLevels as availableDeepLevelsForInterpolation } from './interpolationEnforcer';
-import { UnreachableCaseError } from '../util';
+import { availableDeepLevels as availableDeepLevelsForSimple } from './simpleEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForPrimitiveLiteral } from './privitiveLiteralEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForObject } from './propertyEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForArray } from './arrayEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForTuple } from './tupleEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForIterable } from './iterableEnforcer.js';
+import { availableDeepLevels as availableDeepLevelsForInterpolation } from './interpolationEnforcer.js';
+import { UnreachableCaseError } from '../util.js';
 import type { Rule } from '../types/validationRules';
 
 export interface DeepRange {

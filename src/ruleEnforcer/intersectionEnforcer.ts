@@ -1,8 +1,8 @@
-import type { LookupPath } from './LookupPath';
-import type { IntersectionRule } from '../types/validationRules';
-import { getMaxDeepnessLevelOf, maxDeepRange, DEEP_LEVELS, type DeepRange } from './deepnessTools';
-import { calcCheckResponseDeepness, match, type CheckFnResponse } from './ruleMatcherTools';
-import type { InterpolatedValue } from '../types/validator';
+import type { LookupPath } from './LookupPath.js';
+import type { IntersectionRule } from '../types/validationRules.js';
+import { getMaxDeepnessLevelOf, maxDeepRange, DEEP_LEVELS, type DeepRange } from './deepnessTools.js';
+import { calcCheckResponseDeepness, match, type CheckFnResponse } from './ruleMatcherTools.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 export function intersectionCheck(
   rule: IntersectionRule,

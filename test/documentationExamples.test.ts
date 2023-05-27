@@ -8,7 +8,7 @@
 // to make sure we're not accidentally making changes to the documented behaviors.
 
 import * as assert from 'node:assert';
-import { validator, ValidatorSyntaxError, type Validator } from '../src';
+import { validator, ValidatorSyntaxError, type Validator } from '../src/index.js';
 
 describe('documentation examples', () => {
   describe('README', () => {

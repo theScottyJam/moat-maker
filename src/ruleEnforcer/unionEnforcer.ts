@@ -1,7 +1,7 @@
-import type { LookupPath } from './LookupPath';
-import type { UnionRule } from '../types/validationRules';
-import { match, type MatchResponse, type CheckFnResponse } from './ruleMatcherTools';
-import type { InterpolatedValue } from '../types/validator';
+import type { LookupPath } from './LookupPath.js';
+import type { UnionRule } from '../types/validationRules.js';
+import { match, type MatchResponse, type CheckFnResponse } from './ruleMatcherTools.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 export function unionCheck(
   rule: UnionRule,

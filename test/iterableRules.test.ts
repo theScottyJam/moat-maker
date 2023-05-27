@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src/index.js';
 
 describe('iterable rules', () => {
   test('accepts iterables with correct entry types an input', () => {

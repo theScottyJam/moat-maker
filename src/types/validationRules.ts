@@ -3,16 +3,16 @@
 // what shape of data we expect to find in a ruleset.
 // See the doc page here: https://thescottyjam.gitbook.io/moat-maker/resources/syntax-reference
 
-import { asOrdinal, FrozenMap, reprUnknownValue } from '../util';
+import { asOrdinal, FrozenMap, reprUnknownValue } from '../util.js';
 import {
   type InterpolatedValue,
   type Validator,
   type ValidatorTemplateTag,
   type LazyEvaluator,
   createInterpolatedValueCheck,
-} from './validator';
-import { packagePrivate } from '../packagePrivateAccess';
-import { expectDirectInstanceFactory, expectKeysFromFactory, expectNonSparseFactory } from '../validationHelpers';
+} from './validator.js';
+import { packagePrivate } from '../packagePrivateAccess.js';
+import { expectDirectInstanceFactory, expectKeysFromFactory, expectNonSparseFactory } from '../validationHelpers.js';
 
 export type SimpleTypeVariant = 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'object' | 'null' | 'undefined';
 

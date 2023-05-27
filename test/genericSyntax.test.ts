@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { validator, ValidatorSyntaxError } from '../src';
+import { validator, ValidatorSyntaxError } from '../src/index.js';
 
 describe('generic syntax', () => {
   test('Allows ${...} to be tested against', () => {

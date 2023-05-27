@@ -1,7 +1,7 @@
 /* eslint-disable no-new-wrappers */
 
 import { strict as assert } from 'node:assert';
-import { validator } from '../src';
+import { validator } from '../src/index.js';
 
 describe('simple rules', () => {
   describe('general', () => {

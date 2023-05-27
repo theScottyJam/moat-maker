@@ -1,8 +1,8 @@
 // Note that sometimes this module uses the term "char" loosely,
 // and may call strings like "${…}" or "\\n" a "char".
 
-import { TextPosition, type TextRange, type ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition';
-import { assert, indentMultilineString, pipe } from '../util';
+import { TextPosition, type TextRange, type ContentPointedAt, INTERPOLATION_POINT, END_OF_TEXT } from './TextPosition.js';
+import { assert, indentMultilineString, pipe } from '../util.js';
 
 const MAX_LINE_WIDTH = 70;
 const MAX_UNDERLINED_WIDTH = 40;

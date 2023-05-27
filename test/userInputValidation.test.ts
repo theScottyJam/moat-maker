@@ -2,8 +2,8 @@
 
 import * as vm from 'node:vm';
 import { strict as assert } from 'node:assert';
-import { validator, type PropertyRule, type Ruleset } from '../src';
-import { DISABLE_PARAM_VALIDATION } from '../src/config';
+import { validator, type PropertyRule, type Ruleset } from '../src/index.js';
+import { DISABLE_PARAM_VALIDATION } from '../src/config.js';
 
 // These are not meant to be comprehensive tests, rather,
 // they're simple smoke tests to make sure the validation checks

@@ -1,5 +1,5 @@
-import type { TextRange } from '../ruleParser/TextPosition';
-import type { InterpolatedValue } from './validator';
+import type { TextRange } from '../ruleParser/TextPosition.js';
+import type { InterpolatedValue } from './validator.js';
 
 // Note that a number like "Infinity" gets classified as an identifier,
 export interface TextToken {

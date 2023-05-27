@@ -1,7 +1,7 @@
-import type { Ruleset } from './validationRules';
-import { packagePrivate } from '../packagePrivateAccess';
-import { expectDirectInstanceFactory, expectKeysFromFactory } from '../validationHelpers';
-import { DISABLE_PARAM_VALIDATION } from '../config';
+import type { Ruleset } from './validationRules.js';
+import { packagePrivate } from '../packagePrivateAccess.js';
+import { expectDirectInstanceFactory, expectKeysFromFactory } from '../validationHelpers.js';
+import { DISABLE_PARAM_VALIDATION } from '../config.js';
 
 type ErrorFactoryFn = ((...params: ConstructorParameters<typeof Error>) => Error);
 

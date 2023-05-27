@@ -1,9 +1,9 @@
-import type { LookupPath } from './LookupPath';
-import type { ArrayRule } from '../types/validationRules';
-import { reprUnknownValue } from '../util';
-import { DEEP_LEVELS } from './deepnessTools';
-import { match, type CheckFnResponse } from './ruleMatcherTools';
-import type { InterpolatedValue } from '../types/validator';
+import type { LookupPath } from './LookupPath.js';
+import type { ArrayRule } from '../types/validationRules.js';
+import { reprUnknownValue } from '../util.js';
+import { DEEP_LEVELS } from './deepnessTools.js';
+import { match, type CheckFnResponse } from './ruleMatcherTools.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 // The deep levels used in this module
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type

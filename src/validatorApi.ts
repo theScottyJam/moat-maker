@@ -1,4 +1,4 @@
-import { type Ruleset, _validationRulesInternals } from './types/validationRules';
+import { type Ruleset, _validationRulesInternals } from './types/validationRules.js';
 import {
   createAssertMatchesOptsCheck,
   createInterpolatedValueCheck,
@@ -11,11 +11,11 @@ import {
   type ValidatorTemplateTag,
   type Expectation,
   type InterpolatedValue,
-} from './types/validator';
-import { uncheckedValidator } from './uncheckedValidatorApi';
-import { packagePrivate } from './packagePrivateAccess';
-import { DISABLE_PARAM_VALIDATION } from './config';
-import { expectDirectInstanceFactory } from './validationHelpers';
+} from './types/validator.js';
+import { uncheckedValidator } from './uncheckedValidatorApi.js';
+import { packagePrivate } from './packagePrivateAccess.js';
+import { DISABLE_PARAM_VALIDATION } from './config.js';
+import { expectDirectInstanceFactory } from './validationHelpers.js';
 
 const { createRulesetCheck } = _validationRulesInternals[packagePrivate];
 const rulesetCheck = createRulesetCheck(uncheckedValidator);

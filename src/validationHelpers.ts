@@ -1,5 +1,5 @@
-import type { Expectation, ValidatorTemplateTag } from './types/validator';
-import { isDirectInstanceOf, reprUnknownValue } from './util';
+import type { Expectation, ValidatorTemplateTag } from './types/validator.js';
+import { isDirectInstanceOf, reprUnknownValue } from './util.js';
 
 export function expectDirectInstanceFactory(validator: ValidatorTemplateTag) {
   return (targetClass: new (...params: any[]) => any) => validator.expectTo((value) => {

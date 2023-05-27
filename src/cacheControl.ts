@@ -1,5 +1,5 @@
-import { assert } from './util';
-import type { Rule } from './types/validationRules';
+import { assert } from './util.js';
+import type { Rule } from './types/validationRules.js';
 
 interface CacheEntry {
   readonly exists: () => boolean

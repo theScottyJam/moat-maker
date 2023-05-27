@@ -1,14 +1,14 @@
-import { LookupPath } from './LookupPath';
-import type { Rule } from '../types/validationRules';
+import { LookupPath } from './LookupPath.js';
+import type { Rule } from '../types/validationRules.js';
 import {
   buildValueMatchError,
   buildArgumentMatchError,
   type BuildValueMatchErrorOpts,
   type BuildArgumentMatchErrorOpts,
-} from './errorMessageBuilder';
-import { match } from './ruleMatcherTools';
-import { asOrdinal } from '../util';
-import type { InterpolatedValue } from '../types/validator';
+} from './errorMessageBuilder.js';
+import { match } from './ruleMatcherTools.js';
+import { asOrdinal } from '../util.js';
+import type { InterpolatedValue } from '../types/validator.js';
 
 export function matchValue(
   rule: Rule,
