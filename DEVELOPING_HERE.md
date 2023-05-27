@@ -22,7 +22,6 @@ The workflow for publishing will generally go as follows:
 * Run `nvm use` to make sure you're on the correct version of Node.
 * Run `npm run prepublishOnly` to make sure everything will be able to publish without issue.
 * Update the version number in package.json.
-* Add information about this release to releaseNotes.md.
 * Add these changes to a "Update version to X.X.X" commit.
 * Add a version tag to this commit in GitHub
 * Run `npm publish` to publish the branch.
