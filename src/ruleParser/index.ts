@@ -115,7 +115,7 @@ function parseRuleAtPrecedence2(tokenStream: TokenStream): Rule {
 
 function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
   const token = tokenStream.peek();
-  if (token.category === 'number' || (['Infinity', '+', '-'] as unknown[]).includes(token.value)) {
+  if (token.category === 'number' || (['+', '-'] as unknown[]).includes(token.value)) {
     return {
       category: 'primitiveLiteral',
       value: parseNumber(tokenStream),
@@ -531,7 +531,7 @@ function parseNumber(tokenStream: TokenStream): number {
 
   const numberToken = tokenStream.next();
 
-  if (numberToken.category !== 'number' && numberToken.value !== 'Infinity') {
+  if (numberToken.category !== 'number') {
     throw createValidatorSyntaxError('Expected a number after the sign.', tokenStream.originalText, numberToken.range);
   }
 

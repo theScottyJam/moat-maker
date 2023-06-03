@@ -301,7 +301,6 @@ describe('documentation examples', () => {
       validator`'Hello World!'`.assertMatches('Hello World!'); // ✓
       validator`-2`.assertMatches(-2); // ✓
       validator`0xFF`.assertMatches(255); // ✓
-      validator`Infinity`.assertMatches(Infinity); // ✓
       validator`2n`.assertMatches(2n); // ✓
       validator`true`.assertMatches(true); // ✓
     });

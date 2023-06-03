@@ -517,12 +517,6 @@ describe('primitive literal rules', () => {
         assert.throws((): any => validator`0o167.2`, ValidatorSyntaxError);
       });
 
-      test('infinity', () => {
-        expect(validator`Infinity`.matches(Infinity)).toBe(true);
-        expect(validator`+Infinity`.matches(Infinity)).toBe(true);
-        expect(validator`- Infinity`.matches(-Infinity)).toBe(true);
-      });
-
       test('overly large number', () => {
         const v = validator`1234567890123456789012345678901234567890`;
         // eslint-disable-next-line @typescript-eslint/no-loss-of-precision
@@ -623,6 +617,18 @@ describe('primitive literal rules', () => {
             'Expected to find a type here. (line 1, col 1)',
             '  NaN',
             '  ~~~',
+          ].join('\n'),
+        });
+        assert.throws(act, ValidatorSyntaxError);
+      });
+
+      test("Infinity isn't a valid numeric literal to match against", () => {
+        const act = (): any => validator`Infinity`;
+        assert.throws(act, {
+          message: [
+            'Expected to find a type here. (line 1, col 1)',
+            '  Infinity',
+            '  ~~~~~~~~',
           ].join('\n'),
         });
         assert.throws(act, ValidatorSyntaxError);
