@@ -141,7 +141,7 @@ function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
       value: token.parsedValue,
     };
   } else if (token.category === 'identifier') {
-    return parseLiteralOrNoop(tokenStream);
+    return parseSimpleTypeOrNoop(tokenStream);
   } else if (token.category === 'interpolation') {
     const interpolationToken = tokenStream.next();
     assert(interpolationToken.category === 'interpolation');
@@ -166,7 +166,7 @@ function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
   }
 }
 
-function parseLiteralOrNoop(tokenStream: TokenStream): Rule {
+function parseSimpleTypeOrNoop(tokenStream: TokenStream): Rule {
   const token = tokenStream.next();
   assert(token.category === 'identifier');
 
