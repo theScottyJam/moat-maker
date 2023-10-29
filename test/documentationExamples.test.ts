@@ -599,7 +599,7 @@ describe('documentation examples', () => {
       function expectRef(expectedRef: object) {
         return validator.expectTo(value => {
           if (value !== expectedRef) {
-            return `to be the same object as ${String(expectedRef)}`;
+            return `be the same object as ${String(expectedRef)}`;
           }
         });
       }
@@ -610,7 +610,7 @@ describe('documentation examples', () => {
       assert.throws(() => {
         validator`${expectRef(myRef)}`.assertMatches({}); // ✕
       }, {
-        message: 'Expected <receivedValue>, which was [object Object], to to be the same object as [object Object]',
+        message: 'Expected <receivedValue>, which was [object Object], to be the same object as [object Object]',
       });
     });
 
@@ -678,6 +678,59 @@ describe('documentation examples', () => {
           'Found a hole at index 1.'
         ),
       });
+    });
+
+    test('getMatchFailureMessage()', () => {
+      interface GetMatchFailureMessageOpts {
+        readonly at?: string
+        readonly errorPrefix?: string
+      }
+
+      function getMatchFailureMessage(
+        validator: Validator,
+        valueToValidate: unknown,
+        opts: GetMatchFailureMessageOpts = {},
+      ): string | undefined {
+        class ValidationError extends Error {}
+
+        try {
+          validator.assertMatches(valueToValidate, {
+            ...opts,
+            errorFactory: (...args) => new ValidationError(...args),
+          });
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            return error.message;
+          } else {
+            throw error;
+          }
+        }
+
+        return undefined;
+      }
+
+      // Example usage
+
+      // Returns 'Expected <receivedValue> to be of type "number" but got type "string".'
+      assert.equal(
+        getMatchFailureMessage(validator`number`, 'not-a-number'),
+        'Expected <receivedValue> to be of type "number" but got type "string".',
+      );
+
+      // Returns 'Something went wrong: Expected <value> to be of type "number" but got type "string".'
+      assert.equal(
+        getMatchFailureMessage(validator`number`, 'not-a-number', {
+          at: '<value>',
+          errorPrefix: 'Something went wrong:',
+        }),
+        'Something went wrong: Expected <value> to be of type "number" but got type "string".',
+      );
+
+      // Returned undefined
+      assert.equal(
+        getMatchFailureMessage(validator`number`, 2),
+        undefined,
+      );
     });
   });
 
