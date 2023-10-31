@@ -54,13 +54,13 @@ A number of existing runtime type-validation tools already exists in the JavaScr
 
 So why make another?
 
-The existing type-validation tools all tend to exhibit similar issues:
+Many of the existing type-validation tools tend to exhibit similar issues:
 * They can be cumbersome to use, due to the fact that they rely on function calls or nested object structures to define their schemas.
 * There's a higher learning curve associated with these tools because they have a fairly large and unfamiliar API surface area.
 
 Moat Maker set out to solve both of these problems by requiring schemas to be defined, not by nested objects or function calls, but with TypeScript syntax - a syntax that many JavaScript developers are already familiar with. This greatly reduced the learning curve for this project (in fact, all you really need to know to get started can be found in the "Quick Start" section below). Due to the concise nature of TypeScript's syntax, your schemas will feel much more light-weight and simple to understand.
 
-If Moat Maker's goals don't align with yours, feel free to take a look at the great work these other projects have done to see if they offer what you need.
+If Moat Maker's goals don't align with yours, feel free to take a look at the great work these other projects have done to see if they offer what you need. You may also be interested in [ArkType](https://github.com/arktypeio/arktype), which has similar goals to Moat-Maker - it doesn't support quite as much TypeScript syntax, but it is capable of auto-generating TypeScript types from your schemas.
 
 ## Quick Start
 
