@@ -70,6 +70,18 @@ describe('primitive literal rules', () => {
       assert.throws(act, TypeError);
     });
 
+    test('can provide negative bigints', () => {
+      const v = validator`-2n`;
+      assert(v.matches(-2n));
+      assert(!v.matches(2n));
+    });
+
+    test('can provide bigints with an explicit "+" sign', () => {
+      const v = validator`+2n`;
+      assert(v.matches(2n));
+      assert(!v.matches(-2n));
+    });
+
     test('produces the correct rule', () => {
       const v = validator`42n`;
       expect(v.ruleset).toMatchObject({

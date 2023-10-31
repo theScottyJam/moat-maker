@@ -114,19 +114,32 @@ function parseRuleAtPrecedence2(tokenStream: TokenStream): Rule {
 }
 
 function parseRuleAtPrecedence3(tokenStream: TokenStream): Rule {
+  let sign;
+  if ((['-', '+'] as unknown[]).includes(tokenStream.peek().value)) {
+    const signToken = tokenStream.next();
+    assert(signToken.category === 'specialChar');
+    sign = signToken.value as '+' | '-';
+
+    const numberToken = tokenStream.peek();
+    if (numberToken.category !== 'number' && numberToken.category !== 'bigint') {
+      throw createValidatorSyntaxError('Expected a number after the sign.', tokenStream.originalText, numberToken.range);
+    }
+  }
+
   const token = tokenStream.peek();
-  if (token.category === 'number' || (['+', '-'] as unknown[]).includes(token.value)) {
+  if (token.category === 'number') {
     return {
       category: 'primitiveLiteral',
-      value: parseNumber(tokenStream),
+      value: parseNumber(tokenStream, { sign: sign ?? '+' }),
     };
   } else if (token.category === 'bigint') {
     tokenStream.next();
     assert(token.value.at(-1) === 'n');
     const numberWithoutSuffix = token.value.slice(0, -1);
+    const factor = sign === '-' ? -1n : 1n;
     return {
       category: 'primitiveLiteral',
-      value: BigInt(numberWithoutSuffix),
+      value: BigInt(numberWithoutSuffix) * factor,
     };
   } else if ((['true', 'false'] as unknown[]).includes(token.value)) {
     tokenStream.next();
@@ -521,19 +534,9 @@ function tryParseTupleEntryNameRegion(tokenStream: TokenStream): { name: string,
   return { name: entryNameToken.value, optional };
 }
 
-function parseNumber(tokenStream: TokenStream): number {
-  let sign = '+';
-  if ((['-', '+'] as unknown[]).includes(tokenStream.peek().value)) {
-    const signToken = tokenStream.next();
-    assert(signToken.category === 'specialChar');
-    sign = signToken.value;
-  }
-
+function parseNumber(tokenStream: TokenStream, { sign }: { sign: '+' | '-' }): number {
   const numberToken = tokenStream.next();
-
-  if (numberToken.category !== 'number') {
-    throw createValidatorSyntaxError('Expected a number after the sign.', tokenStream.originalText, numberToken.range);
-  }
+  assert(numberToken.category === 'number');
 
   if (/^0[0-7_]+([e.].*)?$/.exec(numberToken.value) !== null) {
     throw createValidatorSyntaxError(
