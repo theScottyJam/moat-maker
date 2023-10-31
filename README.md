@@ -1,5 +1,7 @@
 # Moat Maker
 
+[Complete Documentation](https://thescottyjam.gitbook.io/moat-maker/)
+
 Validate your runtime JavaScript data with easy to pick up, TypeScript-inspired syntax. It's as easy as:
 
 ```bash
