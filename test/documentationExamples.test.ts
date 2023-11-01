@@ -4,8 +4,13 @@
 /* eslint-disable consistent-return */
 /* eslint-disable symbol-description */
 
-// Each example found in the documentation has a corresponding test case in here,
+// Each example found in the documentation has a corresponding test case in here
 // to make sure we're not accidentally making changes to the documented behaviors.
+// The examples in the test cases may differ in a couple of ways:
+// * With the exception of the "recipes" page, type information will be stripped out in the docs version.
+//   (The examples in the docs are generally written in JavaScript, while this is a TypeScript file)
+// * Assertions are added to the tests to validate the claims that comments make.
+//   (e.g. if a comment says that something would get returned or thrown, that will get wrapped in an assertion)
 
 import * as assert from 'node:assert';
 import { validator, ValidatorSyntaxError, type Validator } from '../src/index.js';
