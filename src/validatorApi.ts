@@ -156,6 +156,27 @@ const staticFields: ValidatorTemplateTagStaticFields = {
       },
     });
   },
+
+  isValidator(value: unknown): value is Validator {
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`
+      .assertArgs('validator.isValidator()', arguments);
+
+    return uncheckedValidator.isValidator(value);
+  },
+
+  isExpectation(value: unknown): value is Expectation {
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`
+      .assertArgs('validator.isExpectation()', arguments);
+
+    return uncheckedValidator.isExpectation(value);
+  },
+
+  isLazyEvaluator(value: unknown): value is LazyEvaluator {
+    !DISABLE_PARAM_VALIDATION && uncheckedValidator`[value: unknown]`
+      .assertArgs('validator.isLazyEvaluator()', arguments);
+
+    return uncheckedValidator.isLazyEvaluator(value);
+  },
 };
 
 Object.assign(validator, staticFields);

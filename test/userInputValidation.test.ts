@@ -256,6 +256,36 @@ import { DISABLE_PARAM_VALIDATION } from '../src/config.js';
     });
   });
 
+  test('Wrong number of parameters to validator.isValidator()', () => {
+    const act = (): any => (validator.isValidator as any)(0, 1, 2);
+    assert.throws(act, {
+      message: (
+        'Received invalid arguments for validator.isValidator(): ' +
+        'Expected the <argumentList> array to have 1 entry, but found 3.'
+      ),
+    });
+  });
+
+  test('Wrong number of parameters to validator.isExpectation()', () => {
+    const act = (): any => (validator.isExpectation as any)(0, 1, 2);
+    assert.throws(act, {
+      message: (
+        'Received invalid arguments for validator.isExpectation(): ' +
+        'Expected the <argumentList> array to have 1 entry, but found 3.'
+      ),
+    });
+  });
+
+  test('Wrong number of parameters to validator.isLazyEvaluator()', () => {
+    const act = (): any => (validator.isLazyEvaluator as any)(0, 1, 2);
+    assert.throws(act, {
+      message: (
+        'Received invalid arguments for validator.isLazyEvaluator(): ' +
+        'Expected the <argumentList> array to have 1 entry, but found 3.'
+      ),
+    });
+  });
+
   // This tests expectations that are applied to every user-supplied object and array that gets validated.
   describe('object and array restrictions', () => {
     test('can not supply an inherited object where a plain object is expected', () => {

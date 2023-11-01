@@ -107,13 +107,13 @@ export interface ValidatorTemplateTagStaticFields {
   /**
    * This function expects a ruleset as a parameter and returns a new validator instance.
    */
-  fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
+  readonly fromRuleset: <T=unknown>(rule: Ruleset) => Validator<T>
   /**
    * If a validator instance is passed in, the same validator instance is returned.
    * If a string is passed in, the string will be parsed as a string containing validation rules,
    * and a new validator instance will be returned.
    */
-  from: (unknownValue: string | Validator) => Validator
+  readonly from: (unknownValue: string | Validator) => Validator
   /**
    * This function allows you to lazily fetch or build a validator instance at the moment it's needed.
    * It expects a callback to be provided and will return a lazy evaluator (of type LazyEvaluator),
@@ -122,7 +122,7 @@ export interface ValidatorTemplateTagStaticFields {
    * The callback accepts, as a parameter, the value it's in charge of validating.
    * It should return a validator instance, which will be used to validate the data.
    */
-  lazy: (deriveValidator: (value: unknown) => Validator) => LazyEvaluator
+  readonly lazy: (deriveValidator: (value: unknown) => Validator) => LazyEvaluator
   /**
    * The validator.expectTo() function makes it easy to supply custom validation logic.
    * It expects a callback that returns an error string or null, depending on if your custom
@@ -132,7 +132,19 @@ export interface ValidatorTemplateTagStaticFields {
    * The error message string you return is expected to complete the sentence "Expect [the value] to ...".
    * End the phrase with a period, and if needed, you can add additional sentences afterward.
    */
-  expectTo: (callback: (valueBeingMatched: unknown) => string | undefined) => Expectation
+  readonly expectTo: (callback: (valueBeingMatched: unknown) => string | undefined) => Expectation
+  /**
+   * Returns true if the provided value is a validator instance.
+   */
+  readonly isValidator: (value: unknown) => value is Validator
+  /**
+   * Returns true if the provided value is an Expectation instance.
+   */
+  readonly isExpectation: (value: unknown) => value is Expectation
+  /**
+   * Returns true if the provided value is a LazyEvaluator instance.
+   */
+  readonly isLazyEvaluator: (value: unknown) => value is LazyEvaluator
 }
 
 type Primitive = string | number | bigint | boolean | symbol | null | undefined;

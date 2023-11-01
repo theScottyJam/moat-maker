@@ -8,14 +8,17 @@ import { freezeRuleset } from './ruleFreezer.js';
 import { matchArgument, matchValue } from './ruleEnforcer/index.js';
 import { lookupCacheEntry } from './cacheControl.js';
 import type { Ruleset } from './types/validationRules.js';
-import type {
-  AssertMatchesOpts,
-  Validator,
-  LazyEvaluator,
-  ValidatorTemplateTag,
-  ValidatorTemplateTagStaticFields,
-  Expectation,
-  InterpolatedValue,
+import {
+  type AssertMatchesOpts,
+  type Validator,
+  type LazyEvaluator,
+  type ValidatorTemplateTag,
+  type ValidatorTemplateTagStaticFields,
+  type Expectation,
+  type InterpolatedValue,
+  isValidator,
+  isExpectation,
+  isLazyEvaluator,
 } from './types/validator.js';
 import { packagePrivate } from './packagePrivateAccess.js';
 
@@ -136,6 +139,18 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     return {
       [packagePrivate]: { type: 'expectation', testExpectation },
     };
+  },
+
+  isValidator(value: unknown): value is Validator {
+    return isValidator(value);
+  },
+
+  isExpectation(value: unknown): value is Expectation {
+    return isExpectation(value);
+  },
+
+  isLazyEvaluator(value: unknown): value is LazyEvaluator {
+    return isLazyEvaluator(value);
   },
 };
 

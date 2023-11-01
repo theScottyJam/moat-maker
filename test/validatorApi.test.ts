@@ -513,10 +513,48 @@ describe('validator behavior', () => {
     });
   });
 
-  test('forbids outside users from instantiating ValidatorSyntaxError', () => {
-    const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
-    assert.throws(act, (err: Error) => err.constructor === Error);
-    assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
+  describe('validator.isValidator()', () => {
+    test('returns true when a Validator instance is provided', () => {
+      const v = validator`number`;
+      expect(validator.isValidator(v)).toBe(true);
+    });
+
+    test('returns false when a non-Validator instance is provided', () => {
+      const lazyEvaluator = validator.lazy(() => validator`number`);
+      expect(validator.isValidator(lazyEvaluator)).toBe(false);
+    });
+  });
+
+  describe('validator.isExpectation()', () => {
+    test('returns true when an Expectation instance is provided', () => {
+      const expectToNotFail = validator.expectTo(() => undefined);
+      expect(validator.isExpectation(expectToNotFail)).toBe(true);
+    });
+
+    test('returns false when a non-Expectation instance is provided', () => {
+      const v = validator`number`;
+      expect(validator.isExpectation(v)).toBe(false);
+    });
+  });
+
+  describe('validator.isLazyEvaluator()', () => {
+    test('returns true when an Expectation instance is provided', () => {
+      const lazyEvaluator = validator.lazy(() => validator`number`);
+      expect(validator.isLazyEvaluator(lazyEvaluator)).toBe(true);
+    });
+
+    test('returns false when a non-Expectation instance is provided', () => {
+      const expectToNotFail = validator.expectTo(() => undefined);
+      expect(validator.isLazyEvaluator(expectToNotFail)).toBe(false);
+    });
+  });
+
+  describe('ValidatorSyntaxError', () => {
+    test('forbids outside users from instantiating ValidatorSyntaxError', () => {
+      const act = (): any => new (ValidatorSyntaxError as any)('Whoops!');
+      assert.throws(act, (err: Error) => err.constructor === Error);
+      assert.throws(act, { message: 'The ValidatorSyntaxError constructor is private.' });
+    });
   });
 
   describe('cache', () => {
