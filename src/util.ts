@@ -128,14 +128,25 @@ export function asOrdinal(number: number): string {
   return String(number) + suffix;
 }
 
+const frozenMapDescriptionSymbol = Symbol('Description');
+
 export class FrozenMap<K, V> {
   #content: Map<K, V>;
   constructor(entries: ReadonlyArray<[K, V]>) {
     this.#content = new Map(entries);
   }
 
+  /**
+   * The only reason this is here is because one time I was logging out a FrozenMap instance (in Node),
+   * saw it display `FrozenMap {}`, and incorrectly assumed that meant the map was empty. Having an "own" property like this
+   * will instead cause it to show up as `FrozenMap { [Symbol(Description)]: '...' }`, which should hopefully
+   * remind users that Node isn't trying to display these instances the same way it displays a normal `Map` instance,
+   * and that no assumptions should be made about its content based on what it displays.
+   */
+  [frozenMapDescriptionSymbol] = 'This is similar to a Map instance, but methods that mutate its contents have been ommitted.';
+
   /* eslint-disable @typescript-eslint/explicit-function-return-type */
-  get size(): number { return this.#content.size; }
+  get size() { return this.#content.size; }
   [Symbol.iterator]() { return this.#content[Symbol.iterator](); }
   entries(...args: Parameters<Map<K, V>['entries']>) { return this.#content.entries(...args); }
   get(...args: Parameters<Map<K, V>['get']>) { return this.#content.get(...args); }
