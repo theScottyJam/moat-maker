@@ -653,7 +653,7 @@ describe('validator behavior', () => {
       expect(cacheApi.getCacheEntryFor`[testExpectation: ${null}]`.exists()).toBe(false);
 
       // expectTo() takes one argument. Calling expectTo should
-      // run the type-checker against the empty the `[testExpectation: <function>]` tuple.
+      // run the type-checker against the `[testExpectation: <function>]` tuple.
       validator.expectTo(() => undefined);
 
       expect(cacheApi.getCacheEntryFor`[testExpectation: ${null}]`.exists()).toBe(true);

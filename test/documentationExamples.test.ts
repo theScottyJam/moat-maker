@@ -537,7 +537,7 @@ describe('documentation examples', () => {
       // validated that the value is an array. If you don't,
       // this expectation may throw, because it will try to access
       // a `length` property that may not exist on the value.
-      const andExpectNonEmptyArray = validator.expectTo((array: any) => {
+      const andExpectNonEmptyArray = validator.expectTo<unknown[]>(array => {
         if (array.length === 0) {
           return 'be an empty array.';
         }

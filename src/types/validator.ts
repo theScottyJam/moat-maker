@@ -14,8 +14,8 @@ export interface AssertMatchesOpts {
 export function createAssertMatchesOptsCheck(validator: ValidatorTemplateTag): Validator {
   const expectDirectInstance = expectDirectInstanceFactory(validator);
   const expectKeysFrom = expectKeysFromFactory(validator);
-  const andExpectEndsWithColon = validator.expectTo(value => {
-    return (value as string).endsWith(':')
+  const andExpectEndsWithColon = validator.expectTo<string>(value => {
+    return value.endsWith(':')
       ? undefined
       : 'end with a colon.';
   });
@@ -131,8 +131,11 @@ export interface ValidatorTemplateTagStaticFields {
    *
    * The error message string you return is expected to complete the sentence "Expect [the value] to ...".
    * End the phrase with a period, and if needed, you can add additional sentences afterward.
+   *
+   * A generic parameter can optionally be provied to tell TypeScript the type of parameter your callback takes.
+   * It defaults to unknown.
    */
-  readonly expectTo: (callback: (valueBeingMatched: unknown) => string | undefined) => Expectation
+  readonly expectTo: <T=unknown>(callback: (valueBeingMatched: T) => string | undefined) => Expectation
   /**
    * Returns true if the provided value is a validator instance.
    */

@@ -158,8 +158,8 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
   const expectKeysFrom = expectKeysFromFactory(validator);
   const expectNonSparse = expectNonSparseFactory(validator);
   const expectNormalArray = validator`${expectDirectInstance(Array)} & ${expectNonSparse}`;
-  const andExpectNonEmptyArray = validator.expectTo(
-    value => (value as unknown[]).length > 0 ? undefined : 'be non-empty.',
+  const andExpectNonEmptyArray = validator.expectTo<unknown[]>(
+    value => value.length > 0 ? undefined : 'be non-empty.',
   );
 
   const lazyRuleCheck = validator.lazy(() => ruleCheck);
@@ -173,8 +173,8 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     type: ${simpleTypeVariantCheck}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'type'])}`;
 
-  const andExpectNotNaN = validator.expectTo(value => Number.isNaN(value) ? 'not be NaN.' : undefined);
-  const andExpectNotInfinity = validator.expectTo(value => !Number.isFinite(value) ? 'be finite.' : undefined);
+  const andExpectNotNaN = validator.expectTo<number>(value => Number.isNaN(value) ? 'not be NaN.' : undefined);
+  const andExpectNotInfinity = validator.expectTo<number>(value => !Number.isFinite(value) ? 'be finite.' : undefined);
 
   const primitiveLiteralRuleCheck = validator`{
     category: 'primitiveLiteral'
@@ -220,8 +220,7 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     content: ${lazyRuleCheck}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'content'])}`;
 
-  const andExpectProperTupleRule = validator.expectTo(value_ => {
-    const value = value_ as TupleRule;
+  const andExpectProperTupleRule = validator.expectTo<TupleRule>(value => {
     const allowedLabelCount = value.content.length + value.optionalContent.length + (value.rest !== null ? 1 : 0);
     if (value.entryLabels !== null && value.entryLabels.length !== allowedLabelCount) {
       return `have exactly ${allowedLabelCount} label(s) but found ${value.entryLabels.length}.`;
@@ -255,8 +254,8 @@ function createRuleCheck(validator: ValidatorTemplateTag, interpolated: readonly
     variants: ${lazyRuleCheck}[] & ${andExpectNonEmptyArray} & ${expectNormalArray}
   } & ${expectDirectInstance(Object)} & ${expectKeysFrom(['category', 'variants'])}`;
 
-  const andExpectValidInterpolationIndex = validator.expectTo(index => {
-    return index as number in interpolated
+  const andExpectValidInterpolationIndex = validator.expectTo<number>(index => {
+    return index in interpolated
       ? undefined
       : `be an in-bounds interpolation index. Received ${interpolated.length} interpolated value(s).`;
   });

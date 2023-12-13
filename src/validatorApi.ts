@@ -136,11 +136,11 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     return uncheckedValidator.lazy(deriveValidator);
   },
 
-  expectTo(testExpectation_: (valueBeingMatched: unknown) => string | undefined): Expectation {
+  expectTo<T=unknown>(testExpectation_: (valueBeingMatched: T) => string | undefined): Expectation {
     !DISABLE_PARAM_VALIDATION && uncheckedValidator`[testExpectation: ${expectDirectInstance(Function)}]`
       .assertArgs('validator.expectTo()', arguments);
 
-    const testExpectation = (valueBeingMatched: unknown): string | undefined => {
+    const testExpectation = (valueBeingMatched: T): string | undefined => {
       const result = testExpectation_(valueBeingMatched);
       !DISABLE_PARAM_VALIDATION && uncheckedValidator`string | undefined`.assertMatches(result, {
         errorPrefix: 'validator.expectTo() received a bad "testExpectation" function:',
@@ -152,7 +152,7 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     return Object.freeze({
       [packagePrivate]: {
         type: 'expectation' as const,
-        testExpectation,
+        testExpectation: testExpectation as (value: unknown) => string | undefined,
       },
     });
   },

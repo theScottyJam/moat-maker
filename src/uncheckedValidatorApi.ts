@@ -135,9 +135,12 @@ const staticFields: ValidatorTemplateTagStaticFields = {
     });
   },
 
-  expectTo(testExpectation: (valueBeingMatched: unknown) => string | undefined): Expectation {
+  expectTo<T=unknown>(testExpectation: (valueBeingMatched: T) => string | undefined): Expectation {
     return {
-      [packagePrivate]: { type: 'expectation', testExpectation },
+      [packagePrivate]: {
+        type: 'expectation',
+        testExpectation: testExpectation as (value: unknown) => string | undefined,
+      },
     };
   },
 
